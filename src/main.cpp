@@ -7,7 +7,10 @@ int main() {
 StateGraph graph;
 graph.computeProxyEdges();
 std::cout << "Completed computation" << std::endl;
-graph.printEdges(1);
-graph.printEdges(5);
-graph.printEdges(10);
+
+std::cout << "Generating json positions..." << std::endl;
+graph.printPositions();
+std::cout << "Generating json graph with all edges..." << std::endl;
+graph.printEdges();
+std::cout << "Completed generating edges..." << std::endl;
 }

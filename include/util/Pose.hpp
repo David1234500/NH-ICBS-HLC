@@ -44,8 +44,8 @@ struct Pose2DWithError{
     float p_error = 0.f;
 
     /* settings values for the associated fit */
-    float s_a_val[2] = {0.f,0.f};
-    float s_v_val[2] = {0.f,0.f};
+    float s_a = 0.f;
+    float s_v = 0.f;
 };
 
 }

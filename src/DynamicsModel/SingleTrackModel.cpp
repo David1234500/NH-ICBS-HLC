@@ -9,16 +9,16 @@ using namespace dynamics::data;
 Pose2D SimpleDynamicsModel::computeNextPose(Pose2D current_pose, float steering_angle, float velocity, float time){
 
 // Compute driven distance 
-float time_sec = time / 1000; 
+float time_sec = time / 1000; //millisec
 float dist = velocity * time_sec;
 
 //Case of no steering angle
-if(steering_angle == 0.f){
-Vector2Df dp = {dist , 0.f};
-Eigen::Rotation2Df rotation(current_pose.h);
-auto dph = rotation * dp;
-auto new_pos = current_pose.pos + dph;
-return Pose2D{new_pos, current_pose.h};
+if(steering_angle <= 0.05f){
+    Vector2Df dp = {dist , 0.f};
+    Eigen::Rotation2Df rotation(current_pose.h);
+    auto dph = rotation * dp;
+    auto new_pos = current_pose.pos + dph;
+    return Pose2D{new_pos, current_pose.h};
 }
 
 // Compute radius of driven curve
@@ -93,10 +93,10 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
                         current_best_pose.a_error = angle_pose_error;
                         current_best_pose.p_error = position_pose_error;
                     
-                        current_best_pose.s_a_val[0] = next_angle;
-                        current_best_pose.s_a_val[1] = next_angle_step_2;
-                        current_best_pose.s_v_val[0] = next_speed;
-                        current_best_pose.s_v_val[1] = next_speed_step_2;
+                        // current_best_pose.s_a_val[0] = next_angle;
+                        // current_best_pose.s_a_val[1] = next_angle_step_2;
+                        // current_best_pose.s_v_val[0] = next_speed;
+                        // current_best_pose.s_v_val[1] = next_speed_step_2;
 
                     }
                 }
@@ -115,22 +115,18 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFitSingleStep(Po
     current_best_pose.bi_pose = tpi;
 
     float current_angle_span = SimpleDynamicsModel::angle_limit();
-    float current_velocity_span = SimpleDynamicsModel::velocity_limit() / 4; //TODO REMOVE HARDCODING HERE, CALC LIMIT TO ACCELERATION AND CONSEQ LIMIT TO SPEED SPAN
+    float current_velocity_span = SimpleDynamicsModel::velocity_limit() / 3; //TODO REMOVE HARDCODING HERE, CALC LIMIT TO ACCELERATION AND CONSEQ LIMIT TO SPEED SPAN
     float current_error = 1000.f;
 
     // Iterate over all possible combinations of speeds and steering angles to find best configuration for reaching the target node
-    uint32_t angle_count = 20;
-    uint32_t vel_count = 10; // TODO REMOVE THESE HARDCODED VALUES
+    uint32_t angle_count = 30;
+    uint32_t vel_count = 20; // TODO REMOVE THESE HARDCODED VALUES
 
     for(uint32_t i = 1; i < angle_count; i ++){
         float next_angle = (-(1.f/2.f)*SimpleDynamicsModel::angle_limit()) + SimpleDynamicsModel::angle_limit() * ((float)i / (float)angle_count);
         
         for(uint32_t j = 1; j < vel_count; j ++){    
-            float next_speed = current_pose.vel - current_velocity_span + (current_velocity_span * 2.f * ((float)i / (float)vel_count)); //TODO AFJUST SPEED VAL HERE
-            
-            if(fabs(next_speed) < 1.f){
-                continue;
-            }
+            float next_speed = current_pose.vel -(1.f/2.f)*current_velocity_span + (current_velocity_span * ((float)j / (float)vel_count)); //TODO AFJUST SPEED VAL HERE
 
             // Project Vehicle for one timestep with these settings
             auto next_pose_step_1 = SimpleDynamicsModel::computeNextPose(current_pose, next_angle, next_speed, timestep);
@@ -140,9 +136,9 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFitSingleStep(Po
             float angle_pose_error =  std::abs(next_pose_step_1.h - target_pose.h);
             float combined_pose_error = position_pose_error + angle_pose_error;
 
-            if(combined_pose_error < current_error){
+            if(position_pose_error < current_error){
 
-                current_error = combined_pose_error;
+                current_error = position_pose_error;
 
                 current_best_pose.pos = next_pose_step_1.pos;
                 current_best_pose.h = next_pose_step_1.h;
@@ -151,8 +147,8 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFitSingleStep(Po
                 current_best_pose.a_error = angle_pose_error;
                 current_best_pose.p_error = position_pose_error;
             
-                current_best_pose.s_a_val[0] = next_angle;
-                current_best_pose.s_v_val[0] = next_speed;
+                current_best_pose.s_a = next_angle;
+                current_best_pose.s_v= next_speed;
 
             }
         }
@@ -166,5 +162,5 @@ float SimpleDynamicsModel::velocity_limit(){
 }
 
 float SimpleDynamicsModel::angle_limit(){
-    return PI / 4;
+    return PI / 2;
 }
