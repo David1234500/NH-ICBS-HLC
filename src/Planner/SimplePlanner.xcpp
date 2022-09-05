@@ -231,7 +231,7 @@ std::vector<Pose2DWithError> SimpleRoutePlanner::single_step_vehicle_list(Pose2D
 
             auto next_pose = SimpleDynamicsModel::computeNextPose(pose, next_angle, next_speed, timestep_ms);
             float error = compute_error(next_pose, target);
-            Pose2DWithError next_pose_with_error {next_pose.pos, next_pose.h,next_pose.vel, error};
+            Pose2DWithError next_pose_with_error {next_pose.pos, next_pose.h, next_pose.vel, error};
             pose_vector.push_back(next_pose_with_error);   
         }
     }
@@ -245,26 +245,26 @@ std::vector<Pose2DWithError> SimpleRoutePlanner::single_step_vehicle_list(Pose2D
 
 
 std::vector<std::shared_ptr<CombinedSearchNode>> SimpleRoutePlanner::build_options_recursive(uint32_t index, std::shared_ptr<CombinedSearchNode> node, std::map<uint32_t, std::vector<dynamics::Pose2DWithError>>& map){
-    std::vector<std::shared_ptr<CombinedSearchNode>> results;
-    print("Combining process startm : " + std::to_string(map[0].size()),40);
-    for(auto pose: map[index]){
+    // std::vector<std::shared_ptr<CombinedSearchNode>> results;
+    // print("Combining process startm : " + std::to_string(map[0].size()),40);
+    // for(auto pose: map[index]){
         
-        auto new_node = std::make_shared<CombinedSearchNode>(*node);
+    //     auto new_node = std::make_shared<CombinedSearchNode>(*node);
     
-        new_node->vehicle_poses[index].pos = pose.pos;
-        new_node->vehicle_poses[index].h = pose.h;
-        new_node->vehicle_poses[index].vel = pose.vel;
-        new_node->cumulative_error += pose.error;
+    //     new_node->vehicle_poses[index].pos = pose.pos;
+    //     new_node->vehicle_poses[index].h = pose.h;
+    //     new_node->vehicle_poses[index].vel = pose.vel;
+    //     new_node->cumulative_error += pose.error;
 
-        if(index == map.size() - 1){
-            results.push_back(new_node);
-        }else{
-            auto rec_results = build_options_recursive(index + 1, new_node, map);
-            results.insert( results.end(), rec_results.begin(), rec_results.end() );
-        }
-    }
-    print("Combining process endv : " + std::to_string(results.size()),40);
-    return results;
+    //     if(index == map.size() - 1){
+    //         results.push_back(new_node);
+    //     }else{
+    //         auto rec_results = build_options_recursive(index + 1, new_node, map);
+    //         results.insert( results.end(), rec_results.begin(), rec_results.end() );
+    //     }
+    // }
+    // print("Combining process endv : " + std::to_string(results.size()),40);
+    // return results;
 }
 
 void SimpleRoutePlanner::plan2(){

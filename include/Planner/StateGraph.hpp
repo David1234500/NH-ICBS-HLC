@@ -5,23 +5,41 @@
 #include <DynamicsModel/SingleTrackModel.hpp>
 
 #include <vector>
+#include <map>
+#include <mutex>
 
+typedef int IHeading; //Heading Index
 
 
 struct StateNode{
-   
 
 };
 
-struct Edge{
+struct TraversableEdge{
+    dynamics::data::Pose2DWithError link;
+    dynamics::data::PoseByIndex target;
+};
 
+struct ProxyNode{
+    //Stores the relativ position of this node to the center
+    dynamics::data::Pose2D rel_pose;
+};
 
+struct ProxyTask{
+    
+    uint32_t txi = 0;
+    uint32_t tyi = 0;
 
+    uint32_t cai = 0;
+    uint32_t csi = 0;
+
+    float tstep = 0.0f;
 };
 
 constexpr int map_size_x = 40;
 constexpr int map_size_y = 40;
-constexpr int map_size_angle = 20;
+constexpr int map_size_angle = 10;
+constexpr int map_size_speed = 4;
 
 constexpr int map_size_x_cm = 400;
 constexpr int map_size_y_cm = 400;
@@ -30,20 +48,28 @@ constexpr float xpc = (float)map_size_x_cm / (float)map_size_x;
 constexpr float ypc = (float)map_size_y_cm / (float)map_size_y;
 constexpr float api = (2.f * PI) / (float)map_size_angle;
 
+
+
 class StateGraph{
 public:
 
 StateGraph();
 
-StateNode m_nodes[20][20][10];
-//                      from x      from  y     from a          to
-Edge m_adjacency_matrix[map_size_x][map_size_y][map_size_angle][map_size_x][map_size_y][map_size_angle];
+ProxyNode m_proxyMap[map_size_x][map_size_y][map_size_angle][map_size_speed];
+std::map<IHeading,std::vector<TraversableEdge>> m_proxyEdgeList;
 
-void computeSpacing();
-void computeEdges();
-void writeToDisk();
-float indexToAngle();
-dynamics::data::Pose2D gridToPosition(uint32_t x, uint32_t y, uint32_t angle);
+void computeProxyEdges();
+
+
+std::mutex m_proxyTaskMutex;
+std::vector<ProxyTask> m_proxyTaskQueue;
+
+bool m_terminateProxyThreads = false;
+void workerThreadProxyEdges(uint32_t index);
+
+// debug functions
+
+void printEdges(uint32_t index);
 
 };
 
