@@ -25,13 +25,42 @@ struct ProxyNode{
     dynamics::data::Pose2D rel_pose;
 };
 
+struct IndexNode{
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t a = 0;
+    int32_t s = 0;
+
+    inline bool operator==(IndexNode e) {
+    if(e.x==x && e.y == y && e.a == a && e.s== s){
+       return true;
+      }else{
+       return false;
+       }
+    }
+
+    inline bool operator&=(IndexNode e) {
+    if(e.x==x && e.y == y){
+       return true;
+      }else{
+       return false;
+       }
+    }
+
+    inline IndexNode operator+(IndexNode e) {
+        IndexNode n = {e.x + x, e.y + y, a, s};
+        return n;
+    }
+
+};
+
 struct ProxyTask{
     
-    uint32_t txi = 0;
-    uint32_t tyi = 0;
+    int32_t txi = 0;
+    int32_t tyi = 0;
 
-    uint32_t cai = 0;
-    uint32_t csi = 0;
+    int32_t cai = 0;
+    int32_t csi = 0;
 
     float tstep = 0.0f;
 };
@@ -55,23 +84,32 @@ public:
 
 StateGraph();
 
+
+// Proxy Edges/Node
+
+void computeProxyEdges();
+
 ProxyNode m_proxyMap[map_size_x][map_size_y][map_size_angle][map_size_speed];
 uint32_t m_proxyMapReachableSpan = 0;
 std::map<IHeading,std::vector<TraversableEdge>> m_proxyEdgeList;
 
-void computeProxyEdges();
-
-
 std::mutex m_proxyTaskMutex;
 std::vector<ProxyTask> m_proxyTaskQueue;
-
 bool m_terminateProxyThreads = false;
 void workerThreadProxyEdges(uint32_t index);
 
 // debug functions
-
 void printEdges();
 void printPositions();
+
+// Convenience Operator Overrides
+// inline ProxyNode operator[](IndexNode a) {
+//     if(a.x==x && a.y== y)
+//        return true;
+//       else
+//        return false;
+// }
+
 
 };
 
