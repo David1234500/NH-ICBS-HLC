@@ -132,7 +132,8 @@ bool m_terminateProxyThreads = false;
 void workerThreadProxyEdges(uint32_t index);
 
 // debug functions
-void printEdges();
+void writeGraphToDisk();
+void readGraphFromDisk();
 void printPositions();
 
 };

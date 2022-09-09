@@ -11,10 +11,10 @@ typedef Eigen::Matrix<float, 2, 1> Position2Df;
 typedef Eigen::Matrix<float, 2, 1> Vector2Df;
 
 struct PoseByIndex{
-    uint32_t x = 0;
-    uint32_t y = 0;
-    uint32_t a = 0;
-    uint32_t s = 0;
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t a = 0;
+    int32_t s = 0;
 
     inline PoseByIndex operator+(PoseByIndex e) {
         PoseByIndex n = {e.x + x, e.y + y, a,s};
@@ -102,6 +102,9 @@ struct Pose2DWithError{
     /* settings values for the associated fit */
     float s_a = 0.f;
     float s_v = 0.f;
+
+    float s_a_2 = 0.f;
+    float s_v_2 = 0.f;
 };
 
 }

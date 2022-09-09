@@ -16,6 +16,18 @@ file(GLOB SRC "src/Planner/*.cpp" "src/DynamicsModel/*.cpp" "src/util/*.cpp")
 add_library(planner_lib SHARED ${SRC})
 
 
-add_executable(main src/main.cpp)
-target_link_libraries(main planner_lib)
+file(GLOB EXEC_SRC "src/Exec/*.cpp")
+foreach(src_ ${EXEC_SRC})
+	get_filename_component(target ${src_} NAME)
+    
+	string(REPLACE ".cpp" "" target ${target})
+	string(REPLACE "/" "_" target ${target})
+    message(STATUS "Found executable : ${target}")
+
+	add_executable(${target} ${src_})
+    target_link_libraries(${target} planner_lib)
+endforeach()
+
+
+
 

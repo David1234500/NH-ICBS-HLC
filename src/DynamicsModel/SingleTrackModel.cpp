@@ -48,43 +48,44 @@ return Pose2D{new_pos, new_head};
 }
 
 dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D current_pose, PoseByIndex tpi, Pose2D target_pose, float timestep){
-    float error = 1.f;
-
+   
     dynamics::data::Pose2DWithError current_best_pose;
     current_best_pose.bi_pose = tpi;
 
     float current_angle_span = SimpleDynamicsModel::angle_limit();
-    float current_velocity_span = SimpleDynamicsModel::velocity_limit() / 4; //TODO REMOVE HARDCODING HERE, CALC LIMIT TO ACCELERATION AND CONSEQ LIMIT TO SPEED SPAN
+    float current_velocity_span = SimpleDynamicsModel::velocity_limit() / 3; //TODO REMOVE HARDCODING HERE, CALC LIMIT TO ACCELERATION AND CONSEQ LIMIT TO SPEED SPAN
     float current_error = 1000.f;
 
     // Iterate over all possible combinations of speeds and steering angles to find best configuration for reaching the target node
-    uint32_t angle_count = 20;
-    uint32_t vel_count = 10; // TODO REMOVE THESE HARDCODED VALUES
+    uint32_t angle_count = 30;
+    uint32_t vel_count = 20; // TODO REMOVE THESE HARDCODED VALUES
 
-    for(uint32_t i = 1; i < angle_count; i ++){
-        float next_angle = SimpleDynamicsModel::angle_limit() * (i/(float)angle_count);
+    for(uint32_t i = 0; i <= angle_count; i ++){
+        float next_angle = (-(1.f/2.f)*SimpleDynamicsModel::angle_limit()) + SimpleDynamicsModel::angle_limit() * ((float)i / (float)angle_count);
         
-        for(uint32_t j = 1; j < vel_count; j ++){    
-            float next_speed = -SimpleDynamicsModel::velocity_limit() + SimpleDynamicsModel::velocity_limit() * 2 * (i/(float)vel_count); //TODO AFJUST SPEED VAL HERE
+        for(uint32_t j = 0; j <= vel_count; j ++){    
+            float next_speed = current_pose.vel -(1.f/2.f)*current_velocity_span + (current_velocity_span * ((float)j / (float)vel_count)); //TODO AFJUST SPEED VAL HERE
+
             // Project Vehicle for one timestep with these settings
-            auto next_pose_step_1 = SimpleDynamicsModel::computeNextPose(current_pose, next_angle, next_speed, timestep);
-            
-            for(uint32_t i2 = 1; i2 < angle_count; i2 ++){
-                float next_angle_step_2 = SimpleDynamicsModel::angle_limit() * (i2/(float)angle_count);
+            auto next_pose_step_1 = SimpleDynamicsModel::computeNextPose(current_pose, next_angle, next_speed, timestep/2);
+
+            for(uint32_t i2 = 0; i2 <= angle_count; i2 ++){
+                float next_angle2 = (-(1.f/2.f)*SimpleDynamicsModel::angle_limit()) + SimpleDynamicsModel::angle_limit() * ((float)i2 / (float)angle_count);
                 
-                for(uint32_t j2 = 1; j2 < vel_count; j2 ++){    
-                    float next_speed_step_2 = -SimpleDynamicsModel::velocity_limit() + SimpleDynamicsModel::velocity_limit() * 2 * (i2/(float)vel_count);
-                    //Project Vehicle again and reevaluate
-                    auto next_pose_step_2 = SimpleDynamicsModel::computeNextPose(next_pose_step_1, next_angle_step_2, next_speed_step_2, timestep);
+                for(uint32_t j2 = 0; j2 <= vel_count; j2 ++){    
+                    float next_speed2 = current_pose.vel -(1.f/2.f)*current_velocity_span + (current_velocity_span * ((float)j2 / (float)vel_count)); //TODO AFJUST SPEED VAL HERE
+
+                    // Project Vehicle for one timestep with these settings
+                    auto next_pose_step_2 = SimpleDynamicsModel::computeNextPose(next_pose_step_1, next_angle2, next_speed2, timestep/2);
 
                     // Compute error from target position 
                     float position_pose_error = (next_pose_step_2.pos - target_pose.pos).norm() ; //TODO: GUESTIMATE USEFULL ERRORS BOUNDARIES FOR THESE VALUES
                     float angle_pose_error =  std::abs(next_pose_step_2.h - target_pose.h);
                     float combined_pose_error = position_pose_error + angle_pose_error;
 
-                    if(combined_pose_error < current_error){
+                    if(position_pose_error < current_error){
 
-                        current_error = combined_pose_error;
+                        current_error = position_pose_error;
 
                         current_best_pose.pos = next_pose_step_2.pos;
                         current_best_pose.h = next_pose_step_2.h;
@@ -93,18 +94,20 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
                         current_best_pose.a_error = angle_pose_error;
                         current_best_pose.p_error = position_pose_error;
                     
-                        // current_best_pose.s_a_val[0] = next_angle;
-                        // current_best_pose.s_a_val[1] = next_angle_step_2;
-                        // current_best_pose.s_v_val[0] = next_speed;
-                        // current_best_pose.s_v_val[1] = next_speed_step_2;
+                        current_best_pose.s_a = next_angle;
+                        current_best_pose.s_v = next_speed;
+
+                        current_best_pose.s_a_2 = next_angle2;
+                        current_best_pose.s_v_2 = next_speed2;
 
                     }
                 }
             }
         }
+            
     }
     return current_best_pose;
-}   
+}
 
 
 
@@ -122,10 +125,10 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFitSingleStep(Po
     uint32_t angle_count = 40;
     uint32_t vel_count = 30; // TODO REMOVE THESE HARDCODED VALUES
 
-    for(uint32_t i = 1; i < angle_count; i ++){
+    for(uint32_t i = 0; i < angle_count; i ++){
         float next_angle = (-(1.f/2.f)*SimpleDynamicsModel::angle_limit()) + SimpleDynamicsModel::angle_limit() * ((float)i / (float)angle_count);
         
-        for(uint32_t j = 1; j < vel_count; j ++){    
+        for(uint32_t j = 0; j < vel_count; j ++){    
             float next_speed = current_pose.vel -(1.f/2.f)*current_velocity_span + (current_velocity_span * ((float)j / (float)vel_count)); //TODO AFJUST SPEED VAL HERE
 
             // Project Vehicle for one timestep with these settings

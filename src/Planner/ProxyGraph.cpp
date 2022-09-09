@@ -34,18 +34,18 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
         if(hasTask){
             
             dynamics::data::Pose2D veh_pose = {{0.f,0.f}, m_proxyMap[0][0][threadTask.cai][threadTask.csi].rel_pose.h,  m_proxyMap[0][0][threadTask.cai][threadTask.csi].rel_pose.vel};
-            for(uint32_t a = 0; a < map_size_angle; a ++){
-                for(uint32_t s = 0; s < map_size_speed; s ++){
+            for(int32_t a = 0; a < map_size_angle; a ++){
+                for(int32_t s = 0; s < map_size_speed; s ++){
             
                 //Compute best fit settings set to get from the current to the target location
                 dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, a, s};
-                auto epose = dynamics::SimpleDynamicsModel::computeBestFitSingleStep(veh_pose, target_pose_by_index, m_proxyMap[threadTask.txi][threadTask.tyi][a][s].rel_pose, threadTask.tstep);
+                auto epose = dynamics::SimpleDynamicsModel::computeBestFit(veh_pose, target_pose_by_index, m_proxyMap[threadTask.txi][threadTask.tyi][a][s].rel_pose, threadTask.tstep);
                 
                 //Discard if error greater than half of the angular resolution 
-                if(epose.a_error >  api){ //TODO: MAKE THIS VALUE ADJUSTABLE, CURRENTLY WEIGHT JUST SET ARBITRARILY
+                if(epose.a_error >  api / 4){ //TODO: MAKE THIS VALUE ADJUSTABLE, CURRENTLY WEIGHT JUST SET ARBITRARILY
                     continue;
                 }
-                if(epose.p_error > xpc / 16){ //TODO: MAKE THIS VALUE ADJUSTABLE
+                if(epose.p_error > xpc / 20){ //TODO: MAKE THIS VALUE ADJUSTABLE
                     continue;
                 }
 
@@ -55,7 +55,6 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
                 std::cout << "[INFO]["<< index <<"] Added edge to " << std::to_string(epose.pos[0]) <<":"<< std::to_string(epose.pos[1]) 
                 << " >s" << epose.s_a <<"_"<< epose.s_v << "e" << epose.p_error <<  "p" << a <<"_"<< s << std::endl;
                 m_proxyEdgeList[threadTask.cai].push_back(nt_edge);  
-                break;
                 }
             }
         }else{
@@ -156,16 +155,16 @@ void ProxyGraph::computeProxyEdges(){
     }
 
     std::vector<std::thread> workers;
-    for(uint32_t i = 0; i < 32; i++){
+    for(uint32_t i = 0; i < 10; i++){
         workers.push_back(std::thread(&ProxyGraph::workerThreadProxyEdges, this, i));
     }
-    for(uint32_t i = 0; i < 32; i++){
+    for(uint32_t i = 0; i < 10; i++){
         workers.at(i).join();
     }
 }
 
 
-void ProxyGraph::printEdges(){
+void ProxyGraph::writeGraphToDisk(){
    json proxy_map_dump;
     // Dump array to list
     for(uint32_t x = 0; x < m_proxyMapReachableSpan; x ++){
@@ -189,21 +188,61 @@ void ProxyGraph::printEdges(){
             json jedge;
             jedge["source"]["a"] = i;
             
-            for(float ts = 0; ts < 250.f; ts += 25.f){
-                
-                dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
-                auto next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edge.link.s_a, edge.link.s_v, ts);
-                
-                json point;
-                point["x"] = next_pose.pos[0];
-                point["y"] = next_pose.pos[1];
-                jedge["curve"].push_back(point);
+            
+            if(edge.link.s_a_2 != 0.f){
 
+                dynamics::data::Pose2D next_pose;
+                for(float ts = 0; ts < 125.f; ts += 25.f){
+                
+                    dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
+                    next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edge.link.s_a, edge.link.s_v, ts);
+                    
+                    json point;
+                    point["x"] = next_pose.pos[0];
+                    point["y"] = next_pose.pos[1];
+                    jedge["curve"].push_back(point);
+
+                }
+                
+                for(float ts = 0; ts < 125.f; ts += 25.f){
+                
+                    dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
+                    auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edge.link.s_a_2, edge.link.s_v_2, ts);
+                    
+                    json point;
+                    point["x"] = next_pose2.pos[0];
+                    point["y"] = next_pose2.pos[1];
+                    jedge["curve"].push_back(point);
+                }
+
+            }else{
+                for(float ts = 0; ts < 250.f; ts += 25.f){
+                
+                    dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
+                    auto next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edge.link.s_a, edge.link.s_v, ts);
+                    
+                    json point;
+                    point["x"] = next_pose.pos[0];
+                    point["y"] = next_pose.pos[1];
+                    jedge["curve"].push_back(point);
+
+                }
             }
 
             jedge["target"]["x"] = m_proxyMap[edge.target.x][edge.target.y][0][0].rel_pose.pos[0];
             jedge["target"]["y"] = m_proxyMap[edge.target.x][edge.target.y][0][0].rel_pose.pos[1];
-            
+            jedge["target"]["s"] = m_proxyMap[edge.target.x][edge.target.y][edge.target.a][edge.target.s].rel_pose.vel;
+            jedge["target"]["a"] = m_proxyMap[edge.target.x][edge.target.y][edge.target.a][edge.target.s].rel_pose.h;
+
+            jedge["settings"]["a1"] = edge.link.s_a;
+            jedge["settings"]["a2"] = edge.link.s_a_2;
+            jedge["settings"]["v1"] = edge.link.s_v;
+            jedge["settings"]["v2"] = edge.link.s_v_2;
+
+            jedge["error"]["ae"] = edge.link.a_error;
+            jedge["error"]["pe"] = edge.link.p_error;
+
+            jedge["targeti"]["s"] = edge.target.s;
             jedge["targeti"]["a"] = edge.target.a;
             jedge["targeti"]["x"] = edge.target.x;
             jedge["targeti"]["y"] = edge.target.y;
