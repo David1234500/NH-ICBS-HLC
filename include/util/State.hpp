@@ -28,35 +28,35 @@ public:
 
     void init_random(){
         
-        util::Config* config = util::Config::getInstance();
+        // util::Config* config = util::Config::getInstance();
         
-        std::random_device rd;     // only used once to initialise (seed) engine
-        std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
-        std::uniform_int_distribution<float> uni(0,config->getFloatByKey("map_size")); // guaranteed unbiased
+        // std::random_device rd;     // only used once to initialise (seed) engine
+        // std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
+        // std::uniform_int_distribution<float> uni(0,config->getFloatByKey("map_size")); // guaranteed unbiased
 
-        auto random_integer = uni(rng);
+        // auto random_integer = uni(rng);
 
-        float rx = (float)  uni(rng);;
-        float ry = (float)  uni(rng);;
-        pose.vel = 0;
-        std::cout << "start " << rx << ":" << ry << std::endl;
+        // float rx = (float)  uni(rng);;
+        // float ry = (float)  uni(rng);;
+        // pose.vel = 0;
+        // std::cout << "start " << rx << ":" << ry << std::endl;
 
-        pose.h = (float) (rand()) / ((float) (RAND_MAX/6.3));
-        pose.pos = {rx,ry};
-        pose.vel = 0;
+        // pose.h = (float) (rand()) / ((float) (RAND_MAX/6.3));
+        // pose.pos = {rx,ry};
+        // pose.vel = 0;
 
-        start.pos = {rx,ry};
-        start.h = (float) (rand()) / ((float) (RAND_MAX/6.3));
-        pose.vel = 0;
+        // start.pos = {rx,ry};
+        // start.h = (float) (rand()) / ((float) (RAND_MAX/6.3));
+        // pose.vel = 0;
 
-        rx = (float)  uni(rng);;
-        ry = (float)  uni(rng);;
+        // rx = (float)  uni(rng);;
+        // ry = (float)  uni(rng);;
 
-        std::cout << "target " << rx << ":" << ry << std::endl;
+        // std::cout << "target " << rx << ":" << ry << std::endl;
 
-        target.pos = {rx,ry};
-        target.h = (float) (rand()) / ((float) (RAND_MAX/6.3));
-        target.vel = 0;
+        // target.pos = {rx,ry};
+        // target.h = (float) (rand()) / ((float) (RAND_MAX/6.3));
+        // target.vel = 0;
     }
 };
 

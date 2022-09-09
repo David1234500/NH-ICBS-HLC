@@ -1,10 +1,10 @@
-#include <Planner/StateGraph.hpp>
+#include <Planner/ProxyGraph.hpp>
 #include <iostream>
 
 int main() {
 
 
-StateGraph graph;
+ProxyGraph graph;
 graph.computeProxyEdges();
 std::cout << "Completed computation" << std::endl;
 

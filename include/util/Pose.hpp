@@ -15,7 +15,63 @@ struct PoseByIndex{
     uint32_t y = 0;
     uint32_t a = 0;
     uint32_t s = 0;
+
+    inline PoseByIndex operator+(PoseByIndex e) {
+        PoseByIndex n = {e.x + x, e.y + y, a,s};
+        return n;
+    }
+
+    inline PoseByIndex operator+(int32_t offset) {
+        PoseByIndex n = {x + offset, y + offset, a,s};
+        return n;
+    }
+
+    inline PoseByIndex operator-(PoseByIndex e) {
+        PoseByIndex n = {e.x - x, e.y - y,a,s};
+        return n;
+    }
+
+     inline PoseByIndex operator-(int32_t offset) {
+        PoseByIndex n = {x - offset, y - offset, a,s};
+        return n;
+    }
+
+    inline bool operator==(PoseByIndex e) {
+        if(e.x==x && e.y == y && e.a == a && e.s== s){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+     bool operator < (const dynamics::data::PoseByIndex r) const {
+        if(x < r.x){
+            return true;
+        }else if(x > r.x){
+            return false;
+        }else{
+            if(y < r.y){
+                return true;
+            }else if(y > r.y){
+                return false;
+            }else{
+                if(a < r.a){
+                    return true;
+                }else if(a > r.a){
+                    return false;
+                }else{
+                    if(s < r.s){
+                        return true;
+                    }else{
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+
 };
+
 
 struct Pose2D{
     /* 2D Position in cm */

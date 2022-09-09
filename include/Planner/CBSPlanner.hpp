@@ -2,15 +2,15 @@
 #define PLANNER_HPP
 
 #include <util/Pose.hpp>
-#include <util/Config.hpp>
-#include <util/State.hpp>
-#include <util/SearchTree.hpp>
 
 #include <DynamicsModel/SingleTrackModel.hpp>
+#include <Planner/ProxyGraph.hpp>
 #include <Planner/StateGraph.hpp>
-
+#include <Config.hpp>
 #include <queue>
 #include <map>
+
+
 
 class CBSPlanner 
 {
@@ -19,9 +19,17 @@ public:
 
     }
 
-    void astar(IndexNode start, IndexNode target);
-    void insertByOrder(IndexNode node, std::vector<IndexNode>& openSet, std::map<IndexNode,float>& fScore);
 
+    dynamics::data::PoseByIndex toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative);
+    dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex);
+    dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global);
+
+    void astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target);
+    int32_t binarySearch(dynamics::data::PoseByIndex node, std::vector<dynamics::data::PoseByIndex>& openSet,  std::map<dynamics::data::PoseByIndex, float>& fScoreMap);
+
+private:
+    ProxyGraph m_proxGraph;
+    StateGraph m_stateGraph;
 
 };
 

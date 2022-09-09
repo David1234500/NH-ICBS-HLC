@@ -119,8 +119,8 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFitSingleStep(Po
     float current_error = 1000.f;
 
     // Iterate over all possible combinations of speeds and steering angles to find best configuration for reaching the target node
-    uint32_t angle_count = 30;
-    uint32_t vel_count = 20; // TODO REMOVE THESE HARDCODED VALUES
+    uint32_t angle_count = 40;
+    uint32_t vel_count = 30; // TODO REMOVE THESE HARDCODED VALUES
 
     for(uint32_t i = 1; i < angle_count; i ++){
         float next_angle = (-(1.f/2.f)*SimpleDynamicsModel::angle_limit()) + SimpleDynamicsModel::angle_limit() * ((float)i / (float)angle_count);
