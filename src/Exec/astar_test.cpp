@@ -7,16 +7,15 @@ int main() {
 
 
     CBSPlanner planner;
-    planner.m_proxGraph.computeProxyEdges();
-    std::cout << "Completed computation" << std::endl;
+    std::cout << "Loading graph from disk!" << std::endl;
+    planner.m_proxGraph.loadGraphFromDisk();
+    std::cout << "Finished loading graph from disk!" << std::endl;
 
-    std::cout << "Generating json graph with all edges..." << std::endl;
-    planner.m_proxGraph.writeGraphToDisk();
-    std::cout << "Completed generating edges..." << std::endl;
+    dynamics::data::PoseByIndex start = {5,5,5,2};
+    dynamics::data::PoseByIndex end = {25,10,7,2};
 
-    dynamics::data::PoseByIndex start = {5,5,5,3};
-    dynamics::data::PoseByIndex end = {35,35,35,3};
 
+    std::cout << "Start AStar!" << std::endl;
     auto res = planner.astar(start,end);
     std::cout << "Completed Astar" << std::endl;
     std::cout << res.size() << std::endl;

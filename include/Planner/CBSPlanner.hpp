@@ -19,7 +19,7 @@ public:
 
     }
 
-
+    bool validatePosition(dynamics::data::PoseByIndex base);
     dynamics::data::PoseByIndex toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative);
     dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex);
     dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global);

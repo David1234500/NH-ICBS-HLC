@@ -67,7 +67,7 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
             float next_speed = current_pose.vel -(1.f/2.f)*current_velocity_span + (current_velocity_span * ((float)j / (float)vel_count)); //TODO AFJUST SPEED VAL HERE
 
             // Project Vehicle for one timestep with these settings
-            auto next_pose_step_1 = SimpleDynamicsModel::computeNextPose(current_pose, next_angle, next_speed, timestep/2);
+            auto next_pose_step_1 = SimpleDynamicsModel::computeNextPose(current_pose, next_angle, next_speed, timestep);
 
             for(uint32_t i2 = 0; i2 <= angle_count; i2 ++){
                 float next_angle2 = (-(1.f/2.f)*SimpleDynamicsModel::angle_limit()) + SimpleDynamicsModel::angle_limit() * ((float)i2 / (float)angle_count);
@@ -76,7 +76,7 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
                     float next_speed2 = current_pose.vel -(1.f/2.f)*current_velocity_span + (current_velocity_span * ((float)j2 / (float)vel_count)); //TODO AFJUST SPEED VAL HERE
 
                     // Project Vehicle for one timestep with these settings
-                    auto next_pose_step_2 = SimpleDynamicsModel::computeNextPose(next_pose_step_1, next_angle2, next_speed2, timestep/2);
+                    auto next_pose_step_2 = SimpleDynamicsModel::computeNextPose(next_pose_step_1, next_angle2, next_speed2, timestep);
 
                     // Compute error from target position 
                     float position_pose_error = (next_pose_step_2.pos - target_pose.pos).norm() ; //TODO: GUESTIMATE USEFULL ERRORS BOUNDARIES FOR THESE VALUES
@@ -118,11 +118,11 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFitSingleStep(Po
     current_best_pose.bi_pose = tpi;
 
     float current_angle_span = SimpleDynamicsModel::angle_limit();
-    float current_velocity_span = SimpleDynamicsModel::velocity_limit() / 3; //TODO REMOVE HARDCODING HERE, CALC LIMIT TO ACCELERATION AND CONSEQ LIMIT TO SPEED SPAN
+    float current_velocity_span = SimpleDynamicsModel::velocity_limit() / 2; //TODO REMOVE HARDCODING HERE, CALC LIMIT TO ACCELERATION AND CONSEQ LIMIT TO SPEED SPAN
     float current_error = 1000.f;
 
     // Iterate over all possible combinations of speeds and steering angles to find best configuration for reaching the target node
-    uint32_t angle_count = 40;
+    uint32_t angle_count = 50;
     uint32_t vel_count = 30; // TODO REMOVE THESE HARDCODED VALUES
 
     for(uint32_t i = 0; i < angle_count; i ++){
@@ -165,5 +165,5 @@ float SimpleDynamicsModel::velocity_limit(){
 }
 
 float SimpleDynamicsModel::angle_limit(){
-    return PI / 2;
+    return PI * 1.5;
 }

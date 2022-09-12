@@ -1,5 +1,6 @@
-project(asoa_core)
-set(CMAKE_BUILD_TYPE Debug)
+project(planner)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
+# set(CMAKE_BUILD_TYPE Debug)
 cmake_minimum_required(VERSION 3.15)
 
 ## Compile and include Eigen

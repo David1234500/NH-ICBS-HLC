@@ -133,7 +133,7 @@ void workerThreadProxyEdges(uint32_t index);
 
 // debug functions
 void writeGraphToDisk();
-void readGraphFromDisk();
+void loadGraphFromDisk();
 void printPositions();
 
 };

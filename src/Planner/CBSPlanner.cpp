@@ -6,28 +6,34 @@
 using json = nlohmann::json;
 
 void CBSPlanner::insert(dynamics::data::PoseByIndex node, std::vector<dynamics::data::PoseByIndex>& openSet,  std::map<dynamics::data::PoseByIndex, float>& fScoreMap){
-    uint32_t index_left = 0;
-    uint32_t index_right = openSet.size() - 1;
-    
-    while(index_left < index_right){
-        uint32_t m = std::floor((index_left + index_right) / 2);
-        if(fScoreMap[openSet.at(m)] < fScoreMap[node]){
-            index_left = m + 1;
-        }else if (fScoreMap[openSet.at(m)] > fScoreMap[node]){
-            index_right = m - 1;
-        }else{
-            openSet.insert(openSet.begin() + m, node);
-        }
+    uint32_t index = 0;
+    while(index < openSet.size() && (fScoreMap[openSet.at(index)] < fScoreMap[node])){
+        index ++;
     }
+    openSet.insert(openSet.begin() + index, node);
 }
 
 
 int32_t CBSPlanner::binarySearch(dynamics::data::PoseByIndex node, std::vector<dynamics::data::PoseByIndex>& openSet,  std::map<dynamics::data::PoseByIndex, float>& fScoreMap){
-    uint32_t index_left = 0;
-    uint32_t index_right = openSet.size() - 1;
     
-    while(index_left < index_right){
-        uint32_t m = std::floor((index_left + index_right) / 2);
+    if(openSet.size() == 0){
+        return -1;
+    }
+    
+    int32_t index_left = 0;
+    int32_t index_right = openSet.size() - 1;
+    
+    while(index_left <= index_right){
+        int32_t m = std::floor((index_left + index_right) / 2);
+        
+        if(fScoreMap.count(openSet.at(m)) == 0){
+            fScoreMap[openSet.at(m)] = 1000000000.f;
+        }
+
+        if(fScoreMap.count(node) == 0){
+            fScoreMap[node] = 1000000000.f;
+        }
+
         if(fScoreMap[openSet.at(m)] < fScoreMap[node]){
             index_left = m + 1;
         }else if (fScoreMap[openSet.at(m)] > fScoreMap[node]){
@@ -60,7 +66,21 @@ dynamics::data::PoseByIndex CBSPlanner::toLocalIndex(dynamics::data::PoseByIndex
     return (global - base) +  m_proxGraph.m_proxyMapCarOffset;
 }
 
-
+bool CBSPlanner::validatePosition(dynamics::data::PoseByIndex base){
+    if(base.a < 0 || base.a > map_size_angle){
+        return false;
+    }
+    if(base.s < 0 || base.s > map_size_speed){
+        return false;
+    }
+    if(base.x < 0 || base.x > map_size_x){
+        return false;
+    }
+     if(base.y < 0 || base.y > map_size_y){
+        return false;
+    }
+    return true;
+}
 
 std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex> CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target){
     std::vector<dynamics::data::PoseByIndex> openSet;
@@ -78,12 +98,13 @@ std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex> CBSPlanner::as
 
     while(!openSet.empty()){
         
-        if(openSet.size() % 5 == 0){
-            std::cout << "Size os:" << openSet.size() << std::endl;
-        }
-
+        
+        std::cout << "Size os:" << openSet.size() << std::endl;
+        
         auto current = openSet.front();
-       
+        std::cout << "current index :" << current.x << "_" << current.y << "_" << current.a << "_" << current.s << std::endl;
+        std::cout << "current scores g" << gScore[current] << " f" << fScore[current] <<  std::endl;
+
         if(current == target){
             std::cout << "a star finished" << std::endl;
             return cameFrom;
@@ -92,13 +113,23 @@ std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex> CBSPlanner::as
         openSet.erase(openSet.begin());
         for(auto rel_neighbor: m_proxGraph.m_proxyEdgeList[current.a]){
             
-            std::cout << "neigh" << rel_neighbor.target.x << " " << rel_neighbor.target.y << std::endl; 
+            // std::cout << "neigh" << rel_neighbor.target.x << " " << rel_neighbor.target.y << std::endl; 
 
             dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(current, rel_neighbor.target);
 
+            // std::cout << "gl neigh" << gl_neighbor.x << " " <<gl_neighbor.y << std::endl; 
+
             auto neigh_pose = indexToPose(gl_neighbor);
+
+            // Invalid position, so we can skip this
+            if(!validatePosition(gl_neighbor)){
+                continue;
+            }
+
             auto current_pose = indexToPose(current);
             
+            // std::cout << "npose" << neigh_pose.pos[0] << " "<< neigh_pose.pos[1]  << std::endl; 
+
             float dist = (neigh_pose.pos - current_pose.pos).norm();
             
             if(gScore.count(gl_neighbor) == 0){
@@ -106,8 +137,10 @@ std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex> CBSPlanner::as
                 fScore[gl_neighbor] = 1000000000.f;
             }
                         
-            float tentative_score = gScore[gl_neighbor] + dist; // HAS NO GSCORE JET
+            float tentative_score = gScore[current] + dist; // HAS NO GSCORE JET
             
+            // std::cout << "t: " <<  tentative_score << " gs: " << gScore[gl_neighbor] << std::endl;
+
             if(tentative_score < gScore[gl_neighbor]){
                 cameFrom[gl_neighbor] = current;
                 
@@ -116,7 +149,22 @@ std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex> CBSPlanner::as
                 float h = (neigh_pose.pos - target_pose.pos).norm();
                 fScore[gl_neighbor] = tentative_score + h;
                 
-                if(binarySearch(gl_neighbor, openSet, fScore) == -1){
+                int32_t bin_ret = binarySearch(gl_neighbor, openSet, fScore);
+                if(bin_ret == -1){
+                    std::cout << "insert direct" << std::endl; 
+                    insert(gl_neighbor, openSet, fScore);
+                }else{
+                    for(int32_t index = bin_ret; (index >= 0) && (fScore[openSet.at(index)] == fScore[gl_neighbor]); index --){
+                        if(openSet.at(index) == gl_neighbor){
+                            continue;
+                        }
+                    }
+                    for(int32_t index = bin_ret;index < openSet.size() && (fScore[openSet.at(index)] == fScore[gl_neighbor]); index ++){
+                        if(openSet.at(index) == gl_neighbor){
+                            continue;
+                        }
+                    }
+                    std::cout << "insert with dup fscore" << std::endl; 
                     insert(gl_neighbor, openSet, fScore);
                 }
             }
@@ -135,10 +183,13 @@ void CBSPlanner::writePathToDisk( std::map<dynamics::data::PoseByIndex,dynamics:
         node["y"] = current.y;
         node["s"] = current.s;
         node["a"] = current.a;
+
         astar_path["path"].push_back(node);
 
         current = predecessor[current];
     }
+
+    
 
     //dump file to disc
     std::ofstream o("astar_path.json");

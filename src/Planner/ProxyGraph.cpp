@@ -10,7 +10,7 @@
 using json = nlohmann::json;
 
 ProxyGraph::ProxyGraph(){
-
+    // m_proxyMap = (ProxyNode*) malloc(sizeof(ProxyGraph) * map_size_x *map_size_y* map_size_angle * map_size_speed);
 
 }
 
@@ -72,15 +72,15 @@ void ProxyGraph::computeProxyEdges(){
 
     //Compute size of the proxy field based on reachable distance at the given speed
     uint32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / xpc);
-    uint32_t reachable_node_span = (2*reachable_node_count) + 1; 
+    uint32_t reachable_node_span = (2*reachable_node_count); 
     m_proxyMapReachableSpan = reachable_node_span;
     m_proxyMapCarOffset = reachable_node_count; 
 
     std::cout << "[INFO] Allocated all proxy nodes." << std::endl;
 
     //Set the positions of each proxy node relative to the car
-    for(uint32_t x = 0; x < reachable_node_span; x ++){
-        for(uint32_t y = 0; y < reachable_node_span; y ++){
+    for(uint32_t x = 0; x <= reachable_node_span; x ++){
+        for(uint32_t y = 0; y <= reachable_node_span; y ++){
             for(uint32_t a = 0; a < map_size_angle; a ++){
                 for(uint32_t s = 0; s < map_size_speed; s ++){
                     //Compute position, heading and velocity of the node
@@ -115,8 +115,8 @@ void ProxyGraph::computeProxyEdges(){
             dynamics::data::Pose2D veh_pose = {{0.f,0.f}, m_proxyMap[0][0][j][i].rel_pose.h, m_proxyMap[0][0][j][i].rel_pose.vel};
             
             //Check for each candidate node if we can find a connection between these two, but use all system threads
-            for(int32_t x = 0; x < reachable_node_span; x ++){
-                for(int32_t y = 0; y < reachable_node_span; y ++){
+            for(int32_t x = 0; x <= reachable_node_span; x ++){
+                for(int32_t y = 0; y <= reachable_node_span; y ++){
                      
                     if(x == m_proxyMapCarOffset && y == m_proxyMapCarOffset){
                         continue;
@@ -141,24 +141,24 @@ void ProxyGraph::computeProxyEdges(){
                     auto t3 = asin(t1_dot / t2_n);
 
                     //Check that angle between these is smaller than threshold to reduce compute time
-                    if(fabs(t3) < 2 * dynamics::SimpleDynamicsModel::angle_limit()){
-                        std::cout << "[INFO] Adding Task for x " << x << ":y " << y <<  "a " << j << ":s " << i << " asin(B)" << t3 << std::endl;
-                        std::lock_guard<std::mutex> lock(m_proxyTaskMutex);    
-                        
-                        ProxyTask nTask;    
-                        nTask = {x,y,j,i,time_set_ms};
-                        m_proxyTaskQueue.push_back(nTask);
-                    }
+                    // if(fabs(t3) < 2 * dynamics::SimpleDynamicsModel::angle_limit()){
+                    std::cout << "[INFO] Adding Task for x " << x << ":y " << y <<  "a " << j << ":s " << i << " asin(B)" << t3 << std::endl;
+                    std::lock_guard<std::mutex> lock(m_proxyTaskMutex);    
+                    
+                    ProxyTask nTask;    
+                    nTask = {x,y,j,i,time_set_ms};
+                    m_proxyTaskQueue.push_back(nTask);
+                    // }
                 }
             }   
         }
     }
 
     std::vector<std::thread> workers;
-    for(uint32_t i = 0; i < 10; i++){
+    for(uint32_t i = 0; i < worker_counter; i++){
         workers.push_back(std::thread(&ProxyGraph::workerThreadProxyEdges, this, i));
     }
-    for(uint32_t i = 0; i < 10; i++){
+    for(uint32_t i = 0; i < worker_counter; i++){
         workers.at(i).join();
     }
 }
@@ -166,9 +166,12 @@ void ProxyGraph::computeProxyEdges(){
 
 void ProxyGraph::writeGraphToDisk(){
    json proxy_map_dump;
+
+    proxy_map_dump["info"]["m_proxyMapReachableSpan"] = m_proxyMapReachableSpan;
+
     // Dump array to list
-    for(uint32_t x = 0; x < m_proxyMapReachableSpan; x ++){
-        for(uint32_t y = 0; y < m_proxyMapReachableSpan; y ++){
+    for(uint32_t x = 0; x <= m_proxyMapReachableSpan; x ++){
+        for(uint32_t y = 0; y <= m_proxyMapReachableSpan; y ++){
             for(uint32_t a = 0; a < map_size_angle; a ++){
                 for(uint32_t s = 0; s < map_size_speed; s ++){
                     //Compute position, heading and velocity of the node
@@ -177,6 +180,12 @@ void ProxyGraph::writeGraphToDisk(){
                     node["pose"]["y"] =  m_proxyMap[x][y][a][s].rel_pose.pos[1];
                     node["pose"]["h"] =  m_proxyMap[x][y][a][s].rel_pose.h;
                     node["pose"]["v"] =  m_proxyMap[x][y][a][s].rel_pose.vel;
+
+                    node["pose"]["xi"] = x;
+                    node["pose"]["yi"] = y;
+                    node["pose"]["ai"] = a;
+                    node["pose"]["si"] = s;
+
                     proxy_map_dump["map"].push_back(node);
                 }
             }
@@ -187,12 +196,13 @@ void ProxyGraph::writeGraphToDisk(){
         for(auto edge: m_proxyEdgeList[i]){
             json jedge;
             jedge["source"]["a"] = i;
+           
             
             
             if(edge.link.s_a_2 != 0.f){
 
                 dynamics::data::Pose2D next_pose;
-                for(float ts = 0; ts < 125.f; ts += 25.f){
+                for(float ts = 0; ts < timestep_ms; ts += 25.f){
                 
                     dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
                     next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edge.link.s_a, edge.link.s_v, ts);
@@ -204,7 +214,7 @@ void ProxyGraph::writeGraphToDisk(){
 
                 }
                 
-                for(float ts = 0; ts < 125.f; ts += 25.f){
+                for(float ts = 0; ts < timestep_ms; ts += 25.f){
                 
                     dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
                     auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edge.link.s_a_2, edge.link.s_v_2, ts);
@@ -216,7 +226,7 @@ void ProxyGraph::writeGraphToDisk(){
                 }
 
             }else{
-                for(float ts = 0; ts < 250.f; ts += 25.f){
+                for(float ts = 0; ts < timestep_ms; ts += 25.f){
                 
                     dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
                     auto next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edge.link.s_a, edge.link.s_v, ts);
@@ -257,6 +267,57 @@ void ProxyGraph::writeGraphToDisk(){
     o.close();
 }
 
+
+void ProxyGraph::loadGraphFromDisk(){
+    std::ifstream ifs("proxy_state_graph.json");
+    json jf = json::parse(ifs);
+    m_proxyMapReachableSpan = jf["info"]["m_proxyMapReachableSpan"];
+    m_proxyMapReachableSpan += 1;
+
+    std::cout << "Loading map with: " << jf["map"].size() << " and expected " << m_proxyMapReachableSpan * m_proxyMapReachableSpan * map_size_angle * map_size_speed <<std::endl;
+    assert(jf["map"].size() == m_proxyMapReachableSpan * m_proxyMapReachableSpan * map_size_angle * map_size_speed);
+    uint32_t index = 0;
+    
+    for(auto node: jf["map"]){
+
+        uint32_t x = node["pose"]["xi"];
+        uint32_t y = node["pose"]["yi"];
+        uint32_t a = node["pose"]["ai"];
+        uint32_t s = node["pose"]["si"];
+        
+        m_proxyMap[x][y][a][s].rel_pose.h = node["pose"]["h"];
+        m_proxyMap[x][y][a][s].rel_pose.vel = node["pose"]["v"];
+        m_proxyMap[x][y][a][s].rel_pose.pos[0] = node["pose"]["x"];
+        m_proxyMap[x][y][a][s].rel_pose.pos[1] = node["pose"]["y"];
+    }
+
+
+    for(auto edge: jf["edges"]){
+        TraversableEdge tedge;
+
+        tedge.link.s_a = edge["settings"]["a1"];
+        tedge.link.s_a_2 = edge["settings"]["a2"];
+        tedge.link.s_v = edge["settings"]["v1"];
+        tedge.link.s_v_2 = edge["settings"]["v2"];
+
+        tedge.link.a_error = edge["error"]["ae"];
+        tedge.link.p_error = edge["error"]["pe"];
+
+        tedge.link.h = edge["target"]["a"];
+        tedge.link.pos[1] = edge["target"]["y"];
+        tedge.link.pos[0] = edge["target"]["x"];
+        tedge.link.vel = edge["target"]["s"];
+
+        tedge.target.s = edge["targeti"]["s"];
+        tedge.target.a = edge["targeti"]["a"];
+        tedge.target.x = edge["targeti"]["x"];
+        tedge.target.y = edge["targeti"]["y"];
+
+        m_proxyEdgeList[edge["source"]["a"]].push_back(tedge);
+    }
+}
+
+
 void ProxyGraph::printPositions(){
     json proxy_map_dump;
     // Dump array to list
@@ -266,6 +327,10 @@ void ProxyGraph::printPositions(){
                 for(uint32_t s = 0; s < map_size_speed; s ++){
                     //Compute position, heading and velocity of the node
                     json node;
+                    node["pose"]["xi"] = x;
+                    node["pose"]["yi"] = y;
+                    node["pose"]["ai"] = a;
+                    node["pose"]["si"] = s;
                     node["pose"]["x"] =  m_proxyMap[x][y][a][s].rel_pose.pos[0];
                     node["pose"]["y"] =  m_proxyMap[x][y][a][s].rel_pose.pos[1];
                     node["pose"]["h"] =  m_proxyMap[x][y][a][s].rel_pose.h;

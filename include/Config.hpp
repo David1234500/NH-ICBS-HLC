@@ -5,7 +5,7 @@
 
 constexpr int map_size_x = 50;
 constexpr int map_size_y = 50;
-constexpr int map_size_angle = 32;
+constexpr int map_size_angle = 16;
 constexpr int map_size_speed = 5;
 
 constexpr float timestep_ms = 250.f;
@@ -18,5 +18,7 @@ constexpr float ypc = (float)map_size_y_cm / (float)map_size_y;
 constexpr float api = (2.f * PI) / (float)map_size_angle;
 
 constexpr float m_speedsFactor[5] = {-0.5f, -0.25f, 0.25f, 0.5f, 1.0f};
+
+constexpr uint32_t worker_counter = 32;
 
 #endif
