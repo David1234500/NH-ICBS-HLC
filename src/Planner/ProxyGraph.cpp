@@ -42,10 +42,10 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
                 auto epose = dynamics::SimpleDynamicsModel::computeBestFit(veh_pose, target_pose_by_index, m_proxyMap[threadTask.txi][threadTask.tyi][a][s].rel_pose, threadTask.tstep);
                 
                 //Discard if error greater than half of the angular resolution 
-                if(epose.a_error >  api / 4){ //TODO: MAKE THIS VALUE ADJUSTABLE, CURRENTLY WEIGHT JUST SET ARBITRARILY
+                if(epose.a_error >  api / 2){ //TODO: MAKE THIS VALUE ADJUSTABLE, CURRENTLY WEIGHT JUST SET ARBITRARILY
                     continue;
                 }
-                if(epose.p_error > xpc / 20){ //TODO: MAKE THIS VALUE ADJUSTABLE
+                if(epose.p_error > xpc / 5){ //TODO: MAKE THIS VALUE ADJUSTABLE
                     continue;
                 }
 
@@ -54,9 +54,14 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
                 
                 std::cout << "[INFO]["<< index <<"] Added edge to " << std::to_string(epose.pos[0]) <<":"<< std::to_string(epose.pos[1]) 
                 << " >s" << epose.s_a <<"_"<< epose.s_v << "e" << epose.p_error <<  "p" << a <<"_"<< s << std::endl;
+                
+                m_proxyTaskMutex.lock();
                 m_proxyEdgeList[threadTask.cai].push_back(nt_edge);  
+                m_proxyTaskMutex.unlock();
+                
                 }
             }
+
         }else{
             return;
         }
@@ -65,10 +70,8 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
 }
 
 void ProxyGraph::computeProxyEdges(){
-
-    float time_set_ms = 250.f; // 500 ms timestep
     float spi = dynamics::SimpleDynamicsModel::velocity_limit() / 2; //TODO CHANGE TO NOT HARD CODED VALUE HERE
-    float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(time_set_ms) / 1000.f);
+    float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
 
     //Compute size of the proxy field based on reachable distance at the given speed
     uint32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / xpc);
@@ -122,33 +125,11 @@ void ProxyGraph::computeProxyEdges(){
                         continue;
                     }
 
-                    //Compute heading vector of car in this state
-                    
-                    dynamics::Vector2Df unit_vec(1,0);
-                    
-                    if(veh_pose.vel < 0.f){
-                        unit_vec[0] = -1.f;
-                    }
-
-
-                    Eigen::Rotation2Df rot_to_heading_mx(map_size_angle * api);
-                    auto heading_vec = rot_to_heading_mx * unit_vec;
-                    auto can_node_pos = m_proxyMap[x][y][0][0].rel_pose.pos;
-                    
-                    // Compute angle difference and threshold it
-                    auto t1_dot =  heading_vec.dot(can_node_pos);
-                    auto t2_n = heading_vec.norm() * can_node_pos.norm();
-                    auto t3 = asin(t1_dot / t2_n);
-
-                    //Check that angle between these is smaller than threshold to reduce compute time
-                    // if(fabs(t3) < 2 * dynamics::SimpleDynamicsModel::angle_limit()){
-                    std::cout << "[INFO] Adding Task for x " << x << ":y " << y <<  "a " << j << ":s " << i << " asin(B)" << t3 << std::endl;
-                    std::lock_guard<std::mutex> lock(m_proxyTaskMutex);    
-                    
+                    std::cout << "[INFO] Adding Task for x " << x << ":y " << y <<  "a " << j << ":s " << i << std::endl;    
                     ProxyTask nTask;    
-                    nTask = {x,y,j,i,time_set_ms};
+                    nTask = {x,y,j,i,timestep_ms};
                     m_proxyTaskQueue.push_back(nTask);
-                    // }
+                
                 }
             }   
         }
@@ -168,6 +149,7 @@ void ProxyGraph::writeGraphToDisk(){
    json proxy_map_dump;
 
     proxy_map_dump["info"]["m_proxyMapReachableSpan"] = m_proxyMapReachableSpan;
+    proxy_map_dump["info"]["m_proxyMapCarOffset"] = m_proxyMapCarOffset;
 
     // Dump array to list
     for(uint32_t x = 0; x <= m_proxyMapReachableSpan; x ++){
@@ -197,47 +179,31 @@ void ProxyGraph::writeGraphToDisk(){
             json jedge;
             jedge["source"]["a"] = i;
            
+            dynamics::data::Pose2D next_pose;
+            for(float ts = 0; ts <= timestep_ms; ts += 25.f){
             
-            
-            if(edge.link.s_a_2 != 0.f){
-
-                dynamics::data::Pose2D next_pose;
-                for(float ts = 0; ts < timestep_ms; ts += 25.f){
+                dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
+                next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edge.link.s_a, edge.link.s_v, ts);
                 
-                    dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
-                    next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edge.link.s_a, edge.link.s_v, ts);
-                    
-                    json point;
-                    point["x"] = next_pose.pos[0];
-                    point["y"] = next_pose.pos[1];
-                    jedge["curve"].push_back(point);
+                json point;
+                point["x"] = next_pose.pos[0];
+                point["y"] = next_pose.pos[1];
+                jedge["curve"].push_back(point);
 
-                }
-                
-                for(float ts = 0; ts < timestep_ms; ts += 25.f){
-                
-                    dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
-                    auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edge.link.s_a_2, edge.link.s_v_2, ts);
-                    
-                    json point;
-                    point["x"] = next_pose2.pos[0];
-                    point["y"] = next_pose2.pos[1];
-                    jedge["curve"].push_back(point);
-                }
-
-            }else{
-                for(float ts = 0; ts < timestep_ms; ts += 25.f){
-                
-                    dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
-                    auto next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edge.link.s_a, edge.link.s_v, ts);
-                    
-                    json point;
-                    point["x"] = next_pose.pos[0];
-                    point["y"] = next_pose.pos[1];
-                    jedge["curve"].push_back(point);
-
-                }
             }
+            
+            for(float ts = 0; ts <= timestep_ms; ts += 25.f){
+            
+                dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
+                auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edge.link.s_a_2, edge.link.s_v_2, ts);
+                
+                json point;
+                point["x"] = next_pose2.pos[0];
+                point["y"] = next_pose2.pos[1];
+                jedge["curve"].push_back(point);
+            }
+
+            
 
             jedge["target"]["x"] = m_proxyMap[edge.target.x][edge.target.y][0][0].rel_pose.pos[0];
             jedge["target"]["y"] = m_proxyMap[edge.target.x][edge.target.y][0][0].rel_pose.pos[1];
@@ -273,6 +239,7 @@ void ProxyGraph::loadGraphFromDisk(){
     json jf = json::parse(ifs);
     m_proxyMapReachableSpan = jf["info"]["m_proxyMapReachableSpan"];
     m_proxyMapReachableSpan += 1;
+    m_proxyMapCarOffset = jf["info"]["m_proxyMapCarOffset"];
 
     std::cout << "Loading map with: " << jf["map"].size() << " and expected " << m_proxyMapReachableSpan * m_proxyMapReachableSpan * map_size_angle * map_size_speed <<std::endl;
     assert(jf["map"].size() == m_proxyMapReachableSpan * m_proxyMapReachableSpan * map_size_angle * map_size_speed);

@@ -14,46 +14,52 @@ void CBSPlanner::insert(dynamics::data::PoseByIndex node, std::vector<dynamics::
 }
 
 
-int32_t CBSPlanner::binarySearch(dynamics::data::PoseByIndex node, std::vector<dynamics::data::PoseByIndex>& openSet,  std::map<dynamics::data::PoseByIndex, float>& fScoreMap){
+bool CBSPlanner::binarySearch(dynamics::data::PoseByIndex node, std::vector<dynamics::data::PoseByIndex>& openSet,  std::map<dynamics::data::PoseByIndex, float>& fScoreMap){
     
     if(openSet.size() == 0){
-        return -1;
+        return false;
     }
     
-    int32_t index_left = 0;
-    int32_t index_right = openSet.size() - 1;
+    for(auto snode: openSet){
+        if(snode == node){
+            return true;
+        }
+    }
+    return false;
+    // int32_t index_left = 0;
+    // int32_t index_right = openSet.size() - 1;
     
-    while(index_left <= index_right){
-        int32_t m = std::floor((index_left + index_right) / 2);
+    // while(index_left <= index_right){
+    //     int32_t m = std::floor((index_left + index_right) / 2);
         
-        if(fScoreMap.count(openSet.at(m)) == 0){
-            fScoreMap[openSet.at(m)] = 1000000000.f;
-        }
+    //     if(fScoreMap.count(openSet.at(m)) == 0){
+    //         fScoreMap[openSet.at(m)] = 1000000000.f;
+    //     }
 
-        if(fScoreMap.count(node) == 0){
-            fScoreMap[node] = 1000000000.f;
-        }
+    //     if(fScoreMap.count(node) == 0){
+    //         fScoreMap[node] = 1000000000.f;
+    //     }
 
-        if(fScoreMap[openSet.at(m)] < fScoreMap[node]){
-            index_left = m + 1;
-        }else if (fScoreMap[openSet.at(m)] > fScoreMap[node]){
-            index_right = m - 1;
-        }else{
-           return m;
-        }
-    }
-    return -1;
+    //     if(fScoreMap[openSet.at(m)] < fScoreMap[node]){
+    //         index_left = m + 1;
+    //     }else if (fScoreMap[openSet.at(m)] > fScoreMap[node]){
+    //         index_right = m - 1;
+    //     }else{
+    //        return m;
+    //     }
+    // }
+    // return -1;
 }
 
 dynamics::data::PoseByIndex CBSPlanner::toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative){
-    return base + (relative - m_proxGraph.m_proxyMapCarOffset);
+    return  (relative + base) - m_proxGraph.m_proxyMapCarOffset;
 }
 
 dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PoseByIndex global){
     dynamics::data::Pose2D global_pose;
     
-    global_pose.pos[0] = (xpc*global.x);
-    global_pose.pos[1] = (ypc*global.y);
+    global_pose.pos[0] = (xpc * global.x);
+    global_pose.pos[1] = (ypc * global.y);
     global_pose.h = api * static_cast<float>(global.a);
     global_pose.vel = m_speedsFactor[global.s] * dynamics::SimpleDynamicsModel::velocity_limit();
     
@@ -82,42 +88,44 @@ bool CBSPlanner::validatePosition(dynamics::data::PoseByIndex base){
     return true;
 }
 
-std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex> CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target){
+std::vector<dynamics::data::Pose2D> CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target){
     std::vector<dynamics::data::PoseByIndex> openSet;
     openSet.push_back(start);
 
     std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex> cameFrom;
+    std::map<dynamics::data::PoseByIndex,TraversableEdge> usedEdge;
     
     auto current_pose = indexToPose(start);
     auto target_pose = indexToPose(target);
 
     std::map<dynamics::data::PoseByIndex, float> fScore;
     fScore[start] = (target_pose.pos - current_pose.pos).norm();
+    
     std::map<dynamics::data::PoseByIndex, float> gScore;
     gScore[start] = 0.f;
 
     while(!openSet.empty()){
         
         
-        std::cout << "Size os:" << openSet.size() << std::endl;
+        // std::cout << "Size os:" << openSet.size() << std::endl;
         
         auto current = openSet.front();
-        std::cout << "current index :" << current.x << "_" << current.y << "_" << current.a << "_" << current.s << std::endl;
-        std::cout << "current scores g" << gScore[current] << " f" << fScore[current] <<  std::endl;
+
+        // std::cout << "current index :" << current.x << "_" << current.y << "_" << current.a << "_" << current.s << std::endl;
+        // std::cout << "current scores g" << gScore[current] << " f" << fScore[current] <<  std::endl;
 
         if(current == target){
             std::cout << "a star finished" << std::endl;
-            return cameFrom;
+            return getCurves(cameFrom, usedEdge, current);
         }
 
         openSet.erase(openSet.begin());
         for(auto rel_neighbor: m_proxGraph.m_proxyEdgeList[current.a]){
-            
-            // std::cout << "neigh" << rel_neighbor.target.x << " " << rel_neighbor.target.y << std::endl; 
 
             dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(current, rel_neighbor.target);
 
-            // std::cout << "gl neigh" << gl_neighbor.x << " " <<gl_neighbor.y << std::endl; 
+            // std::cout << "neigh " << rel_neighbor.target.x << " " << rel_neighbor.target.y << " " << rel_neighbor.target.a << " " << rel_neighbor.target.s << std::endl; 
+            // std::cout << "gl neigh " << gl_neighbor.x << " " << gl_neighbor.y << " " << gl_neighbor.a << " " << gl_neighbor.s << std::endl; 
 
             auto neigh_pose = indexToPose(gl_neighbor);
 
@@ -143,41 +151,89 @@ std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex> CBSPlanner::as
 
             if(tentative_score < gScore[gl_neighbor]){
                 cameFrom[gl_neighbor] = current;
+                usedEdge[gl_neighbor] = rel_neighbor;
                 
                 gScore[gl_neighbor] = tentative_score;
                 
                 float h = (neigh_pose.pos - target_pose.pos).norm();
                 fScore[gl_neighbor] = tentative_score + h;
                 
-                int32_t bin_ret = binarySearch(gl_neighbor, openSet, fScore);
-                if(bin_ret == -1){
-                    std::cout << "insert direct" << std::endl; 
-                    insert(gl_neighbor, openSet, fScore);
-                }else{
-                    for(int32_t index = bin_ret; (index >= 0) && (fScore[openSet.at(index)] == fScore[gl_neighbor]); index --){
-                        if(openSet.at(index) == gl_neighbor){
-                            continue;
-                        }
-                    }
-                    for(int32_t index = bin_ret;index < openSet.size() && (fScore[openSet.at(index)] == fScore[gl_neighbor]); index ++){
-                        if(openSet.at(index) == gl_neighbor){
-                            continue;
-                        }
-                    }
-                    std::cout << "insert with dup fscore" << std::endl; 
+               
+                if(!binarySearch(gl_neighbor, openSet, fScore)){
+                    // std::cout << "insert direct" << std::endl; 
                     insert(gl_neighbor, openSet, fScore);
                 }
             }
         }
     }
-    return cameFrom;
+    return std::vector<dynamics::data::Pose2D>();
 }
 
-void CBSPlanner::writePathToDisk( std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex> predecessor, dynamics::data::PoseByIndex target){
-    json astar_path;
+std::vector<dynamics::data::PoseByIndex> CBSPlanner::getPath(std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex> predecessor, dynamics::data::PoseByIndex target){
     auto current = target;
+    std::vector<dynamics::data::PoseByIndex> result;
 
     while(predecessor.find(current) != predecessor.end()){
+        result.push_back(current);
+        current = predecessor[current];
+    }
+    return result;
+}
+
+std::vector<dynamics::data::Pose2D> CBSPlanner::getCurves(std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target){
+    auto current = target;
+    std::vector<dynamics::data::PoseByIndex> nodes;
+    std::vector<TraversableEdge> edges;
+
+    while(predecessor.find(current) != predecessor.end()){
+        nodes.push_back(current);
+        edges.push_back(edge_map[current]);
+        std::cout << " " << current.x << " " << current.y << " " << current.a << " " << current.s << std::endl;
+        current = predecessor[current];
+    }
+
+    std::vector<dynamics::data::Pose2D> result;
+    for(int64_t i = nodes.size() - 1; i >= 1; i --){
+       
+        dynamics::data::Pose2D next_pose;
+        dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(i));
+        for(float ts = 0; ts <= timestep_ms; ts += 25.f){    
+            next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, ts);
+            result.push_back(next_pose);
+        }
+        
+        for(float ts = 0; ts <= timestep_ms; ts += 25.f){
+            auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, ts);
+            result.push_back(next_pose2);
+        }
+    }
+
+    return result;
+}
+
+
+
+void CBSPlanner::writeCurveToDisk(std::vector<dynamics::data::Pose2D> path, std::string name){
+    json astar_path;
+    
+    for(auto current: path){
+        json node;
+        node["x"] = current.pos[0];
+        node["y"] = current.pos[1];
+
+        astar_path["path"].push_back(node);
+    }
+
+    //dump file to disc
+    std::ofstream o(name);
+    o << astar_path << std::endl;
+    o.close();
+}
+
+void CBSPlanner::writePathToDisk( std::vector<dynamics::data::PoseByIndex> path, std::string name){
+    json astar_path;
+    
+    for(auto current: path){
         json node;
         node["x"] = current.x;
         node["y"] = current.y;
@@ -185,14 +241,10 @@ void CBSPlanner::writePathToDisk( std::map<dynamics::data::PoseByIndex,dynamics:
         node["a"] = current.a;
 
         astar_path["path"].push_back(node);
-
-        current = predecessor[current];
     }
 
-    
-
     //dump file to disc
-    std::ofstream o("astar_path.json");
+    std::ofstream o(name);
     o << astar_path << std::endl;
     o.close();
 }

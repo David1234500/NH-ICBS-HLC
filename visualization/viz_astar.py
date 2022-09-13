@@ -1,8 +1,10 @@
 import json
 import matplotlib.pyplot as plt
 import math
+import sys
 
-f = open("astar_path.json", "r")
+
+f = open(sys.argv[1], "r")
 x = f.read() 
 y = json.loads(x)
   

@@ -11,16 +11,16 @@ int main() {
     planner.m_proxGraph.loadGraphFromDisk();
     std::cout << "Finished loading graph from disk!" << std::endl;
 
-    dynamics::data::PoseByIndex start = {5,5,5,2};
-    dynamics::data::PoseByIndex end = {25,10,7,2};
-
-
+    
+    dynamics::data::PoseByIndex end = {10,11,0,2};
+    dynamics::data::PoseByIndex start = {10,10,4,2};
     std::cout << "Start AStar!" << std::endl;
     auto res = planner.astar(start,end);
     std::cout << "Completed Astar" << std::endl;
     std::cout << res.size() << std::endl;
-    planner.writePathToDisk(res,end);
-    std::cout << "Wrote res to disc" << std::endl;
+    planner.writeCurveToDisk(res, "res2_path");
+    // planner.m_proxGraph.writeGraphToDisk();
+
 }
 
 
