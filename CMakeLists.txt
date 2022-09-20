@@ -1,6 +1,7 @@
 project(planner)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+# set(CMAKE_BUILD_TYPE RelWithDebInfo)
 # set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 cmake_minimum_required(VERSION 3.15)
 
 ## Compile and include Eigen

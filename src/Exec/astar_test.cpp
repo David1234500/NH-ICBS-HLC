@@ -12,8 +12,8 @@ int main() {
     std::cout << "Finished loading graph from disk!" << std::endl;
 
     
-    dynamics::data::PoseByIndex end = {10,11,0,2};
-    dynamics::data::PoseByIndex start = {10,10,4,2};
+    dynamics::data::PoseByIndex end = {55,55,7,2};
+    dynamics::data::PoseByIndex start = {45,2,5,2};
     std::cout << "Start AStar!" << std::endl;
     auto res = planner.astar(start,end);
     std::cout << "Completed Astar" << std::endl;
