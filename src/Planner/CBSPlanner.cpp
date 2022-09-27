@@ -45,10 +45,25 @@ bool CBSPlanner::binarySearch(dynamics::data::PoseByIndex node, std::vector<dyna
     //     }else if (fScoreMap[openSet.at(m)] > fScoreMap[node]){
     //         index_right = m - 1;
     //     }else{
-    //        return m;
+    //         index_left = m;
+    //         while(index_left >= 0 && fScoreMap[openSet.at(index_left)] == fScoreMap[node]){
+    //             if(openSet.at(index_left) == node){
+    //                 return true;
+    //             }
+    //             index_left --;
+    //         }
+
+    //         index_right = m;
+    //         while(index_right < openSet.size() && fScoreMap[openSet.at(index_right)] == fScoreMap[node]){
+    //             if(openSet.at(index_right) == node){
+    //                 return true;
+    //             }
+    //             index_right ++;
+    //         }
+    //         return false;
     //     }
     // }
-    // return -1;
+    return false;
 }
 
 dynamics::data::PoseByIndex CBSPlanner::toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative){
@@ -104,15 +119,18 @@ std::vector<dynamics::data::Pose2D> CBSPlanner::astar(dynamics::data::PoseByInde
     std::map<dynamics::data::PoseByIndex, float> gScore;
     gScore[start] = 0.f;
 
+    uint32_t explored_nodes = 0;
+
     while(!openSet.empty()){
-        
-        
-        // std::cout << "Size os:" << openSet.size() << std::endl;
         
         auto current = openSet.front();
 
-        // std::cout << "current index :" << current.x << "_" << current.y << "_" << current.a << "_" << current.s << std::endl;
-        // std::cout << "current scores g" << gScore[current] << " f" << fScore[current] <<  std::endl;
+        if(explored_nodes % 20 == 0){
+            std::cout << "explored nodes:" << explored_nodes << std::endl;
+            std::cout << "current scores g" << gScore[current] << " f" << fScore[current] <<  std::endl;
+        }
+        
+        explored_nodes += 1;
 
         if(current == target){
             std::cout << "a star finished" << std::endl;
