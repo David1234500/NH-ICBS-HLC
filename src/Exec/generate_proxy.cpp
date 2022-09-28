@@ -5,11 +5,11 @@
 int main() {
 
 
-CBSPlanner planner;
-planner.m_proxGraph.computeProxyEdges();
+auto prxy = std::make_shared<ProxyGraph>();
+prxy->computeProxyEdges();
 std::cout << "Completed computation" << std::endl;
 
 std::cout << "Generating json graph with all edges..." << std::endl;
-planner.m_proxGraph.writeGraphToDisk();
+prxy->writeGraphToDisk();
 std::cout << "Completed generating edges..." << std::endl;
 }
