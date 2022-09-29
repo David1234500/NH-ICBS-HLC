@@ -5,7 +5,7 @@
 
 constexpr int map_size_x = 60;
 constexpr int map_size_y = 60;
-constexpr int map_size_angle = 12;
+constexpr int map_size_angle = 8;
 constexpr int map_size_speed = 4;
 
 constexpr float timestep_ms = 250.f;

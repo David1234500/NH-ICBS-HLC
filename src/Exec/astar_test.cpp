@@ -17,16 +17,16 @@ int main() {
     planner.m_proxGraph.loadGraphFromDisk();
     std::cout << "Finished loading graph from disk!" << std::endl;
 
-    std::vector<int64_t> times;
-
-    auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    dynamics::data::PoseByIndex end = {10,11,0,2};
-    dynamics::data::PoseByIndex start = {10,10,3,2};
+    
+    dynamics::data::PoseByIndex end = {55,55,7,2};
+    dynamics::data::PoseByIndex start = {45,2,5,2};
+    std::vector<uint32_t> times;
     std::cout << "Start AStar!" << std::endl;
+    auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     auto res = planner.astar(start,end);
     std::cout << "Completed Astar" << std::endl;
-    std::cout << res.size() << std::endl;
-    planner.writeCurveToDisk(res, "res2_path");
+    std::cout << res->size() << std::endl;
+    
     auto tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     times.push_back(tstop - tstart);
 
@@ -37,8 +37,8 @@ int main() {
     std::cout << "Start AStar!" << std::endl;
      res = planner.astar(start,end);
     std::cout << "Completed Astar" << std::endl;
-    std::cout << res.size() << std::endl;
-    planner.writeCurveToDisk(res, "res3_path");
+    std::cout << res->size() << std::endl;
+    
     tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     times.push_back(tstop - tstart);
 
@@ -48,8 +48,8 @@ int main() {
     std::cout << "Start AStar!" << std::endl;
      res = planner.astar(start,end);
     std::cout << "Completed Astar" << std::endl;
-    std::cout << res.size() << std::endl;
-    planner.writeCurveToDisk(res, "res4_path");
+    std::cout << res->size() << std::endl;
+    
     tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     times.push_back(tstop - tstart);
 
@@ -59,8 +59,8 @@ int main() {
     std::cout << "Start AStar!" << std::endl;
      res = planner.astar(start,end);
     std::cout << "Completed Astar" << std::endl;
-    std::cout << res.size() << std::endl;
-    planner.writeCurveToDisk(res, "res5_path");
+    std::cout << res->size() << std::endl;
+    
     tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     times.push_back(tstop - tstart);
     

@@ -2,6 +2,7 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <iostream>
+#include <queue>
 
 using json = nlohmann::json;
 
@@ -103,7 +104,7 @@ bool CBSPlanner::validatePosition(dynamics::data::PoseByIndex base){
     return true;
 }
 
-std::vector<dynamics::data::Pose2D> CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target){
+std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target){
     std::vector<dynamics::data::PoseByIndex> openSet;
     openSet.push_back(start);
 
@@ -134,7 +135,7 @@ std::vector<dynamics::data::Pose2D> CBSPlanner::astar(dynamics::data::PoseByInde
 
         if(current == target){
             std::cout << "a star finished" << std::endl;
-            return getCurves(cameFrom, usedEdge, current);
+            return getPath(cameFrom, current);
         }
 
         openSet.erase(openSet.begin());
@@ -178,21 +179,20 @@ std::vector<dynamics::data::Pose2D> CBSPlanner::astar(dynamics::data::PoseByInde
                 
                
                 if(!binarySearch(gl_neighbor, openSet, fScore)){
-                    // std::cout << "insert direct" << std::endl; 
                     insert(gl_neighbor, openSet, fScore);
                 }
             }
         }
     }
-    return std::vector<dynamics::data::Pose2D>();
+    return std::make_shared<std::vector<dynamics::data::PoseByIndex>>();
 }
 
-std::vector<dynamics::data::PoseByIndex> CBSPlanner::getPath(std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex> predecessor, dynamics::data::PoseByIndex target){
+std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::getPath(std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target){
     auto current = target;
-    std::vector<dynamics::data::PoseByIndex> result;
+    std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> result;
 
     while(predecessor.find(current) != predecessor.end()){
-        result.push_back(current);
+        result->push_back(current);
         current = predecessor[current];
     }
     return result;
@@ -229,6 +229,149 @@ std::vector<dynamics::data::Pose2D> CBSPlanner::getCurves(std::map<dynamics::dat
     return result;
 }
 
+void CBSPlanner::low_level_astar_worker(){
+    while(m_keepThreadsAlive){
+        
+        bool hasJob = false;
+        low_level_job job;
+
+        m_lowLevelSearchJobLock.lock();
+        if(!m_lowLevelJobs.empty()){
+            hasJob = true;
+
+            job = m_lowLevelJobs.back();
+            m_lowLevelJobs.pop_back();
+        
+        }else{
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        m_lowLevelSearchJobLock.unlock();
+
+        low_level_result res;
+
+        res.path = astar(job.start_positions, job.target_positions);
+        res.job_id = job.job_id;
+        res.car_id = job.car_id;
+
+        m_lowLevelSearchResultsLock.lock();
+        m_lowLevelResults.push_back(res);
+        m_lowLevelSearchResultsLock.unlock();
+    }
+}
+
+void CBSPlanner::conflict_check_worker(){
+    
+    while(m_keepThreadsAlive){
+        
+        bool hasJob = false;
+        collision_job job;
+
+        m_conflictJobLock.lock();
+        if(!m_conflictJobs.empty()){
+            hasJob = true;
+
+            job = m_conflictJobs.back();
+            m_conflictJobs.pop_back();
+        
+        }else{
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        m_conflictJobLock.unlock();
+
+        collision_result res;
+
+         for(uint32_t i = 0; i < job.path1->size() && i < job.path2->size(); i ++){
+            auto p = job.path1->at(i) - job.path2->at(i);
+            if( p.x == 0 && p.y == 0){
+                res.found_conflict = true;
+                res.conflicting_pose = job.path1->at(i);
+                res.conflict_step_count = i;
+            }
+        }
+
+        res.job_id = job.job_id;
+
+        m_conflictResultsLock.lock();
+        m_conflictResults.push_back(res);
+        m_conflictResultsLock.unlock();
+    }    
+}
+
+
+std::vector<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions){
+    std::vector<std::vector<dynamics::data::PoseByIndex>> paths_by_vehicle;
+    
+    for(uint32_t i = 0; i < worker_counter; i ++){
+        m_lowLevelWorkers.push_back(std::thread(&CBSPlanner::low_level_astar_worker, this));
+        m_conflictWorkers.push_back(std::thread(&CBSPlanner::conflict_check_worker, this));
+    }
+
+    // Enqueu all jobs to astar workers
+    std::priority_queue<constraint_node> openSet;
+    for(uint32_t i = 0; i < start_positions.size(); i ++){
+        low_level_job job;
+        job.job_id = i;
+        job.start_positions = start_positions.at(i);
+        job.target_positions = target_positions.at(i);
+        job.car_id = i;
+        
+        m_lowLevelSearchJobLock.lock();
+        m_lowLevelJobs.push_back(job);
+        m_lowLevelSearchJobLock.unlock();
+    }
+
+    //Wait for all threads to termiante
+    while(true){
+        m_lowLevelSearchResultsLock.lock();
+        if(m_lowLevelResults.size() == start_positions.size()){
+            break;
+        }
+        m_lowLevelSearchResultsLock.unlock();
+       std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    // Compute SIC by hop count
+    uint64_t sic = 0;
+    for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
+        sic += m_lowLevelResults.at(i).path->size();
+    }
+
+    constraint_node node;
+    node.sic = sic;
+    node.avoid.clear();
+    for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
+        node.result = m_lowLevelResults.at(i); 
+        node.result[m_lowLevelResults.at(i).car_id]= m_lowLevelResults.at(i);
+    }
+    
+    openSet.push(node);
+    while(!openSet.empty()){
+        constraint_node node = openSet.top();
+
+        for(uint32_t i = 0; i < start_positions.size(); i ++){
+            
+
+
+        }
+
+        //Wait for all threads to termiante
+        while(true){
+            m_lowLevelSearchResultsLock.lock();
+            if(m_lowLevelResults.size() == start_positions.size()){
+                break;
+            }
+            m_lowLevelSearchResultsLock.unlock();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        } 
+
+    }
+
+    m_keepThreadsAlive = false;
+    for(uint32_t i = 0; i < worker_counter; i ++){
+        m_lowLevelWorkers.at(i).join();
+        m_conflictWorkers.at(i).join();
+    }
+}
 
 
 void CBSPlanner::writeCurveToDisk(std::vector<dynamics::data::Pose2D> path, std::string name){
