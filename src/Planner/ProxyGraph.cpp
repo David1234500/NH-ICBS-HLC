@@ -35,17 +35,19 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
             
             dynamics::data::Pose2D veh_pose = {{0.f,0.f}, m_proxyMap[0][0][threadTask.cai][threadTask.csi].rel_pose.h,  m_proxyMap[0][0][threadTask.cai][threadTask.csi].rel_pose.vel};
             for(int32_t a = 0; a < map_size_angle; a ++){
-                for(int32_t s = 0; s < map_size_speed; s ++){
+                
+                //Constraint speed changes to one level up, same or one level down [current_speed_level - 1, current_speed_level + 1]
+                for(int32_t s = std::max(0, threadTask.csi - 1); s < std::min(4, threadTask.csi + 1); s ++){
             
                 //Compute best fit settings set to get from the current to the target location
                 dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, a, s};
                 auto epose = dynamics::SimpleDynamicsModel::computeBestFit(veh_pose, target_pose_by_index, m_proxyMap[threadTask.txi][threadTask.tyi][a][s].rel_pose, threadTask.tstep);
                 
                 //Discard if error greater than half of the angular resolution 
-                if(epose.a_error >  api / 2){ //TODO: MAKE THIS VALUE ADJUSTABLE, CURRENTLY WEIGHT JUST SET ARBITRARILY
+                if(epose.a_error > state_change_fit_quality_angle){
                     continue;
                 }
-                if(epose.p_error > xpc / 5){ //TODO: MAKE THIS VALUE ADJUSTABLE
+                if(epose.p_error > state_change_fit_quality_position){
                     continue;
                 }
 
@@ -55,6 +57,7 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
                 std::cout << "[INFO]["<< index <<"] Added edge to " << std::to_string(epose.pos[0]) <<":"<< std::to_string(epose.pos[1]) 
                 << " >s" << epose.s_a <<"_"<< epose.s_v << "e" << epose.p_error <<  "p" << a <<"_"<< s << std::endl;
                 
+                // add new edge to the edgelist
                 m_proxyTaskMutex.lock();
                 m_proxyEdgeList[threadTask.cai].push_back(nt_edge);  
                 m_proxyTaskMutex.unlock();

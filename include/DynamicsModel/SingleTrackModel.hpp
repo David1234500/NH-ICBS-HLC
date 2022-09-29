@@ -2,9 +2,7 @@
 #define DYNAMICS_MODEL_HPP
  
 #include <util/Pose.hpp>
-
-
-#define PI 3.14159265
+#include <Config.hpp>
 
 namespace dynamics{
 

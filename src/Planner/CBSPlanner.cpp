@@ -126,8 +126,8 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::astar(dyna
         
         auto current = openSet.front();
 
-        if(explored_nodes % 20 == 0){
-            std::cout << "explored nodes:" << explored_nodes << std::endl;
+        if(explored_nodes % 100 == 0){
+            std::cout << "explored nodes:" << explored_nodes << " open nodes " << openSet.size() << std::endl;
             std::cout << "current scores g" << gScore[current] << " f" << fScore[current] <<  std::endl;
         }
         
@@ -165,9 +165,6 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::astar(dyna
             }
                         
             float tentative_score = gScore[current] + dist; // HAS NO GSCORE JET
-            
-            // std::cout << "t: " <<  tentative_score << " gs: " << gScore[gl_neighbor] << std::endl;
-
             if(tentative_score < gScore[gl_neighbor]){
                 cameFrom[gl_neighbor] = current;
                 usedEdge[gl_neighbor] = rel_neighbor;
@@ -189,7 +186,7 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::astar(dyna
 
 std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::getPath(std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target){
     auto current = target;
-    std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> result;
+    std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> result = std::make_shared<std::vector<dynamics::data::PoseByIndex>>();
 
     while(predecessor.find(current) != predecessor.end()){
         result->push_back(current);
@@ -259,51 +256,13 @@ void CBSPlanner::low_level_astar_worker(){
     }
 }
 
-void CBSPlanner::conflict_check_worker(){
-    
-    while(m_keepThreadsAlive){
-        
-        bool hasJob = false;
-        collision_job job;
-
-        m_conflictJobLock.lock();
-        if(!m_conflictJobs.empty()){
-            hasJob = true;
-
-            job = m_conflictJobs.back();
-            m_conflictJobs.pop_back();
-        
-        }else{
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-        m_conflictJobLock.unlock();
-
-        collision_result res;
-
-         for(uint32_t i = 0; i < job.path1->size() && i < job.path2->size(); i ++){
-            auto p = job.path1->at(i) - job.path2->at(i);
-            if( p.x == 0 && p.y == 0){
-                res.found_conflict = true;
-                res.conflicting_pose = job.path1->at(i);
-                res.conflict_step_count = i;
-            }
-        }
-
-        res.job_id = job.job_id;
-
-        m_conflictResultsLock.lock();
-        m_conflictResults.push_back(res);
-        m_conflictResultsLock.unlock();
-    }    
-}
 
 
-std::vector<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions){
+constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions){
     std::vector<std::vector<dynamics::data::PoseByIndex>> paths_by_vehicle;
     
     for(uint32_t i = 0; i < worker_counter; i ++){
         m_lowLevelWorkers.push_back(std::thread(&CBSPlanner::low_level_astar_worker, this));
-        m_conflictWorkers.push_back(std::thread(&CBSPlanner::conflict_check_worker, this));
     }
 
     // Enqueu all jobs to astar workers
@@ -324,6 +283,7 @@ std::vector<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::cbs(std::vecto
     while(true){
         m_lowLevelSearchResultsLock.lock();
         if(m_lowLevelResults.size() == start_positions.size()){
+            m_lowLevelSearchResultsLock.unlock();
             break;
         }
         m_lowLevelSearchResultsLock.unlock();
@@ -336,40 +296,114 @@ std::vector<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::cbs(std::vecto
         sic += m_lowLevelResults.at(i).path->size();
     }
 
+    // Create initial constraint node
     constraint_node node;
     node.sic = sic;
     node.avoid.clear();
     for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
-        node.result = m_lowLevelResults.at(i); 
         node.result[m_lowLevelResults.at(i).car_id]= m_lowLevelResults.at(i);
     }
+    m_lowLevelResults.clear();
     
+    // Insert initial constraint node into list
     openSet.push(node);
     while(!openSet.empty()){
         constraint_node node = openSet.top();
 
-        for(uint32_t i = 0; i < start_positions.size(); i ++){
-            
+        //Validate Solution in first node to find conflicts
+        dynamics::data::PoseByIndex conflict_pose;
+        int32_t conflict_step = -1;
+        std::array<int32_t,2> conflicting_vehicles = {-1,-1};
 
+        for(int32_t car_index = 0; car_index < start_positions.size(); car_index ++){
+            for (int32_t car_index2 = 0; car_index2 < start_positions.size(); car_index2 ++){
+                for(uint32_t i = 0; i < node.result[car_index].path->size() && i < node.result[car_index2].path->size(); i ++){
+                
+                    auto p = node.result[car_index].path->at(i) - node.result[car_index2].path->at(i);
+                    if(p.x == 0 && p.y == 0){
 
+                        conflict_pose = node.result[car_index].path->at(i);
+                        conflict_step = i;
+                        conflicting_vehicles = {car_index, car_index2};
+                        break;
+
+                    }
+                }   
+            }
         }
 
-        //Wait for all threads to termiante
-        while(true){
-            m_lowLevelSearchResultsLock.lock();
-            if(m_lowLevelResults.size() == start_positions.size()){
-                break;
-            }
-            m_lowLevelSearchResultsLock.unlock();
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        } 
+        // Check if we have just obtained a valid solution -> terminate if yes
+        if(conflict_step == -1){
+            return node;
+        }
 
+        // Add new constraints and replan
+        for(auto vehicle_in_conflict: conflicting_vehicles){
+            // Create new constraint node
+            constraint_node constraint = node;
+
+            dynamics::data::PBIConstraint constr;
+            constr.id = vehicle_in_conflict;
+            constr = conflict_pose;
+            constr.t = conflict_step;
+
+            constraint.avoid.push_back(constr);
+
+            // Recompute Solutions for this path TODO: maybe restore astar compute from here
+
+            // Enqueu all jobs to astar workers
+            for(uint32_t i = 0; i < start_positions.size(); i ++){
+                low_level_job job;
+                job.job_id = i;
+                
+                job.start_positions = start_positions.at(i);
+                job.target_positions = target_positions.at(i);
+                
+                job.car_id = i;
+                
+                m_lowLevelSearchJobLock.lock();
+                m_lowLevelJobs.push_back(job);
+                m_lowLevelSearchJobLock.unlock();
+            }
+
+            //Wait for all threads to termiante
+            while(true){
+                m_lowLevelSearchResultsLock.lock();
+                if(m_lowLevelResults.size() == start_positions.size()){
+                    m_lowLevelSearchResultsLock.unlock();
+                    break;
+                }
+                m_lowLevelSearchResultsLock.unlock();
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+
+            // Compute SIC by hop count
+            uint64_t sic = 0;
+            bool found_paths_for_all_vehicles = false;
+            for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
+                sic += m_lowLevelResults.at(i).path->size();
+                if(m_lowLevelResults.at(i).path->size() == 0){
+                    found_paths_for_all_vehicles = true; //TODO CHECK THAT THIS FITS with astar result if we have reached the target
+                }
+            }
+
+            // Update constraint node with new information
+            constraint.sic = sic;
+            for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
+                constraint.result[m_lowLevelResults.at(i).car_id]= m_lowLevelResults.at(i);
+            }
+            m_lowLevelResults.clear();
+
+            // Add new constraint node if it is feasible
+            if(found_paths_for_all_vehicles){
+                openSet.push(constraint);
+            }
+        }
     }
 
     m_keepThreadsAlive = false;
     for(uint32_t i = 0; i < worker_counter; i ++){
         m_lowLevelWorkers.at(i).join();
-        m_conflictWorkers.at(i).join();
     }
 }
 

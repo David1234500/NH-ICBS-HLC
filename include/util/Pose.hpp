@@ -10,6 +10,8 @@ namespace data{
 typedef Eigen::Matrix<float, 2, 1> Position2Df;
 typedef Eigen::Matrix<float, 2, 1> Vector2Df;
 
+
+
 struct PoseByIndex{
     int32_t x = 0;
     int32_t y = 0;
@@ -72,6 +74,30 @@ struct PoseByIndex{
 
 };
 
+struct PBIConstraint{
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t a = 0;
+    int32_t s = 0;
+    int32_t t = 0;
+    int32_t id = 0;
+
+    inline void operator=(PoseByIndex e) {
+       x = e.x; 
+       y = e.y; 
+       a = e.a;
+       s = e.s;
+    }
+
+    inline bool operator==(PoseByIndex e) {
+        if(e.x==x && e.y == y && e.a == a && e.s== s){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+};
 
 struct Pose2D{
     /* 2D Position in cm */
