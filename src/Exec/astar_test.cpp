@@ -25,7 +25,7 @@ int main() {
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     auto res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
-    std::cout << res->size() << std::endl;
+    std::cout << res.path->size() << std::endl;
     
     auto tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     times.push_back(tstop - tstart);
@@ -37,7 +37,7 @@ int main() {
     std::cout << "Start AStar!" << std::endl;
      res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
-    std::cout << res->size() << std::endl;
+    std::cout << res.path->size() << std::endl;
     
     tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     times.push_back(tstop - tstart);
@@ -48,7 +48,7 @@ int main() {
     std::cout << "Start AStar!" << std::endl;
      res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
-    std::cout << res->size() << std::endl;
+    std::cout << res.path->size() << std::endl;
     
     tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     times.push_back(tstop - tstart);
@@ -59,7 +59,7 @@ int main() {
     std::cout << "Start AStar!" << std::endl;
      res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
-    std::cout << res->size() << std::endl;
+    std::cout << res.path->size() << std::endl;
     
     tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     times.push_back(tstop - tstart);

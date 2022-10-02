@@ -39,7 +39,7 @@ struct PoseByIndex{
         return n;
     }
 
-    inline bool operator==(PoseByIndex e) {
+    bool operator==( const PoseByIndex& e) const {
         if(e.x==x && e.y == y && e.a == a && e.s== s){
             return true;
         }else{
@@ -74,6 +74,9 @@ struct PoseByIndex{
     }
 };
 
+
+
+
 struct PBIConstraint{
     int32_t x = 0;
     int32_t y = 0;
@@ -97,6 +100,11 @@ struct PBIConstraint{
         }
     }
 
+};
+
+struct LLNode{
+    PoseByIndex pose;
+    uint32_t timestep = 0;
 };
 
 struct Pose2D{
@@ -135,5 +143,16 @@ struct Pose2DWithError{
 
 }
 
+}
+
+
+namespace std {
+    template<> struct hash<dynamics::data::PoseByIndex>
+    {
+        std::size_t operator()(const dynamics::data::PoseByIndex& p) const noexcept
+        {
+            return p.s + p.a * 10 + 100 * p.y + 10000 * p.x;
+        }
+    };
 }
 #endif //UTIL_POSE_HPP
