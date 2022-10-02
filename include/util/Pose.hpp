@@ -3,6 +3,7 @@
  
 #include <Eigen/Dense>
 
+
 namespace dynamics{
 
 namespace data{
@@ -71,7 +72,6 @@ struct PoseByIndex{
             }
         }
     }
-
 };
 
 struct PBIConstraint{

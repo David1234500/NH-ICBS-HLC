@@ -104,18 +104,18 @@ bool CBSPlanner::validatePosition(dynamics::data::PoseByIndex base){
     return true;
 }
 
-std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target){
+std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles){
     std::vector<dynamics::data::PoseByIndex> openSet;
     openSet.push_back(start);
 
-    std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex> cameFrom;
-    std::map<dynamics::data::PoseByIndex,TraversableEdge> usedEdge;
+    std::map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
+    std::map<dynamics::data::PoseByIndex, TraversableEdge> usedEdge;
     
     auto current_pose = indexToPose(start);
     auto target_pose = indexToPose(target);
 
     std::map<dynamics::data::PoseByIndex, float> fScore;
-    fScore[start] = (target_pose.pos - current_pose.pos).norm();
+    fScore[start] = (target_pose.pos - current_pose.pos).norm() + 5 * (start.a - target.a);
     
     std::map<dynamics::data::PoseByIndex, float> gScore;
     gScore[start] = 0.f;
@@ -124,9 +124,9 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::astar(dyna
 
     while(!openSet.empty()){
         
-        auto current = openSet.front();
+        auto current = openSet.front(); // TODO ADD DEPTH TO NODES IN SOME FORM
 
-        if(explored_nodes % 100 == 0){
+        if(explored_nodes % 500 == 0){
             std::cout << "explored nodes:" << explored_nodes << " open nodes " << openSet.size() << std::endl;
             std::cout << "current scores g" << gScore[current] << " f" << fScore[current] <<  std::endl;
         }
@@ -142,14 +142,15 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::astar(dyna
         for(auto rel_neighbor: m_proxGraph.m_proxyEdgeList[current.a]){
 
             dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(current, rel_neighbor.target);
-
-            // std::cout << "neigh " << rel_neighbor.target.x << " " << rel_neighbor.target.y << " " << rel_neighbor.target.a << " " << rel_neighbor.target.s << std::endl; 
-            // std::cout << "gl neigh " << gl_neighbor.x << " " << gl_neighbor.y << " " << gl_neighbor.a << " " << gl_neighbor.s << std::endl; 
-
             auto neigh_pose = indexToPose(gl_neighbor);
 
             // Invalid position, so we can skip this
             if(!validatePosition(gl_neighbor)){
+                continue;
+            }
+
+            // TODO std::unordered_map for all lookups
+            if (std::find(obstacles.begin(), obstacles.end(), gl_neighbor) != obstacles.end()){ //TODO CHECK THIS AGAIN
                 continue;
             }
 
@@ -164,7 +165,7 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::astar(dyna
                 fScore[gl_neighbor] = 1000000000.f;
             }
                         
-            float tentative_score = gScore[current] + dist; // HAS NO GSCORE JET
+            float tentative_score = gScore[current] + dist + 1 * std::abs(gl_neighbor.a - target.a);
             if(tentative_score < gScore[gl_neighbor]){
                 cameFrom[gl_neighbor] = current;
                 usedEdge[gl_neighbor] = rel_neighbor;
@@ -174,13 +175,14 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::astar(dyna
                 float h = (neigh_pose.pos - target_pose.pos).norm();
                 fScore[gl_neighbor] = tentative_score + h;
                 
-               
+                // TODO std::unordered_map for all lookups
                 if(!binarySearch(gl_neighbor, openSet, fScore)){
                     insert(gl_neighbor, openSet, fScore);
                 }
             }
         }
     }
+    std::cout << "a star infeasible" << std::endl;
     return std::make_shared<std::vector<dynamics::data::PoseByIndex>>();
 }
 
@@ -226,7 +228,7 @@ std::vector<dynamics::data::Pose2D> CBSPlanner::getCurves(std::map<dynamics::dat
     return result;
 }
 
-void CBSPlanner::low_level_astar_worker(){
+void CBSPlanner::low_level_astar_worker(uint32_t threadid){
     while(m_keepThreadsAlive){
         
         bool hasJob = false;
@@ -235,20 +237,24 @@ void CBSPlanner::low_level_astar_worker(){
         m_lowLevelSearchJobLock.lock();
         if(!m_lowLevelJobs.empty()){
             hasJob = true;
-
+            std::cout << "[INFO CBS LWORKER] "<<  threadid << " Grabbing task " << m_lowLevelJobs.size() << std::endl;
             job = m_lowLevelJobs.back();
             m_lowLevelJobs.pop_back();
-        
+            m_lowLevelSearchJobLock.unlock();
         }else{
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            m_lowLevelSearchJobLock.unlock();
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            continue;
         }
-        m_lowLevelSearchJobLock.unlock();
+        
 
         low_level_result res;
 
-        res.path = astar(job.start_positions, job.target_positions);
+        res.path = astar(job.start_positions, job.target_positions, job.avoid);
         res.job_id = job.job_id;
         res.car_id = job.car_id;
+
+        std::cout << "[INFO CBS LWORKER] "<<  threadid << " Finished task, enqueing result" << job.job_id << std::endl;
 
         m_lowLevelSearchResultsLock.lock();
         m_lowLevelResults.push_back(res);
@@ -262,14 +268,16 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     std::vector<std::vector<dynamics::data::PoseByIndex>> paths_by_vehicle;
     
     for(uint32_t i = 0; i < worker_counter; i ++){
-        m_lowLevelWorkers.push_back(std::thread(&CBSPlanner::low_level_astar_worker, this));
+        m_lowLevelWorkers.push_back(std::thread(&CBSPlanner::low_level_astar_worker, this, i));
     }
 
     // Enqueu all jobs to astar workers
     std::priority_queue<constraint_node> openSet;
     for(uint32_t i = 0; i < start_positions.size(); i ++){
         low_level_job job;
+
         job.job_id = i;
+        job.avoid.clear();
         job.start_positions = start_positions.at(i);
         job.target_positions = target_positions.at(i);
         job.car_id = i;
@@ -287,10 +295,11 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             break;
         }
         m_lowLevelSearchResultsLock.unlock();
-       std::this_thread::sleep_for(std::chrono::milliseconds(100));
+       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-
+    std::cout << "[INFO CBS] All threads returned" << std::endl;
     // Compute SIC by hop count
+    
     uint64_t sic = 0;
     for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
         sic += m_lowLevelResults.at(i).path->size();
@@ -305,10 +314,16 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     }
     m_lowLevelResults.clear();
     
+    std::cout << "[INFO CBS] Finished intial low level phase for all vehicles" << std::endl;
+
+
     // Insert initial constraint node into list
     openSet.push(node);
     while(!openSet.empty()){
         constraint_node node = openSet.top();
+
+        std::cout << "[INFO CBS] Iteration, openSet: " << openSet.size() << std::endl;
+        std::cout << "[INFO CBS] SIC: " << node.sic << std::endl;
 
         //Validate Solution in first node to find conflicts
         dynamics::data::PoseByIndex conflict_pose;
@@ -332,6 +347,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             }
         }
 
+
+        std::cout << "[INFO CBS] Conflict at: " << conflict_step << "with" << conflicting_vehicles[0] << ":" << conflicting_vehicles[1] << std::endl;
+
         // Check if we have just obtained a valid solution -> terminate if yes
         if(conflict_step == -1){
             return node;
@@ -347,6 +365,8 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             constr = conflict_pose;
             constr.t = conflict_step;
 
+            std::cout << "[INFO CBS] Adding new constraint to situation" << conflict_pose.x << ":" << conflict_pose.y << std::endl;
+
             constraint.avoid.push_back(constr);
 
             // Recompute Solutions for this path TODO: maybe restore astar compute from here
@@ -355,7 +375,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             for(uint32_t i = 0; i < start_positions.size(); i ++){
                 low_level_job job;
                 job.job_id = i;
-                
+                job.avoid = constraint.avoid; // TODO: THIS COPIES THE VECTOR -> PROBABLY TURBO SLOW
                 job.start_positions = start_positions.at(i);
                 job.target_positions = target_positions.at(i);
                 
@@ -418,7 +438,6 @@ void CBSPlanner::writeCurveToDisk(std::vector<dynamics::data::Pose2D> path, std:
 
         astar_path["path"].push_back(node);
     }
-
     //dump file to disc
     std::ofstream o(name);
     o << astar_path << std::endl;
@@ -434,7 +453,6 @@ void CBSPlanner::writePathToDisk( std::vector<dynamics::data::PoseByIndex> path,
         node["y"] = current.y;
         node["s"] = current.s;
         node["a"] = current.a;
-
         astar_path["path"].push_back(node);
     }
 

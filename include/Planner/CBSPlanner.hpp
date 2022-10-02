@@ -62,7 +62,7 @@ public:
     std::vector<low_level_job> m_lowLevelJobs;
     std::vector<std::thread> m_lowLevelWorkers;
 
-    void low_level_astar_worker();
+    void low_level_astar_worker(uint32_t i);
     std::mutex m_lowLevelSearchResultsLock;
     std::vector<low_level_result> m_lowLevelResults;
 
@@ -70,7 +70,7 @@ public:
     bool m_keepThreadsAlive = true;
 
 
-    std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target);
+    std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles );
     bool binarySearch(dynamics::data::PoseByIndex node, std::vector<dynamics::data::PoseByIndex>& openSet,  std::map<dynamics::data::PoseByIndex, float>& fScoreMap);
     void insert(dynamics::data::PoseByIndex node, std::vector<dynamics::data::PoseByIndex>& openSet,  std::map<dynamics::data::PoseByIndex, float>& fScoreMap);
 
