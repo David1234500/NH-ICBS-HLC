@@ -3,8 +3,8 @@
 
 #define PI 3.14159265f
 
-constexpr int map_size_x = 60;
-constexpr int map_size_y = 60;
+constexpr int map_size_x = 80;
+constexpr int map_size_y = 80;
 constexpr int map_size_angle = 16;
 constexpr int map_size_speed = 4;
 

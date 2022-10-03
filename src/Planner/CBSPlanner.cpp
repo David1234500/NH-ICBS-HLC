@@ -94,6 +94,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             return res;
         }
 
+        openSet.erase(current.pose);
         openQueue.pop();
         for(auto rel_neighbor: m_proxGraph.m_proxyEdgeList[current.pose.a]){
 
