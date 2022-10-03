@@ -12,6 +12,7 @@
 #include <queue>
 #include <map>
 #include <thread>
+#include <memory>
 
 struct LLJob{
     dynamics::data::PoseByIndex start_positions; 
