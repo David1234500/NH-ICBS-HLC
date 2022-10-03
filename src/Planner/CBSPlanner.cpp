@@ -30,7 +30,15 @@ dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PoseByIndex globa
     return global_pose;
 }
 
+static dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::Pose2D pose){
+    float near_x = pose.pos[0] / xpc;
+    float near_y = pose.pos[1] / ypc;
+    float near_y = pose.h / api;
 
+    dynamics::data::PoseByIndex result = {round(x),round(y),round(a),0}
+
+    return result;
+}
 
 dynamics::data::PoseByIndex CBSPlanner::toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global){
     return (global - base) +  m_proxGraph.m_proxyMapCarOffset;

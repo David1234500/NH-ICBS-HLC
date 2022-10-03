@@ -19,8 +19,7 @@ struct LLJob{
     dynamics::data::PoseByIndex target_positions;
     std::vector<dynamics::data::PBIConstraint> avoid;
     uint32_t job_id = 0;
-    uint16_t car_id = 0;
-    
+    uint16_t car_id = 0;  
 };
 
 
@@ -62,6 +61,8 @@ public:
     dynamics::data::PoseByIndex toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative);
     dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex);
     dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global);
+
+    static dynamics::data::PoseByIndex findNearestPoseByIndex(dynamics::data::Pose2D base);
 
     constraint_node cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions);
     
