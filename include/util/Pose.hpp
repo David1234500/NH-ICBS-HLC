@@ -85,15 +85,15 @@ struct PBIConstraint{
     int32_t t = 0;
     int32_t id = 0;
 
-    inline void operator=(PoseByIndex e) {
+    inline void operator=(const PoseByIndex& e){
        x = e.x; 
        y = e.y; 
        a = e.a;
        s = e.s;
     }
 
-    inline bool operator==(PoseByIndex e) {
-        if(e.x==x && e.y == y && e.a == a && e.s== s){
+    inline bool operator==(const PBIConstraint &e) const {
+        if(e.x==x && e.y == y && e.a == a && e.s== s && e.t == t){
             return true;
         }else{
             return false;
@@ -109,9 +109,9 @@ struct LLNode{
 
     bool operator < (const dynamics::data::LLNode r) const {
         if(fScore < r.fScore){
-            return true;
-        }else{
             return false;
+        }else{
+            return true;
         }
     }
 };
@@ -160,7 +160,23 @@ namespace std {
     {
         std::size_t operator()(const dynamics::data::PoseByIndex& p) const noexcept
         {
-            return p.s + p.a * 10 + 100 * p.y + 10000 * p.x;
+            // 4,294,967,295
+            // 100000 * 100
+            // = 10000000
+            return p.s + p.a * 10 + 1000 * p.y + 100000 * p.x;
+        }
+    };
+}
+
+namespace std {
+    template<> struct hash<dynamics::data::PBIConstraint>
+    {
+        std::size_t operator()(const dynamics::data::PBIConstraint& p) const noexcept
+        {
+            // 4294967295
+            // 10000000 * 100
+            // = 10000000
+            return p.s + p.a * 10 + 1000 * p.y + 100000 * p.x; + 10000000 * p.t;
         }
     };
 }

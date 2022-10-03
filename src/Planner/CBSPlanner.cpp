@@ -54,7 +54,7 @@ bool CBSPlanner::validatePosition(dynamics::data::PoseByIndex base){
 
 
 
-LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles){
+LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::unordered_set<dynamics::data::PBIConstraint> obstacles){
     
     std::priority_queue<dynamics::data::LLNode> openQueue;
     std::unordered_set<dynamics::data::PoseByIndex> openSet;
@@ -81,9 +81,9 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
 
     while(!openQueue.empty()){
         
-        auto current = openQueue.top(); // TODO ADD DEPTH TO NODES IN SOME FORM
+        auto current = openQueue.top(); 
 
-        if(explored_nodes % 1 == 0){
+        if(explored_nodes % 500 == 0){
             std::cout << "explored nodes:" << explored_nodes << " open nodes " << openQueue.size() << std::endl;
             std::cout << "current scores g" << gScore[current.pose] << " f" << fScore[current.pose] <<  std::endl;
             std::cout << "pose " << current.pose.x <<":"<< current.pose.y << std::endl;
@@ -111,33 +111,26 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             if(!validatePosition(gl_neighbor)){
                 continue;
             }
-
-            // TODO std::unordered_map for all lookups
-            // if (std::find(obstacles.begin(), obstacles.end(), gl_neighbor) != obstacles.end()){ //TODO CHECK THIS AGAIN
-            //     continue;
-            // }
-
-            auto current_pose = indexToPose(current.pose);
             
-            // std::cout << "npose" << neigh_pose.pos[0] << " "<< neigh_pose.pos[1]  << std::endl; 
+            dynamics::data::PBIConstraint possible_constraint;
+            possible_constraint = gl_neighbor;
+            possible_constraint.t = current.timestep + 1;
+            if(obstacles.count(possible_constraint) == 1){
+                continue;
+            }
 
+            auto current_pose = indexToPose(current.pose); 
             float dist = (neigh_pose.pos - current_pose.pos).norm();
             
-            if(gScore.count(gl_neighbor) == 0){
-                gScore[gl_neighbor] = 1000000000.f;
-                fScore[gl_neighbor] = 1000000000.f;
-            }
                         
             float tentative_score = gScore[current.pose] + dist; //+ 1 * std::abs(gl_neighbor.a - target.a);
-            if(tentative_score < gScore[gl_neighbor]){
+            if(gScore.count(gl_neighbor) == 0 || tentative_score < gScore[gl_neighbor]){
                 cameFrom[gl_neighbor] = current.pose;
                 usedEdge[gl_neighbor] = rel_neighbor;
                 gScore[gl_neighbor] = tentative_score;
                 
                 float h = (neigh_pose.pos - target_pose.pos).norm();
                 fScore[gl_neighbor] = tentative_score + h;
-                
-                // TODO std::unordered_map for all lookups
                 
                 if(openSet.count(gl_neighbor) == 0){
                     dynamics::data::LLNode node = {gl_neighbor, fScore[gl_neighbor], current.timestep + 1};
@@ -204,7 +197,6 @@ void CBSPlanner::low_level_astar_worker(uint32_t threadid){
         m_lowLevelSearchJobLock.lock();
         if(!m_lowLevelJobs.empty()){
             hasJob = true;
-            // std::cout << "[INFO CBS LWORKER] "<<  threadid << " Grabbing task " << m_lowLevelJobs.size() << std::endl;
             job = m_lowLevelJobs.back();
             m_lowLevelJobs.pop_back();
             m_lowLevelSearchJobLock.unlock();
@@ -219,9 +211,6 @@ void CBSPlanner::low_level_astar_worker(uint32_t threadid){
         auto res = astar(job.start_positions, job.target_positions, job.avoid);
         res.job_id = job.job_id;
         res.car_id = job.car_id;
-
-        // std::cout << "[INFO CBS LWORKER] "<<  threadid << " Finished task, enqueing result" << job.job_id << std::endl;
-
         m_lowLevelSearchResultsLock.lock();
         m_lowLevelResults.push_back(res);
         m_lowLevelSearchResultsLock.unlock();
@@ -305,9 +294,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 
                 for(uint32_t i = 0; i < node.result[car_index].path->size() && i < node.result[car_index2].path->size(); i ++){
                 
-                    std::cout << "Conflict check " << std::endl;
-                    std::cout << "V1: " << node.result[car_index].path->at(i).x << ":" << node.result[car_index].path->at(i).y << std::endl;
-                    std::cout << "V2: " << node.result[car_index2].path->at(i).x << ":" << node.result[car_index2].path->at(i).y << std::endl;
+                    // std::cout << "Conflict check " << std::endl;
+                    // std::cout << "V1: " << node.result[car_index].path->at(i).x << ":" << node.result[car_index].path->at(i).y << std::endl;
+                    // std::cout << "V2: " << node.result[car_index2].path->at(i).x << ":" << node.result[car_index2].path->at(i).y << std::endl;
 
                     auto p = node.result[car_index].path->at(i) - node.result[car_index2].path->at(i);
                     if(p.x == 0 && p.y == 0){
@@ -352,7 +341,14 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             for(uint32_t i = 0; i < start_positions.size(); i ++){
                 LLJob job;
                 job.job_id = i;
-                job.avoid = constraint.avoid; 
+                job.avoid.clear();
+
+                for(auto c: constraint.avoid){
+                    if(c.id == i){
+                        job.avoid.insert(c);
+                    }
+                }
+
                 job.start_positions = start_positions.at(i);
                 job.target_positions = target_positions.at(i);
                 

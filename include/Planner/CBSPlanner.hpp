@@ -19,7 +19,7 @@
 struct LLJob{
     dynamics::data::PoseByIndex start_positions; 
     dynamics::data::PoseByIndex target_positions;
-    std::vector<dynamics::data::PBIConstraint> avoid;
+    std::unordered_set<dynamics::data::PBIConstraint> avoid;
     uint32_t job_id = 0;
     uint16_t car_id = 0;
     
@@ -41,9 +41,9 @@ struct constraint_node{
     std::map<int32_t, LLResult> result;
     bool operator < (const constraint_node r) const {
         if(sic < r.sic){
-            return true;
-        }else{
             return false;
+        }else{
+            return true;
         }
     }
 };
@@ -78,7 +78,7 @@ public:
     bool m_keepThreadsAlive = true;
 
 
-    LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles );
+    LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::unordered_set<dynamics::data::PBIConstraint> obstacles);
     bool binarySearch(dynamics::data::PoseByIndex node, std::vector<dynamics::data::LLNode>& openSet,  std::map<dynamics::data::PoseByIndex, float>& fScoreMap);
     void insert(dynamics::data::LLNode node, std::vector<dynamics::data::LLNode>& openSet, std::unordered_map<dynamics::data::PoseByIndex, float>& fScoreMap);
 

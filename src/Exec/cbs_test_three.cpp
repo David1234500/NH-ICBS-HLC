@@ -30,6 +30,11 @@ int main() {
     targets.push_back(end2);
     starts.push_back(start2);
 
+    dynamics::data::PoseByIndex end3 = {10,5,7,2};
+    dynamics::data::PoseByIndex start3 = {25,3,7,2};
+    targets.push_back(end3);
+    starts.push_back(start3);
+
     planner.astar(start, end, std::unordered_set<dynamics::data::PBIConstraint>());
     planner.astar(start2, end2, std::unordered_set<dynamics::data::PBIConstraint>());
 
