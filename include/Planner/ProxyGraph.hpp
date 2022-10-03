@@ -24,91 +24,13 @@ struct ProxyNode{
     dynamics::data::Pose2D rel_pose;
 };
 
-// struct IndexNode{
-//     int32_t x = 0;
-//     int32_t y = 0;
-//     int32_t a = 0;
-//     int32_t s = 0;
-
-//     inline bool operator==(IndexNode e) {
-//     if(e.x==x && e.y == y && e.a == a && e.s== s){
-//        return true;
-//       }else{
-//        return false;
-//        }
-//     }
-
-//     inline bool operator&=(IndexNode e) {
-//     if(e.x==x && e.y == y){
-//        return true;
-//       }else{
-//        return false;
-//        }
-//     }
-
-//     inline IndexNode operator+(IndexNode e) {
-//         IndexNode n = {e.x + x, e.y + y, a,s};
-//         return n;
-//     }
-
-//     inline IndexNode operator+(int32_t offset) {
-//         IndexNode n = {x + offset, y + offset, a,s};
-//         return n;
-//     }
-
-//     inline IndexNode operator-(IndexNode e) {
-//         IndexNode n = {e.x - x, e.y - y,a,s};
-//         return n;
-//     }
-
-//      inline IndexNode operator-(int32_t offset) {
-//         IndexNode n = {x - offset, y - offset, a,s};
-//         return n;
-//     }
-
-// };
-
-// struct GINodeWS{
-//     int32_t x = 0;
-//     int32_t y = 0;
-//     int32_t a = 0;
-//     int32_t s = 0;
-//     float fScore = 0.f;
-//     float gScore = 100000000.f;
-
-//     inline bool operator=(IndexNode e) {
-//         x = e.x;
-//         y = e.y;
-//         a = e.a;
-//         s = e.s;
-//     }
-
-//     inline IndexNode operator*() {
-//         IndexNode n = {x,y,a,s};
-//         return n;
-//     }
-
-//     inline bool operator==(IndexNode e) {
-//         if(e.x==x && e.y == y && e.a == a && e.s== s){
-//             return true;
-//         }else{
-//             return false;
-//         }
-//     }
-
-
-// };
-
 struct ProxyTask{
     
     int32_t txi = 0;
     int32_t tyi = 0;
-
     int32_t cai = 0;
     int32_t csi = 0;
-
     float tstep = 0.0f;
-    
     float base_velocity = 0.f;
     
 };

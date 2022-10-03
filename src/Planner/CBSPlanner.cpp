@@ -7,14 +7,6 @@
 
 using json = nlohmann::json;
 
-void CBSPlanner::insert(dynamics::data::LLNode node, std::vector<dynamics::data::LLNode>& openSet,  std::unordered_map<dynamics::data::PoseByIndex, float>& fScoreMap){
-    uint32_t index = 0;
-    while(index < openSet.size() && (fScoreMap[openSet.at(index).pose] < fScoreMap[node.pose])){
-        index ++;
-    }
-    openSet.insert(openSet.begin() + index, node);
-}
-
 dynamics::data::PoseByIndex CBSPlanner::toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative){
     return  (relative + base) - m_proxGraph.m_proxyMapCarOffset;
 }
@@ -96,6 +88,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             
             LLResult res;
             res.path = getPath(cameFrom, current.pose);
+            res.spline = getSplines(cameFrom, usedEdge, current.pose);
             res.found_path = true;
 
             return res;
@@ -157,7 +150,7 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::getPath(st
     return result;
 }
 
-std::vector<dynamics::data::Pose2D> CBSPlanner::getCurves(std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target){
+std::vector<dynamics::data::Pose2D> CBSPlanner::getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target){
     auto current = target;
     std::vector<dynamics::data::PoseByIndex> nodes;
     std::vector<TraversableEdge> edges;
@@ -165,26 +158,22 @@ std::vector<dynamics::data::Pose2D> CBSPlanner::getCurves(std::map<dynamics::dat
     while(predecessor.find(current) != predecessor.end()){
         nodes.push_back(current);
         edges.push_back(edge_map[current]);
-        std::cout << " " << current.x << " " << current.y << " " << current.a << " " << current.s << std::endl;
         current = predecessor[current];
     }
 
     std::vector<dynamics::data::Pose2D> result;
     for(int64_t i = nodes.size() - 1; i >= 1; i --){
-       
         dynamics::data::Pose2D next_pose;
         dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(i));
         for(float ts = 0; ts <= timestep_ms; ts += 25.f){    
             next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, ts);
             result.push_back(next_pose);
         }
-        
         for(float ts = 0; ts <= timestep_ms; ts += 25.f){
             auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, ts);
             result.push_back(next_pose2);
         }
     }
-
     return result;
 }
 
@@ -265,7 +254,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     node.sic = sic;
     node.avoid.clear();
     for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
-        node.result[m_lowLevelResults.at(i).car_id]= m_lowLevelResults.at(i);
+        node.result[m_lowLevelResults.at(i).car_id] = m_lowLevelResults.at(i);
     }
     m_lowLevelResults.clear();
     
