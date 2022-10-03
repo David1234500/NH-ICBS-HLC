@@ -3,9 +3,9 @@
 
 #define PI 3.14159265f
 
-constexpr int map_size_x = 40;
-constexpr int map_size_y = 40;
-constexpr int map_size_angle = 8;
+constexpr int map_size_x = 60;
+constexpr int map_size_y = 60;
+constexpr int map_size_angle = 16;
 constexpr int map_size_speed = 4;
 
 constexpr float timestep_ms = 250.f;
@@ -26,6 +26,6 @@ constexpr float state_change_fit_allowed_speed_difference = 0.125f;
 constexpr float state_change_fit_quality_angle = api / 2;
 constexpr float state_change_fit_quality_position =  xpc / 5;
 
-constexpr int worker_counter = 12;
+constexpr int worker_counter = 28;
 
 #endif

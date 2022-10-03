@@ -23,9 +23,10 @@ int main() {
     std::vector<uint32_t> times;
     std::cout << "Start AStar!" << std::endl;
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    auto res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
+    auto res = planner.astar(start,end, std::unordered_set<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
     std::cout << res.path->size() << std::endl;
+    planner.writePathToDisk(*res.path, "path1.json");
     
     auto tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     times.push_back(tstop - tstart);
@@ -35,9 +36,10 @@ int main() {
     end = {10,25,0,2};
     start = {10,10,3,2};
     std::cout << "Start AStar!" << std::endl;
-     res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
+     res = planner.astar(start,end, std::unordered_set<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
     std::cout << res.path->size() << std::endl;
+    planner.writePathToDisk(*res.path, "path2.json");
     
     tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     times.push_back(tstop - tstart);
@@ -46,9 +48,10 @@ int main() {
     end = {10,25,0,2};
     start = {28,25,3,2};
     std::cout << "Start AStar!" << std::endl;
-     res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
+     res = planner.astar(start,end, std::unordered_set<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
     std::cout << res.path->size() << std::endl;
+    planner.writePathToDisk(*res.path, "path3.json");
     
     tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     times.push_back(tstop - tstart);
@@ -57,9 +60,10 @@ int main() {
     end = {10,25,0,2};
     start = {25,10,3,2};
     std::cout << "Start AStar!" << std::endl;
-     res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
+    res = planner.astar(start,end, std::unordered_set<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
     std::cout << res.path->size() << std::endl;
+    planner.writePathToDisk(*res.path, "path4.json");
     
     tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     times.push_back(tstop - tstart);

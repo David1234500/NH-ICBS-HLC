@@ -17,7 +17,7 @@
 struct LLJob{
     dynamics::data::PoseByIndex start_positions; 
     dynamics::data::PoseByIndex target_positions;
-    std::vector<dynamics::data::PBIConstraint> avoid;
+    std::unordered_set<dynamics::data::PBIConstraint> avoid;
     uint32_t job_id = 0;
     uint16_t car_id = 0;  
 };
@@ -26,6 +26,7 @@ struct LLJob{
 struct LLResult{
     bool found_path = false;
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> path;
+    std::vector<dynamics::data::Pose2D> spline;
     uint32_t job_id = 0;
     uint16_t car_id = 0;
 };
@@ -33,18 +34,16 @@ struct LLResult{
 struct constraint_node{
     uint64_t sic = 0;
     std::vector<dynamics::data::PBIConstraint> avoid;
-    std::shared_ptr<constraint_node> r_child = nullptr;
-    std::shared_ptr<constraint_node> l_child = nullptr;
     std::map<int32_t, LLResult> result;
+   
     bool operator < (const constraint_node r) const {
         if(sic < r.sic){
-            return true;
-        }else{
             return false;
+        }else{
+            return true;
         }
     }
 };
-
 
 class CBSPlanner 
 {
@@ -73,24 +72,18 @@ public:
     void low_level_astar_worker(uint32_t i);
     std::mutex m_lowLevelSearchResultsLock;
     std::vector<LLResult> m_lowLevelResults;
-
-    
     bool m_keepThreadsAlive = true;
 
-
-    LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles );
-    bool binarySearch(dynamics::data::PoseByIndex node, std::vector<dynamics::data::LLNode>& openSet,  std::map<dynamics::data::PoseByIndex, float>& fScoreMap);
-    void insert(dynamics::data::LLNode node, std::vector<dynamics::data::LLNode>& openSet, std::unordered_map<dynamics::data::PoseByIndex, float>& fScoreMap);
-
+    LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::unordered_set<dynamics::data::PBIConstraint> obstacles);
 
     ProxyGraph m_proxGraph;
 
     void writePathToDisk( std::vector<dynamics::data::PoseByIndex> path, std::string name);
     void writeCurveToDisk(std::vector<dynamics::data::Pose2D> path, std::string name);
     void writeMultiplePathsToDisk(constraint_node cnode, std::string name);
+    
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> getPath(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target);
-    std::vector<dynamics::data::Pose2D> getCurves(std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target);
-
+    std::vector<dynamics::data::Pose2D> getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target);
     
 
 };
