@@ -26,7 +26,7 @@ struct LLJob{
 struct LLResult{
     bool found_path = false;
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> path;
-    std::vector<dynamics::data::Pose2D> spline;
+    std::vector<dynamics::data::Pose2WithTime> spline;
     uint32_t job_id = 0;
     uint16_t car_id = 0;
 };
@@ -61,7 +61,7 @@ public:
     dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex);
     dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global);
 
-    static dynamics::data::PoseByIndex findNearestPoseByIndex(dynamics::data::Pose2D base);
+    static dynamics::data::PoseByIndex findNearestPoseByIndex(dynamics::data::Pose2D pose);
 
     constraint_node cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions);
     
@@ -83,7 +83,7 @@ public:
     void writeMultiplePathsToDisk(constraint_node cnode, std::string name);
     
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> getPath(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target);
-    std::vector<dynamics::data::Pose2D> getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target);
+    std::vector<dynamics::data::Pose2WithTime> getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target);
     
 
 };

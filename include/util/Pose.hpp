@@ -127,6 +127,26 @@ struct Pose2D{
     float vel = 0.f;
 };
 
+struct Pose2WithTime{
+    /* 2D Position in cm */
+    Position2Df pos = {0.f,0.f}; 
+    
+    /* Heading in radians */
+    float h = 0.f; 
+
+    /* Velocity in m/s */
+    float vel = 0.f;
+
+    float time_ms = 0.f;
+
+    inline void operator=(Pose2D e){
+        pos = e.pos;
+        h = e.h;
+        vel = e.vel;
+    }
+};
+
+
 struct Pose2DWithError{
     /* 2D Position in cm */
     Position2Df pos = {0.f,0.f};

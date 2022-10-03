@@ -59,6 +59,7 @@ void workerThreadProxyEdges(uint32_t index);
 // debug functions
 void writeGraphToDisk();
 void loadGraphFromDisk();
+void loadGraphFromDisk(std::string path);
 void printPositions();
 
 };

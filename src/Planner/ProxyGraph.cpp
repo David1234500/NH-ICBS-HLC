@@ -236,9 +236,12 @@ void ProxyGraph::writeGraphToDisk(){
     o.close();
 }
 
-
 void ProxyGraph::loadGraphFromDisk(){
-    std::ifstream ifs("proxy_state_graph.json");
+    loadGraphFromDisk("proxy_state_graph.json");
+}
+
+void ProxyGraph::loadGraphFromDisk(std::string path){
+    std::ifstream ifs(path);
     json jf = json::parse(ifs);
     m_proxyMapReachableSpan = jf["info"]["m_proxyMapReachableSpan"];
     m_proxyMapReachableSpan += 1;

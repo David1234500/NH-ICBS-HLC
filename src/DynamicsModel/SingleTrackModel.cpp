@@ -120,9 +120,7 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
 
 
 
-dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFitSingleStep(Pose2D current_pose, PoseByIndex tpi, Pose2D target_pose, float timestep){
-    
-}   
+ 
 
 float SimpleDynamicsModel::velocity_limit(){ 
     return 100.0; // cm/s

@@ -22,12 +22,12 @@ dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PoseByIndex globa
     return global_pose;
 }
 
-static dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::Pose2D pose){
+dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::Pose2D pose){
     float near_x = pose.pos[0] / xpc;
     float near_y = pose.pos[1] / ypc;
-    float near_y = pose.h / api;
+    float near_a = pose.h / api;
 
-    dynamics::data::PoseByIndex result = {round(x),round(y),round(a),0}
+    dynamics::data::PoseByIndex result = {round(near_x),round(near_y),round(near_a),0};
 
     return result;
 }
@@ -158,30 +158,37 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::getPath(st
     return result;
 }
 
-std::vector<dynamics::data::Pose2D> CBSPlanner::getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target){
+std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target){
     auto current = target;
     std::vector<dynamics::data::PoseByIndex> nodes;
     std::vector<TraversableEdge> edges;
+
+    uint32_t path_length = 0;
 
     while(predecessor.find(current) != predecessor.end()){
         nodes.push_back(current);
         edges.push_back(edge_map[current]);
         current = predecessor[current];
+        path_length += 1;
     }
 
-    std::vector<dynamics::data::Pose2D> result;
+    std::vector<dynamics::data::Pose2WithTime> result;
     for(int64_t i = nodes.size() - 1; i >= 1; i --){
-        dynamics::data::Pose2D next_pose;
+        
         dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(i));
-        for(float ts = 0; ts <= timestep_ms; ts += 25.f){    
-            next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, ts);
-            result.push_back(next_pose);
-        }
-        for(float ts = 0; ts <= timestep_ms; ts += 25.f){
-            auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, ts);
-            result.push_back(next_pose2);
-        }
+        dynamics::data::Pose2D next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, timestep_ms);
+        dynamics::data::Pose2WithTime start;
+        start = next_pose;
+        start.time_ms = i * 2 * timestep_ms;
+        result.push_back(start);
+        
+        auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, timestep_ms);
+        dynamics::data::Pose2WithTime next_pose2_with_time;
+        next_pose2_with_time = next_pose2;
+        next_pose2_with_time.time_ms = i * 2 * timestep_ms + timestep_ms;
+        result.push_back(next_pose2_with_time);
     }
+    
     return result;
 }
 
@@ -398,6 +405,8 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     for(uint32_t i = 0; i < worker_counter; i ++){
         m_lowLevelWorkers.at(i).join();
     }
+    constraint_node dnode;
+    return dnode;
 }
 
 
