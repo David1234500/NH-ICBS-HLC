@@ -26,6 +26,6 @@ constexpr float state_change_fit_allowed_speed_difference = 0.125f;
 constexpr float state_change_fit_quality_angle = api / 2;
 constexpr float state_change_fit_quality_position =  xpc / 5;
 
-constexpr int worker_counter = 12;
+constexpr int worker_counter = 24;
 
 #endif

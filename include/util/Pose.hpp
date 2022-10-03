@@ -104,7 +104,16 @@ struct PBIConstraint{
 
 struct LLNode{
     PoseByIndex pose;
+    float fScore = 10000000.f;
     uint32_t timestep = 0;
+
+    bool operator < (const dynamics::data::LLNode r) const {
+        if(fScore < r.fScore){
+            return true;
+        }else{
+            return false;
+        }
+    }
 };
 
 struct Pose2D{

@@ -56,34 +56,37 @@ bool CBSPlanner::validatePosition(dynamics::data::PoseByIndex base){
 
 LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles){
     
-    std::vector<dynamics::data::LLNode> openQueue;
+    std::priority_queue<dynamics::data::LLNode> openQueue;
     std::unordered_set<dynamics::data::PoseByIndex> openSet;
-    dynamics::data::LLNode initial = {start, 0};
     
-    openQueue.push_back(initial);
-    openSet.insert(start);
 
     std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
     std::unordered_map<dynamics::data::PoseByIndex, TraversableEdge> usedEdge;
-    
+
     auto current_pose = indexToPose(start);
     auto target_pose = indexToPose(target);
 
     std::unordered_map<dynamics::data::PoseByIndex, float> fScore;
-    fScore[start] = (target_pose.pos - current_pose.pos).norm() ;//+ 5 * (start.a - target.a);
+    fScore[start] = (target_pose.pos - current_pose.pos).norm(); //+ 1 * (start.a - target.a);
     
     std::unordered_map<dynamics::data::PoseByIndex, float> gScore;
     gScore[start] = 0.f;
+
+
+    dynamics::data::LLNode initial = {start, fScore[start], 0};
+    openQueue.push(initial);
+    openSet.insert(start);
 
     uint32_t explored_nodes = 0;
 
     while(!openQueue.empty()){
         
-        auto current = openQueue.front(); // TODO ADD DEPTH TO NODES IN SOME FORM
+        auto current = openQueue.top(); // TODO ADD DEPTH TO NODES IN SOME FORM
 
-        if(explored_nodes % 500 == 0){
-            // std::cout << "explored nodes:" << explored_nodes << " open nodes " << openQueue.size() << std::endl;
-            // std::cout << "current scores g" << gScore[current.pose] << " f" << fScore[current.pose] <<  std::endl;
+        if(explored_nodes % 1 == 0){
+            std::cout << "explored nodes:" << explored_nodes << " open nodes " << openQueue.size() << std::endl;
+            std::cout << "current scores g" << gScore[current.pose] << " f" << fScore[current.pose] <<  std::endl;
+            std::cout << "pose " << current.pose.x <<":"<< current.pose.y << std::endl;
         }
         
         explored_nodes += 1;
@@ -98,7 +101,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             return res;
         }
 
-        openQueue.erase(openQueue.begin());
+        openQueue.pop();
         for(auto rel_neighbor: m_proxGraph.m_proxyEdgeList[current.pose.a]){
 
             dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(current.pose, rel_neighbor.target);
@@ -129,7 +132,6 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             if(tentative_score < gScore[gl_neighbor]){
                 cameFrom[gl_neighbor] = current.pose;
                 usedEdge[gl_neighbor] = rel_neighbor;
-                
                 gScore[gl_neighbor] = tentative_score;
                 
                 float h = (neigh_pose.pos - target_pose.pos).norm();
@@ -138,8 +140,8 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
                 // TODO std::unordered_map for all lookups
                 
                 if(openSet.count(gl_neighbor) == 0){
-                    dynamics::data::LLNode node = {gl_neighbor, current.timestep + 1};
-                    insert(node, openQueue, fScore);
+                    dynamics::data::LLNode node = {gl_neighbor, fScore[gl_neighbor], current.timestep + 1};
+                    openQueue.push(node);
                     openSet.insert(gl_neighbor);
                 }
             }

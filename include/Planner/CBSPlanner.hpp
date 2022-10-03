@@ -12,6 +12,9 @@
 #include <queue>
 #include <map>
 #include <thread>
+#include <memory>
+
+
 
 struct LLJob{
     dynamics::data::PoseByIndex start_positions; 
@@ -44,7 +47,6 @@ struct constraint_node{
         }
     }
 };
-
 
 class CBSPlanner 
 {
@@ -88,7 +90,6 @@ public:
     void writeMultiplePathsToDisk(constraint_node cnode, std::string name);
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> getPath(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target);
     std::vector<dynamics::data::Pose2D> getCurves(std::map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target);
-
     
 
 };
