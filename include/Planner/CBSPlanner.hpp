@@ -17,7 +17,7 @@
 struct LLJob{
     dynamics::data::PoseByIndex start_positions; 
     dynamics::data::PoseByIndex target_positions;
-    std::unordered_set<dynamics::data::PBIConstraint> avoid;
+    std::vector<dynamics::data::PBIConstraint> avoid;
     uint32_t job_id = 0;
     uint16_t car_id = 0;  
 };
@@ -60,6 +60,7 @@ public:
     dynamics::data::PoseByIndex toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative);
     dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex);
     dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global);
+    dynamics::data::Pose2D indexToPose(dynamics::data::PBIConstraint global);
 
     static dynamics::data::PoseByIndex findNearestPoseByIndex(dynamics::data::Pose2D pose);
 
@@ -74,7 +75,7 @@ public:
     std::vector<LLResult> m_lowLevelResults;
     bool m_keepThreadsAlive = true;
 
-    LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::unordered_set<dynamics::data::PBIConstraint> obstacles);
+    LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles);
 
     ProxyGraph m_proxGraph;
 

@@ -23,7 +23,7 @@ int main() {
     std::vector<uint32_t> times;
     std::cout << "Start AStar!" << std::endl;
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    auto res = planner.astar(start,end, std::unordered_set<dynamics::data::PBIConstraint>());
+    auto res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
     std::cout << res.path->size() << std::endl;
     planner.writePathToDisk(*res.path, "path1.json");

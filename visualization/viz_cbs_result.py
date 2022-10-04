@@ -8,13 +8,14 @@ f = open(sys.argv[1], "r")
 x = f.read() 
 y = json.loads(x)
   
-ex = []
-ey = []
+
 
 plt.xlim([0,int(y["sizex"])])
 plt.ylim([0,int(y["sizey"])])
 
 for car in y["multipath"]:
+    ex = []
+    ey = []
     for node in car["path"]:
         ex.append(node["x"])
         ey.append(node["y"])

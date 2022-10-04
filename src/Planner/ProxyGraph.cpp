@@ -161,6 +161,7 @@ void ProxyGraph::writeGraphToDisk(){
 
     proxy_map_dump["info"]["m_proxyMapReachableSpan"] = m_proxyMapReachableSpan;
     proxy_map_dump["info"]["m_proxyMapCarOffset"] = m_proxyMapCarOffset;
+    proxy_map_dump["info"]["size_a"] = map_size_angle;
 
     // Dump array to list
     for(uint32_t x = 0; x <= m_proxyMapReachableSpan; x ++){
