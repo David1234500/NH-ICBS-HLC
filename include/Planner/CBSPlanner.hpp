@@ -79,7 +79,7 @@ public:
     ProxyGraph m_proxGraph;
 
     void writePathToDisk( std::vector<dynamics::data::PoseByIndex> path, std::string name);
-    void writeCurveToDisk(std::vector<dynamics::data::Pose2D> path, std::string name);
+    void writeCurveToDisk(std::vector<dynamics::data::Pose2WithTime> path, std::string name);
     void writeMultiplePathsToDisk(constraint_node cnode, std::string name);
     
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> getPath(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target);

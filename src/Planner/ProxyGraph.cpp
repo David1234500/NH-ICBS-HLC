@@ -37,7 +37,7 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
             for(int32_t a = 0; a < map_size_angle; a ++){
                 
                 //Constraint speed changes to one level up, same or one level down [current_speed_level - 1, current_speed_level + 1]
-                for(int32_t s = std::max(0, threadTask.csi - 1); s < std::min(4, threadTask.csi + 1); s ++){
+                for(int32_t s = std::max(0, threadTask.csi - 1); s < std::min(map_size_speed, threadTask.csi + 1); s ++){
             
                 //Compute best fit settings set to get from the current to the target location
                 dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, a, s};
@@ -120,6 +120,14 @@ void ProxyGraph::computeProxyEdges(){
             //Compute pose of current node/vehicle
             dynamics::data::Pose2D veh_pose = {{0.f,0.f}, m_proxyMap[0][0][j][i].rel_pose.h, m_proxyMap[0][0][j][i].rel_pose.vel};
             
+            if(abs(m_proxyMap[0][0][j][i].rel_pose.vel) < 1.f ){
+                std::cout << "[INFO] Adding Task for x " << 0 << ":y " << 0 <<  "a " << j << ":s " << i << std::endl;    
+                ProxyTask nTask;    
+                nTask = {0,0,j,i,timestep_ms};
+                m_proxyTaskQueue.push_back(nTask);
+                continue;
+            }
+
             //Check for each candidate node if we can find a connection between these two, but use all system threads
             for(int32_t x = 0; x <= reachable_node_span; x ++){
                 for(int32_t y = 0; y <= reachable_node_span; y ++){

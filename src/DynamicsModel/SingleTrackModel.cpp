@@ -20,7 +20,7 @@ if(steering_angle <= 0.05f){
     Eigen::Rotation2Df rotation(current_pose.h);
     auto dph = rotation * dp;
     auto new_pos = current_pose.pos + dph;
-    return Pose2D{new_pos, current_pose.h};
+    return Pose2D{new_pos, current_pose.h, velocity};
 }
 
 // Compute radius of driven curve
@@ -46,7 +46,7 @@ auto dph = rotation * dp;
 auto new_pos = current_pose.pos + dph;
 auto new_head = current_pose.h + circ_comp;
 
-return Pose2D{new_pos, new_head};
+return Pose2D{new_pos, new_head, velocity};
 }
 
 dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D current_pose, PoseByIndex tpi, Pose2D target_pose, float timestep){
@@ -54,12 +54,12 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
     dynamics::data::Pose2DWithError current_best_pose;
     current_best_pose.bi_pose = tpi;
 
-    float current_angle_span =  3 * SimpleDynamicsModel::angle_limit();
+    float current_angle_span = SimpleDynamicsModel::angle_limit();
     float current_error = 1000.f;
 
     // Iterate over all possible combinations of speeds and steering angles to find best configuration for reaching the target node
-    uint32_t angle_count = 60;
-    uint32_t vel_count = 40; // TODO REMOVE THESE HARDCODED VALUES
+    uint32_t angle_count = 40;
+    uint32_t vel_count = 30; // TODO REMOVE THESE HARDCODED VALUES
 
     for(uint32_t i = 0; i <= angle_count; i ++){
         float next_angle = (-(1.f/2.f) * current_angle_span) + current_angle_span * ((float)i / (float)angle_count);
@@ -127,5 +127,5 @@ float SimpleDynamicsModel::velocity_limit(){
 }
 
 float SimpleDynamicsModel::angle_limit(){
-    return PI * 2;
+    return PI / 2;
 }

@@ -25,6 +25,7 @@ dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PoseByIndex globa
 dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::Pose2D pose){
     float near_x = pose.pos[0] / xpc;
     float near_y = pose.pos[1] / ypc;
+    pose.h = fmod(pose.h + 2*PI , 2*PI);
     float near_a = pose.h / api;
 
     dynamics::data::PoseByIndex result = {round(near_x),round(near_y),round(near_a),0};
@@ -63,6 +64,9 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
     std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
     std::unordered_map<dynamics::data::PoseByIndex, TraversableEdge> usedEdge;
 
+    std::cout << "START: " << start.x << ":" << start.y << ":" << start.a << ":" << start.s << std::endl;
+    std::cout << "TARGET: " << target.x << ":" << target.y << ":" << target.a << ":" << target.s << std::endl;
+
     auto current_pose = indexToPose(start);
     auto target_pose = indexToPose(target);
 
@@ -98,6 +102,9 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             res.path = getPath(cameFrom, current.pose);
             res.spline = getSplines(cameFrom, usedEdge, current.pose);
             res.found_path = true;
+
+            std::cout << "START: " << res.path->at(res.path->size() - 1).x << ":" << res.path->at(res.path->size() - 1).y << ":" << res.path->at(res.path->size() - 1).a << ":" << res.path->at(res.path->size() - 1).s << std::endl;
+            std::cout << "TARGET: " << res.path->at(0).x << ":" << res.path->at(0).y << ":" << res.path->at(0).a << ":" << res.path->at(0).s << std::endl;
 
             return res;
         }
@@ -151,10 +158,12 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::getPath(st
     auto current = target;
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> result = std::make_shared<std::vector<dynamics::data::PoseByIndex>>();
 
-    while(predecessor.find(current) != predecessor.end()){
+    do{
         result->push_back(current);
         current = predecessor[current];
-    }
+    } while(predecessor.find(current) != predecessor.end());
+    
+    result->push_back(current);
     return result;
 }
 
@@ -163,30 +172,34 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
     std::vector<dynamics::data::PoseByIndex> nodes;
     std::vector<TraversableEdge> edges;
 
-    uint32_t path_length = 0;
-
-    while(predecessor.find(current) != predecessor.end()){
+    do{
         nodes.push_back(current);
         edges.push_back(edge_map[current]);
         current = predecessor[current];
-        path_length += 1;
-    }
+    }while(predecessor.find(current) != predecessor.end());
+
+    nodes.push_back(current);
+    edges.push_back(edge_map[current]);
 
     std::vector<dynamics::data::Pose2WithTime> result;
-    for(int64_t i = nodes.size() - 1; i >= 1; i --){
+    uint32_t time_index = 0;
+    for(int64_t i = nodes.size() - 1; i > 0; i --){
         
         dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(i));
         dynamics::data::Pose2D next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, timestep_ms);
         dynamics::data::Pose2WithTime start;
         start = next_pose;
-        start.time_ms = i * 2 * timestep_ms;
+        start.time_ms = time_index * 2 * timestep_ms;
         result.push_back(start);
         
-        auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, timestep_ms);
-        dynamics::data::Pose2WithTime next_pose2_with_time;
-        next_pose2_with_time = next_pose2;
-        next_pose2_with_time.time_ms = i * 2 * timestep_ms + timestep_ms;
-        result.push_back(next_pose2_with_time);
+        
+        // auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, timestep_ms);
+        // dynamics::data::Pose2WithTime next_pose2_with_time;
+        // next_pose2_with_time = next_pose2;
+        // next_pose2_with_time.time_ms = time_index * 2 * timestep_ms + timestep_ms;
+        // result.push_back(next_pose2_with_time);
+
+        time_index += 1;
     }
     
     return result;
@@ -210,8 +223,6 @@ void CBSPlanner::low_level_astar_worker(uint32_t threadid){
             continue;
         }
         
-
-        
         auto res = astar(job.start_positions, job.target_positions, job.avoid);
         res.job_id = job.job_id;
         res.car_id = job.car_id;
@@ -224,8 +235,8 @@ void CBSPlanner::low_level_astar_worker(uint32_t threadid){
 
 
 constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions){
-    std::vector<std::vector<dynamics::data::PoseByIndex>> paths_by_vehicle;
-    
+    std::cout << "CBS start" << std::endl;
+
     for(uint32_t i = 0; i < worker_counter; i ++){
         m_lowLevelWorkers.push_back(std::thread(&CBSPlanner::low_level_astar_worker, this, i));
     }
@@ -298,12 +309,8 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 
                 for(uint32_t i = 0; i < node.result[car_index].path->size() && i < node.result[car_index2].path->size(); i ++){
                 
-                    // std::cout << "Conflict check " << std::endl;
-                    // std::cout << "V1: " << node.result[car_index].path->at(i).x << ":" << node.result[car_index].path->at(i).y << std::endl;
-                    // std::cout << "V2: " << node.result[car_index2].path->at(i).x << ":" << node.result[car_index2].path->at(i).y << std::endl;
-
                     auto p = node.result[car_index].path->at(i) - node.result[car_index2].path->at(i);
-                    if(p.x == 0 && p.y == 0){
+                    if(p.x == 0 && p.y == 0){ //TODO CHANGE THIS -> DETECT CONFLICTS PROPERLY
                         
                         std::cout << "Found a conflict" << std::endl;
                         conflict_pose = node.result[car_index].path->at(i);
@@ -410,7 +417,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 }
 
 
-void CBSPlanner::writeCurveToDisk(std::vector<dynamics::data::Pose2D> path, std::string name){
+void CBSPlanner::writeCurveToDisk(std::vector<dynamics::data::Pose2WithTime> path, std::string name){
     json astar_path;
     
     for(auto current: path){
