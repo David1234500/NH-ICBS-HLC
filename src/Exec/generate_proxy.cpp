@@ -1,15 +1,16 @@
 #include <Planner/ProxyGraph.hpp>
 #include <Planner/CBSPlanner.hpp>
 #include <iostream>
+#include <memory>
 
 int main() {
 
 
-CBSPlanner planner;
-planner.m_proxGraph.computeProxyEdges();
+std::shared_ptr<ProxyGraph> graph = std::make_shared<ProxyGraph>();
+graph->computeProxyEdges();
 std::cout << "Completed computation" << std::endl;
 
 std::cout << "Generating json graph with all edges..." << std::endl;
-planner.m_proxGraph.writeGraphToDisk();
+graph->writeGraphToDisk();
 std::cout << "Completed generating edges..." << std::endl;
 }

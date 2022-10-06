@@ -59,7 +59,7 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
 
     // Iterate over all possible combinations of speeds and steering angles to find best configuration for reaching the target node
     uint32_t angle_count = 40;
-    uint32_t vel_count = 30; // TODO REMOVE THESE HARDCODED VALUES
+    uint32_t vel_count = 30;
 
     for(uint32_t i = 0; i <= angle_count; i ++){
         float next_angle = (-(1.f/2.f) * current_angle_span) + current_angle_span * ((float)i / (float)angle_count);
@@ -67,8 +67,9 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
         for(uint32_t j = 0; j <= vel_count; j ++){ 
             float center_average_speed = ((current_pose.vel + target_pose.vel) / 2.f);
             float allowed_deviation_from_target_speed = (-(state_change_fit_allowed_speed_difference/2.f) + (state_change_fit_allowed_speed_difference/vel_count) * j) * SimpleDynamicsModel::velocity_limit();
-            float next_speed =  center_average_speed + allowed_deviation_from_target_speed;
-            // float next_speed = std::max(current_pose.vel -(1.f/2.f)*current_velocity_span + (current_velocity_span * ((float)j / (float)vel_count)),0.f); //TODO AFJUST SPEED VAL HERE
+            float next_speed = center_average_speed + allowed_deviation_from_target_speed;
+
+            //TODO COMPUTE CORRECT ACCELERATION CURVE SOMEWHERE
 
             // Project Vehicle for one timestep with these settings
             auto next_pose_step_1 = SimpleDynamicsModel::computeNextPose(current_pose, next_angle, next_speed, timestep);

@@ -12,9 +12,9 @@ using std::chrono::system_clock;
 int main() {
 
 
-    CBSPlanner planner;
+    std::shared_ptr<CBSPlanner> planner = std::make_shared<CBSPlanner>();
     std::cout << "Loading graph from disk!" << std::endl;
-    planner.m_proxGraph.loadGraphFromDisk();
+    planner->m_proxGraph.loadGraphFromDisk();
     std::cout << "Finished loading graph from disk!" << std::endl;
 
     
@@ -23,11 +23,12 @@ int main() {
     std::vector<uint32_t> times;
     std::cout << "Start AStar!" << std::endl;
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    auto res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
+    auto res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
-        planner.writePathToDisk(*res.path, "path1.json");
+        planner->writePathToDisk(*res.path, "path1.json");
+        // planner->writeCurveToDisk(res.spline, "curve.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }
@@ -40,12 +41,12 @@ int main() {
     end = {10,25,0,2};
     start = {10,10,3,2};
     std::cout << "Start AStar!" << std::endl;
-    res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
+    res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
     
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
-        planner.writePathToDisk(*res.path, "path2.json");
+        planner->writePathToDisk(*res.path, "path2.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }
@@ -57,11 +58,11 @@ int main() {
     end = {10,25,0,2};
     start = {28,25,3,2};
     std::cout << "Start AStar!" << std::endl;
-     res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
+     res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
-        planner.writePathToDisk(*res.path, "path3.json");
+        planner->writePathToDisk(*res.path, "path3.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }
@@ -73,11 +74,11 @@ int main() {
     end = {10,25,0,2};
     start = {25,10,3,2};
     std::cout << "Start AStar!" << std::endl;
-    res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
+    res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
-        planner.writePathToDisk(*res.path, "path4.json");
+        planner->writePathToDisk(*res.path, "path4.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }

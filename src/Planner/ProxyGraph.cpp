@@ -39,29 +39,29 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
                 //Constraint speed changes to one level up, same or one level down [current_speed_level - 1, current_speed_level + 1]
                 for(int32_t s = std::max(0, threadTask.csi - 1); s < std::min(map_size_speed, threadTask.csi + 1); s ++){
             
-                //Compute best fit settings set to get from the current to the target location
-                dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, a, s};
-                auto epose = dynamics::SimpleDynamicsModel::computeBestFit(veh_pose, target_pose_by_index, m_proxyMap[threadTask.txi][threadTask.tyi][a][s].rel_pose, threadTask.tstep);
-                
-                //Discard if error greater than half of the angular resolution 
-                if(epose.a_error > state_change_fit_quality_angle){
-                    continue;
-                }
-                if(epose.p_error > state_change_fit_quality_position){
-                    continue;
-                }
+                    //Compute best fit settings set to get from the current to the target location
+                    dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, a, s};
+                    auto epose = dynamics::SimpleDynamicsModel::computeBestFit(veh_pose, target_pose_by_index, m_proxyMap[threadTask.txi][threadTask.tyi][a][s].rel_pose, threadTask.tstep);
+                    
+                    //Discard if error greater than half of the angular resolution 
+                    if(epose.a_error > state_change_fit_quality_angle){
+                        continue;
+                    }
+                    if(epose.p_error > state_change_fit_quality_position){
+                        continue;
+                    }
 
-                // Found a link to the neighbor, add an edge for this one
-                TraversableEdge nt_edge = {epose, target_pose_by_index};
-                
-                std::cout << "[INFO]["<< index <<"] Added edge to " << std::to_string(epose.pos[0]) <<":"<< std::to_string(epose.pos[1]) 
-                << " >s" << epose.s_a <<"_"<< epose.s_v << "e" << epose.p_error <<  "p" << a <<"_"<< s << std::endl;
-                
-                // add new edge to the edgelist
-                m_proxyTaskMutex.lock();
-                m_proxyEdgeList[threadTask.cai].push_back(nt_edge);  
-                m_proxyTaskMutex.unlock();
-                
+                    // Found a link to the neighbor, add an edge for this one
+                    TraversableEdge nt_edge = {epose, target_pose_by_index};
+                    
+                    std::cout << "[INFO]["<< index <<"] Added edge to " << std::to_string(epose.pos[0]) <<":"<< std::to_string(epose.pos[1]) 
+                    << " >s" << epose.s_a <<"_"<< epose.s_v << "e" << epose.p_error <<  "p" << a <<"_"<< s << std::endl;
+                    
+                    // add new edge to the edgelist
+                    m_proxyTaskMutex.lock();
+                    m_proxyEdgeList[threadTask.cai].push_back(nt_edge);  
+                    m_proxyTaskMutex.unlock();
+                    
                 }
             }
 
@@ -73,7 +73,6 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
 }
 
 void ProxyGraph::computeProxyEdges(){
-    float spi = dynamics::SimpleDynamicsModel::velocity_limit() / 2; //TODO CHANGE TO NOT HARD CODED VALUE HERE
     float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
 
     //Compute size of the proxy field based on reachable distance at the given speed
@@ -107,7 +106,7 @@ void ProxyGraph::computeProxyEdges(){
     std::cout << "[INFO] X Extends: [cm] " << -(reachable_node_count * xpc) << " - " <<  -(reachable_node_count * xpc) + (xpc*reachable_node_span) << " stp:" << xpc << " cnt:" << reachable_node_span << std::endl;
     std::cout << "[INFO] Y Extends: [cm] " << -(reachable_node_count * ypc) << " - " <<  -(reachable_node_count * ypc) + (ypc*reachable_node_span) << " stp:" << ypc << " cnt:" << reachable_node_span << std::endl;
     std::cout << "[INFO] A Extends: [rad] " << 0 << " - " <<  api * map_size_angle << " stp:" << api << " cnt:" << map_size_angle << std::endl;
-    std::cout << "[INFO] S Extends: [cm/s] " <<  m_speedsFactor[0] * dynamics::SimpleDynamicsModel::velocity_limit() << " - " <<   m_speedsFactor[4] * dynamics::SimpleDynamicsModel::velocity_limit() << " stp:" << spi 
+    std::cout << "[INFO] S Extends: [cm/s] " <<  m_speedsFactor[0] * dynamics::SimpleDynamicsModel::velocity_limit() << " - " <<   m_speedsFactor[4] * dynamics::SimpleDynamicsModel::velocity_limit()  
                                       << " cnt:" << map_size_speed << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(1));

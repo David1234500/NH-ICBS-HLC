@@ -72,13 +72,8 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
     
     std::priority_queue<dynamics::data::LLNode> openQueue;
     std::unordered_set<dynamics::data::PoseByIndex> openSet;
-    
-
     std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
     std::unordered_map<dynamics::data::PoseByIndex, TraversableEdge> usedEdge;
-
-    // std::cout << "START: " << start.x << ":" << start.y << ":" << start.a << ":" << start.s << std::endl;
-    // std::cout << "TARGET: " << target.x << ":" << target.y << ":" << target.a << ":" << target.s << std::endl;
 
     auto current_pose = indexToPose(start);
     auto target_pose = indexToPose(target);
@@ -89,23 +84,14 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
     std::unordered_map<dynamics::data::PoseByIndex, float> gScore;
     gScore[start] = 0.f;
 
-
     dynamics::data::LLNode initial = {start, fScore[start], 0};
     openQueue.push(initial);
     openSet.insert(start);
-
     uint32_t explored_nodes = 0;
 
     while(!openQueue.empty()){
         
         auto current = openQueue.top(); 
-
-        // if(explored_nodes % 500 == 0){
-        //     std::cout << "explored nodes:" << explored_nodes << " open nodes " << openQueue.size() << std::endl;
-        //     std::cout << "current scores g" << gScore[current.pose] << " f" << fScore[current.pose] <<  std::endl;
-        //     std::cout << "pose " << current.pose.x <<":"<< current.pose.y << std::endl;
-        // }
-        
         explored_nodes += 1;
 
         if(current.pose == target){
@@ -124,6 +110,8 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
 
         openQueue.pop();
         for(auto rel_neighbor: m_proxGraph.m_proxyEdgeList[current.pose.a]){
+            
+            //TODO THIS DOES NOT CONSIDER VELOCITY
 
             dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(current.pose, rel_neighbor.target);
             auto neigh_pose = indexToPose(gl_neighbor);
@@ -133,11 +121,12 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
                 continue;
             }
             
+            // TODO FAILS TO TAKE INTO ACCOUNT THE STEP AT WHICH IT IS VALID
+            // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
                 auto obstPose = indexToPose(obstacle);
-                if((obstPose.pos - neigh_pose.pos).norm() < safe_radius){
-                    // std::cout << "ASTAR discard due to conflict " << std::endl;
+                if((obstPose.pos - neigh_pose.pos).norm() < safe_radius && obstacle.t == current.timestep + 1){
                     discard_due_to_obstacle = true;
                     break;
                 }
@@ -149,11 +138,11 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
 
             auto current_pose = indexToPose(current.pose); 
             float dist = (neigh_pose.pos - current_pose.pos).norm();
-            if(neigh_pose.vel < 0.f){
+            if(neigh_pose.vel < 0.f){ //TODO REMOVE THIS with correct veloctiy handling
                dist = heuristic_factor_backwards * dist; 
             }
                         
-            float tentative_score = gScore[current.pose] + dist; //+ 1 * std::abs(gl_neighbor.a - target.a);
+            float tentative_score = gScore[current.pose] + dist; 
             if(gScore.count(gl_neighbor) == 0 || tentative_score < gScore[gl_neighbor]){
                 cameFrom[gl_neighbor] = current.pose;
                 usedEdge[gl_neighbor] = rel_neighbor;
@@ -359,9 +348,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             }
         }
 
-
         std::cout << "[INFO CBS] Conflict at: " << conflict_step << " with " << conflicting_vehicles[0] << ":" << conflicting_vehicles[1] << std::endl;
-
         // Check if we have just obtained a valid solution -> terminate if yes
         if(conflict_step == -1){
             std::cout << "CBS TERMINATION!" << std::endl;
@@ -377,12 +364,11 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             constr.id = vehicle_in_conflict;
             constr = conflict_pose;
             constr.t = conflict_step;
-
             std::cout << "[INFO CBS] Adding new constraint to situation " << conflict_pose.x << ":" << conflict_pose.y << std::endl;
 
             constraint.avoid.push_back(constr);
 
-            // Recompute Solutions for this path TODO: maybe restore astar compute from here
+            // TODO: maybe restore astar compute from here
 
             // Enqueu all jobs to astar workers
             for(uint32_t i = 0; i < start_positions.size(); i ++){

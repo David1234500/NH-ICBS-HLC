@@ -180,10 +180,11 @@ namespace std {
     {
         std::size_t operator()(const dynamics::data::PoseByIndex& p) const noexcept
         {
+            
             // 4,294,967,295
-            // 100000 * 100
-            // = 10000000
-            return p.s + p.a * 10 + 1000 * p.y + 100000 * p.x;
+            // 100000 * 100 < 4294967295
+            // TODO: THROW SOME ASSERTS IN HERE FOR GOOD MEASURE, allowable interval should now be 1000x1000
+            return p.s + p.a * 10 + 1000 * p.y + 1000000 * p.x;
         }
     };
 }
@@ -196,7 +197,7 @@ namespace std {
             // 4294967295
             // 10000000 * 100
             // = 10000000
-            return p.s + p.a * 10 + 1000 * p.y + 100000 * p.x; + 10000000 * p.t;
+            return p.s + p.a * 10 + 1000 * p.y + 100000 * p.x + 10000000 * p.t;
         }
     };
 }

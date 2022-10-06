@@ -12,36 +12,36 @@ using std::chrono::system_clock;
 int main() {
 
 
-    CBSPlanner planner;
+    std::shared_ptr<CBSPlanner> planner = std::make_shared<CBSPlanner>();
     std::cout << "Loading graph from disk!" << std::endl;
-    planner.m_proxGraph.loadGraphFromDisk();
+    planner->m_proxGraph.loadGraphFromDisk();
     std::cout << "Finished loading graph from disk!" << std::endl;
 
     std::vector<dynamics::data::PoseByIndex> targets;
     std::vector<dynamics::data::PoseByIndex> starts;
 
-    dynamics::data::PoseByIndex end = {25,1,2,1};
-    dynamics::data::PoseByIndex start = {25,6,7,1};
+    dynamics::data::PoseByIndex end = {25,20,2,1};
+    dynamics::data::PoseByIndex start = {25,150,7,1};
     targets.push_back(end);
     starts.push_back(start);
 
     dynamics::data::PoseByIndex end2 = {25,10,7,1};
-    dynamics::data::PoseByIndex start2 = {25,60,7,1};
+    dynamics::data::PoseByIndex start2 = {25,140,7,1};
     targets.push_back(end2);
     starts.push_back(start2);
 
-    planner.astar(start, end, std::vector<dynamics::data::PBIConstraint>());
+   planner->astar(start, end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "astar 2" << std::endl;
-    planner.astar(start2, end2, std::vector<dynamics::data::PBIConstraint>());
+   planner->astar(start2, end2, std::vector<dynamics::data::PBIConstraint>());
 
 
     std::cout << "Finished a star computation" << std::endl;
-    auto result = planner.cbs(starts,targets);
+    auto result =planner->cbs(starts,targets);
     std::cout << "Finished a cbs computation" << std::endl;
-    planner.writeMultiplePathsToDisk(result, "cbs_result.json");
+   planner->writeMultiplePathsToDisk(result, "cbs_result.json");
 
-    planner.writeCurveToDisk(result.result[0].spline, "cbs_track_car_0.json");
-    planner.writeCurveToDisk(result.result[1].spline, "cbs_track_car_1.json");
+   planner->writeCurveToDisk(result.result[0].spline, "cbs_track_car_0.json");
+   planner->writeCurveToDisk(result.result[1].spline, "cbs_track_car_1.json");
 
 }
 
