@@ -35,12 +35,14 @@ int main() {
     targets.push_back(end3);
     starts.push_back(start3);
 
-    planner.astar(start, end, std::vector<dynamics::data::PBIConstraint>());
-    planner.astar(start2, end2, std::vector<dynamics::data::PBIConstraint>());
-
-
     std::cout << "Finished a star computation" << std::endl;
+    
+
+    auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     auto result = planner.cbs(starts,targets);
+    auto tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    
+    std::cout << "computation took:" << tstop - tstart << std::endl;
     std::cout << "Finished a cbs computation" << std::endl;
     planner.writeMultiplePathsToDisk(result, "cbs_result.json");
 
