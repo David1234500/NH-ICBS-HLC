@@ -41,7 +41,7 @@ dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::P
     pose.h = fmod(pose.h + 2*PI , 2*PI);
     float near_a = pose.h / api;
 
-    dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)round(near_a),0};
+    dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)round(near_a),1};
 
     return result;
 }
@@ -116,9 +116,6 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             res.spline = getSplines(cameFrom, usedEdge, current.pose);
             res.found_path = true;
 
-            std::cout << "START: " << res.path->at(res.path->size() - 1).x << ":" << res.path->at(res.path->size() - 1).y << ":" << res.path->at(res.path->size() - 1).a << ":" << res.path->at(res.path->size() - 1).s << std::endl;
-            std::cout << "TARGET: " << res.path->at(0).x << ":" << res.path->at(0).y << ":" << res.path->at(0).a << ":" << res.path->at(0).s << std::endl;
-
             return res;
         }
 
@@ -171,7 +168,8 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
         }
     }
     std::cout << "a star infeasible" << std::endl;
-    
+    std::cout << "START: " << start.x << ":" << start.y << ":" << start.a << ":" << start.s << std::endl;
+    std::cout << "TARGET: " << target.x << ":" << target.y << ":" << target.a << ":" << target.s << std::endl;
     LLResult res;
     res.found_path = false;
     res.spline.clear();
@@ -209,20 +207,24 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
     std::vector<dynamics::data::Pose2WithTime> result;
     uint32_t time_index = 0;
     for(int64_t i = nodes.size() - 1; i > 0; i --){
-        
         dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(i));
-        dynamics::data::Pose2D next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, timestep_ms);
-        dynamics::data::Pose2WithTime start;
-        start = next_pose;
-        start.time_ms = time_index * 2 * timestep_ms;
-        result.push_back(start);
+        dynamics::data::Pose2D next_pose;
+
+        for(float ts = 0; ts <= timestep_ms; ts += 100.f){    
+            next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, ts);
+            dynamics::data::Pose2WithTime next_with_time;
+            next_with_time = next_pose;
+            next_with_time.time_ms = time_index * 2 * timestep_ms + ts;
+            result.push_back(next_with_time);
+        }
         
-        
-        // auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, timestep_ms);
-        // dynamics::data::Pose2WithTime next_pose2_with_time;
-        // next_pose2_with_time = next_pose2;
-        // next_pose2_with_time.time_ms = time_index * 2 * timestep_ms + timestep_ms;
-        // result.push_back(next_pose2_with_time);
+        for(float ts = 0; ts <= timestep_ms; ts += 100.f){
+            auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, ts);
+            dynamics::data::Pose2WithTime next_pose2_with_time;
+            next_pose2_with_time = next_pose2;
+            next_pose2_with_time.time_ms = time_index * 2 * timestep_ms + timestep_ms + ts;
+            result.push_back(next_pose2_with_time);
+        }
 
         time_index += 1;
     }
