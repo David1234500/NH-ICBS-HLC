@@ -168,6 +168,13 @@ struct Pose2DWithError{
 
     float s_a_2 = 0.f;
     float s_v_2 = 0.f;
+
+    inline void operator=(const PoseByIndex& e){
+       bi_pose.x = e.x; 
+       bi_pose.y = e.y; 
+       bi_pose.a = e.a;
+       bi_pose.s = e.s;
+    }
 };
 
 }

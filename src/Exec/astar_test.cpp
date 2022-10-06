@@ -18,8 +18,8 @@ int main() {
     std::cout << "Finished loading graph from disk!" << std::endl;
 
     
-    dynamics::data::PoseByIndex end = {25,25,7,2};
-    dynamics::data::PoseByIndex start = {25,5,5,2};
+    dynamics::data::PoseByIndex end = {25,25,7,1};
+    dynamics::data::PoseByIndex start = {25,5,5,1};
     std::vector<uint32_t> times;
     std::cout << "Start AStar!" << std::endl;
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -38,8 +38,8 @@ int main() {
 
 
     tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    end = {10,25,0,2};
-    start = {10,10,3,2};
+    end = {10,25,0,1};
+    start = {10,10,3,1};
     std::cout << "Start AStar!" << std::endl;
     res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
@@ -55,8 +55,8 @@ int main() {
     times.push_back(tstop - tstart);
 
     tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    end = {10,25,0,2};
-    start = {28,25,3,2};
+    end = {10,25,0,1};
+    start = {28,25,3,1};
     std::cout << "Start AStar!" << std::endl;
      res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
@@ -71,8 +71,8 @@ int main() {
     times.push_back(tstop - tstart);
 
     tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    end = {10,25,0,2};
-    start = {25,10,3,2};
+    end = {10,25,0,1};
+    start = {25,10,3,1};
     std::cout << "Start AStar!" << std::endl;
     res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;

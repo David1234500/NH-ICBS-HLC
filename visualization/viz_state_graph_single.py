@@ -6,31 +6,30 @@ f = open("proxy_state_graph.json", "r")
 x = f.read() 
 y = json.loads(x)
   
-fig, ax = plt.subplots(nrows=y["info"]["size_a"])
-index = 0
-for f in ax:
+fig, ax = plt.subplots(nrows=y["info"]["size_a"], ncols=y["info"]["size_s"])
+r_index = 0
+c_index = 0
 
-    for node in y["map"]:
-        f.plot(node["pose"]["x"],node["pose"]["y"])
-        # heading = float(node["pose"]["h"])
-        # dx = 0.7 * math.cos(heading)
-        # dy = 0.7 * math.sin(heading)
-        # f.arrow(node["pose"]["x"],node["pose"]["y"], dx, dy)
+grid = {}
 
-    print("edges cnt: {}".format(len(y["edges"])))
-    for edge in y["edges"]:
-        ex = [0]
-        ey = [0]
-        if edge["source"]["a"] != index:
-            continue
-        for curve_point in edge["curve"]:
-            ex.append(curve_point["x"])
-            ey.append(curve_point["y"])
 
-        ex.append(edge["target"]["x"])
-        ey.append(edge["target"]["y"])
-        f.plot(ex,ey)
-    index += 1
+for edge in y["edges"]:
+    ex = [0]
+    ey = [0]
+    for curve_point in edge["curve"]:
+        ex.append(curve_point["x"])
+        ey.append(curve_point["y"])
+
+    if(edge["source"]["s"] == 1):
+        print("edges from zero velocity: x {} y {}".format(edge["target"]["x"], edge["target"]["y"]))
+
+    ex.append(edge["target"]["x"])
+    ey.append(edge["target"]["y"])
+    ax[edge["source"]["a"]][edge["source"]["s"]].plot(ex,ey)
+    ax[edge["source"]["a"]][edge["source"]["s"]].set_xlim([-50,50])
+    ax[edge["source"]["a"]][edge["source"]["s"]].set_ylim([-50,50])
+
+print("edges cnt: {}".format(len(y["edges"])))
 
 # plt.figure(figsize=(8, 8), dpi=80)
 plt.show()

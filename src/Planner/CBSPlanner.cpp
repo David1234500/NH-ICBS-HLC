@@ -106,9 +106,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
         }
 
         openQueue.pop();
-        for(auto rel_neighbor: m_proxGraph.m_proxyEdgeList[current.pose.a]){
-            
-            //TODO THIS DOES NOT CONSIDER VELOCITY
+        for(auto rel_neighbor: m_proxGraph.m_proxyEdgeList[current.pose.a][current.pose.s]){
 
             dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(current.pose, rel_neighbor.target);
             auto neigh_pose = indexToPose(gl_neighbor);
@@ -118,12 +116,11 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
                 continue;
             }
             
-            // TODO FAILS TO TAKE INTO ACCOUNT THE STEP AT WHICH IT IS VALID
             // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
                 auto obstPose = indexToPose(obstacle);
-                if((obstPose.pos - neigh_pose.pos).norm() < safe_radius && obstacle.t == current.timestep + 1){
+                if(obstacle.t == current.timestep + 1 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
                     discard_due_to_obstacle = true;
                     break;
                 }
@@ -335,8 +332,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 
                 for(uint32_t i = 0; i < node.result[car_index].path->size() && i < node.result[car_index2].path->size(); i ++){
                 
-                    auto p = node.result[car_index].path->at(i) - node.result[car_index2].path->at(i);
-                    
+                    auto p = node.result[car_index].path->at(i) - node.result[car_index2].path->at(i);    
                     auto pose_car_a = indexToPose(node.result[car_index].path->at(i));
                     auto pose_car_b = indexToPose(node.result[car_index2].path->at(i));
                     
@@ -371,6 +367,8 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             constraint.avoid.push_back(constr);
 
             // TODO: maybe restore astar compute from here
+            // Just add path again until conflict with all neighbors as open nodes and recompute scores
+            // potentially also adjust the heuristict to account for new obstacle
 
             // Enqueu all jobs to astar workers
             for(uint32_t i = 0; i < start_positions.size(); i ++){

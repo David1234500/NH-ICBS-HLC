@@ -49,7 +49,7 @@ void computeProxyEdges();
 ProxyNode m_proxyMap[map_size_x][map_size_y][map_size_angle][map_size_speed];
 uint32_t m_proxyMapReachableSpan = 0;
 uint32_t m_proxyMapCarOffset = 0;
-std::map<IHeading,std::vector<TraversableEdge>> m_proxyEdgeList;
+std::map<uint32_t, std::map<uint32_t, std::vector<TraversableEdge>>> m_proxyEdgeList;
 
 std::mutex m_proxyTaskMutex;
 std::vector<ProxyTask> m_proxyTaskQueue;

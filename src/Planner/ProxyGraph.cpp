@@ -41,6 +41,12 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
             
                     //Compute best fit settings set to get from the current to the target location
                     dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, a, s};
+                    
+                    //Speed change connection, wants to change speed at current node
+                    if(threadTask.csi == zero_velocity_level){
+                        //TODO: ADD ZERO Connections here v0 -> v1, v0->v-1
+                    }
+                    
                     auto epose = dynamics::SimpleDynamicsModel::computeBestFit(veh_pose, target_pose_by_index, m_proxyMap[threadTask.txi][threadTask.tyi][a][s].rel_pose, threadTask.tstep);
                     
                     //Discard if error greater than half of the angular resolution 
@@ -59,7 +65,7 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
                     
                     // add new edge to the edgelist
                     m_proxyTaskMutex.lock();
-                    m_proxyEdgeList[threadTask.cai].push_back(nt_edge);  
+                    m_proxyEdgeList[threadTask.cai][threadTask.csi].push_back(nt_edge);  
                     m_proxyTaskMutex.unlock();
                     
                 }
@@ -119,12 +125,11 @@ void ProxyGraph::computeProxyEdges(){
             //Compute pose of current node/vehicle
             dynamics::data::Pose2D veh_pose = {{0.f,0.f}, m_proxyMap[0][0][j][i].rel_pose.h, m_proxyMap[0][0][j][i].rel_pose.vel};
             
-            if(abs(m_proxyMap[0][0][j][i].rel_pose.vel) < 1.f ){
-                std::cout << "[INFO] Adding Task for x " << 0 << ":y " << 0 <<  "a " << j << ":s " << i << std::endl;    
+            if(i == zero_velocity_level){
+                std::cout << "[INFO] Adding single Task with zero velocity for x " << 0 << ":y " << 0 <<  "a " << j << ":s " << i << std::endl;    
                 ProxyTask nTask;    
                 nTask = {0,0,j,i,timestep_ms};
                 m_proxyTaskQueue.push_back(nTask);
-                continue;
             }
 
             //Check for each candidate node if we can find a connection between these two, but use all system threads
@@ -161,6 +166,7 @@ void ProxyGraph::writeGraphToDisk(){
     proxy_map_dump["info"]["m_proxyMapReachableSpan"] = m_proxyMapReachableSpan;
     proxy_map_dump["info"]["m_proxyMapCarOffset"] = m_proxyMapCarOffset;
     proxy_map_dump["info"]["size_a"] = map_size_angle;
+    proxy_map_dump["info"]["size_s"] = map_size_speed;
 
     // Dump array to list
     for(uint32_t x = 0; x <= m_proxyMapReachableSpan; x ++){
@@ -186,55 +192,58 @@ void ProxyGraph::writeGraphToDisk(){
     }
 
     for(uint32_t i = 0; i < map_size_angle; i ++){
-        for(auto edge: m_proxyEdgeList[i]){
-            json jedge;
-            jedge["source"]["a"] = i;
-           
-            dynamics::data::Pose2D next_pose;
-            for(float ts = 0; ts <= timestep_ms; ts += 25.f){
+        for(uint32_t j = 0; j < map_size_speed; j ++){
+            for(auto edge: m_proxyEdgeList[i][j]){
+                json jedge;
+                jedge["source"]["a"] = i;
+                jedge["source"]["s"] = j;
             
-                dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
-                next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edge.link.s_a, edge.link.s_v, ts);
+                dynamics::data::Pose2D next_pose;
+                for(float ts = 0; ts <= timestep_ms; ts += 25.f){
                 
-                json point;
-                point["x"] = next_pose.pos[0];
-                point["y"] = next_pose.pos[1];
-                jedge["curve"].push_back(point);
+                    dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
+                    next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edge.link.s_a, edge.link.s_v, ts);
+                    
+                    json point;
+                    point["x"] = next_pose.pos[0];
+                    point["y"] = next_pose.pos[1];
+                    jedge["curve"].push_back(point);
 
-            }
-            
-            for(float ts = 0; ts <= timestep_ms; ts += 25.f){
-            
-                dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
-                auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edge.link.s_a_2, edge.link.s_v_2, ts);
+                }
                 
-                json point;
-                point["x"] = next_pose2.pos[0];
-                point["y"] = next_pose2.pos[1];
-                jedge["curve"].push_back(point);
+                for(float ts = 0; ts <= timestep_ms; ts += 25.f){
+                
+                    dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
+                    auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edge.link.s_a_2, edge.link.s_v_2, ts);
+                    
+                    json point;
+                    point["x"] = next_pose2.pos[0];
+                    point["y"] = next_pose2.pos[1];
+                    jedge["curve"].push_back(point);
+                }
+
+                
+
+                jedge["target"]["x"] = m_proxyMap[edge.target.x][edge.target.y][0][0].rel_pose.pos[0];
+                jedge["target"]["y"] = m_proxyMap[edge.target.x][edge.target.y][0][0].rel_pose.pos[1];
+                jedge["target"]["s"] = m_proxyMap[edge.target.x][edge.target.y][edge.target.a][edge.target.s].rel_pose.vel;
+                jedge["target"]["a"] = m_proxyMap[edge.target.x][edge.target.y][edge.target.a][edge.target.s].rel_pose.h;
+
+                jedge["settings"]["a1"] = edge.link.s_a;
+                jedge["settings"]["a2"] = edge.link.s_a_2;
+                jedge["settings"]["v1"] = edge.link.s_v;
+                jedge["settings"]["v2"] = edge.link.s_v_2;
+
+                jedge["error"]["ae"] = edge.link.a_error;
+                jedge["error"]["pe"] = edge.link.p_error;
+
+                jedge["targeti"]["s"] = edge.target.s;
+                jedge["targeti"]["a"] = edge.target.a;
+                jedge["targeti"]["x"] = edge.target.x;
+                jedge["targeti"]["y"] = edge.target.y;
+
+                proxy_map_dump["edges"].push_back(jedge);
             }
-
-            
-
-            jedge["target"]["x"] = m_proxyMap[edge.target.x][edge.target.y][0][0].rel_pose.pos[0];
-            jedge["target"]["y"] = m_proxyMap[edge.target.x][edge.target.y][0][0].rel_pose.pos[1];
-            jedge["target"]["s"] = m_proxyMap[edge.target.x][edge.target.y][edge.target.a][edge.target.s].rel_pose.vel;
-            jedge["target"]["a"] = m_proxyMap[edge.target.x][edge.target.y][edge.target.a][edge.target.s].rel_pose.h;
-
-            jedge["settings"]["a1"] = edge.link.s_a;
-            jedge["settings"]["a2"] = edge.link.s_a_2;
-            jedge["settings"]["v1"] = edge.link.s_v;
-            jedge["settings"]["v2"] = edge.link.s_v_2;
-
-            jedge["error"]["ae"] = edge.link.a_error;
-            jedge["error"]["pe"] = edge.link.p_error;
-
-            jedge["targeti"]["s"] = edge.target.s;
-            jedge["targeti"]["a"] = edge.target.a;
-            jedge["targeti"]["x"] = edge.target.x;
-            jedge["targeti"]["y"] = edge.target.y;
-
-            proxy_map_dump["edges"].push_back(jedge);
         }
     }
 
@@ -294,7 +303,7 @@ void ProxyGraph::loadGraphFromDisk(std::string path){
         tedge.target.x = edge["targeti"]["x"];
         tedge.target.y = edge["targeti"]["y"];
 
-        m_proxyEdgeList[edge["source"]["a"]].push_back(tedge);
+        m_proxyEdgeList[edge["source"]["a"]][edge["source"]["s"]].push_back(tedge);
     }
 }
 
