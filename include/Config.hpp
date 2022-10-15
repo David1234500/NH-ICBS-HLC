@@ -3,8 +3,8 @@
 
 #define PI 3.14159265f
 
-constexpr int map_size_x = 50;
-constexpr int map_size_y = 50;
+constexpr int map_size_x = 100;
+constexpr int map_size_y = 100;
 constexpr int map_size_angle = 8;
 constexpr int map_size_speed = 4;
 
@@ -23,12 +23,15 @@ constexpr float heuristic_factor_backwards = 2.f;
 constexpr int zero_velocity_level = 1;
 constexpr float m_speedsFactor[map_size_speed] = { -0.3, 0.f, 0.3f, 0.6f}; 
 
-constexpr float state_change_fit_allowed_speed_difference = 0.125f;
+
 
 /* Cons
 traints what the allow angle range is for the edge */
 constexpr float state_change_fit_quality_angle = api / 6;
 constexpr float state_change_fit_quality_position =  xpc / 10;
+constexpr float state_change_fit_allowed_speed_difference = 0.2f;
+constexpr float state_change_fit_threshold_angle_index_difference = 3;
+constexpr float state_change_fit_threshold_angle_difference = 0.5f * PI;
 
 constexpr int worker_counter = 12;
 

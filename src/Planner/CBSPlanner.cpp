@@ -116,7 +116,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
                 continue;
             }
             
-            // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP
+            // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP or KD Tree to avoid this computation every time
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
                 auto obstPose = indexToPose(obstacle);
@@ -153,7 +153,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             }
         }
     }
-    std::cout << "a star infeasible" << std::endl;
+    std::cout << "a star infeasible with explored nodes: " << explored_nodes << std::endl;
     std::cout << "START: " << start.x << ":" << start.y << ":" << start.a << ":" << start.s << std::endl;
     std::cout << "TARGET: " << target.x << ":" << target.y << ":" << target.a << ":" << target.s << std::endl;
     LLResult res;
