@@ -94,7 +94,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
         auto current = openQueue.top(); 
         explored_nodes += 1;
 
-        if(current.pose == target){
+        if(current.pose.x == target.x && current.pose.y == target.y && current.pose.a == target.a ){
             std::cout << "a star finished" << std::endl;
             
             LLResult res;
@@ -104,6 +104,8 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
 
             return res;
         }
+
+        // std::cout << "Visited node: " << current.pose.x << ":" << current.pose.y << ":" << current.pose.a  << ":" << current.pose.s << std::endl;
 
         openQueue.pop();
         for(auto rel_neighbor: m_proxGraph.m_proxyEdgeList[current.pose.a][current.pose.s]){
@@ -186,6 +188,8 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
         edges.push_back(edge_map[current]);
         current = predecessor[current];
     }while(predecessor.find(current) != predecessor.end());
+
+    //TODO COMPUTE CORRECT ACCELERATION CURVE SOMEWHERE
 
     nodes.push_back(current);
     edges.push_back(edge_map[current]);

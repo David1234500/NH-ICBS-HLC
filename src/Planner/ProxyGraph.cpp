@@ -42,18 +42,6 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
                     //Compute best fit settings set to get from the current to the target location
                     dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, a, s};
                     
-                    if (abs(a - threadTask.cai) > state_change_fit_threshold_angle_index_difference){
-                        continue;
-                    }
-
-                    //Speed change connection, wants to change speed at current node
-                    // if(threadTask.txi == 0 && threadTask.tyi == 0){
-                        
-                        // TODO: Consider if we want to allow selfloop at velocity 0 
-                        // Statespace would become unbounded but we could also wait 
-                        // Possibly go this way but introduce waiting restriction at astar
-                    // }
-                    
                     auto epose = dynamics::SimpleDynamicsModel::computeBestFit(veh_pose, target_pose_by_index, m_proxyMap[threadTask.txi][threadTask.tyi][a][s].rel_pose, threadTask.tstep);
                     
                     //Discard if error greater than half of the angular resolution 
@@ -90,7 +78,7 @@ void ProxyGraph::computeProxyEdges(){
 
     //Compute size of the proxy field based on reachable distance at the given speed
     uint32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / xpc);
-    uint32_t reachable_node_span = (2*reachable_node_count); 
+    uint32_t reachable_node_span = (2 * reachable_node_count); 
     m_proxyMapReachableSpan = reachable_node_span;
     m_proxyMapCarOffset = reachable_node_count; 
 
@@ -107,7 +95,6 @@ void ProxyGraph::computeProxyEdges(){
                     m_proxyMap[x][y][a][s].rel_pose.pos[1] = -(reachable_node_count * ypc) + (ypc*y);
                     m_proxyMap[x][y][a][s].rel_pose.h = api * static_cast<float>(a);
                     m_proxyMap[x][y][a][s].rel_pose.vel = m_speedsFactor[s] * dynamics::SimpleDynamicsModel::velocity_limit();
-
                 }
             }
         }
@@ -131,13 +118,6 @@ void ProxyGraph::computeProxyEdges(){
             
             //Compute pose of current node/vehicle
             dynamics::data::Pose2D veh_pose = {{0.f,0.f}, m_proxyMap[0][0][j][i].rel_pose.h, m_proxyMap[0][0][j][i].rel_pose.vel};
-            
-            // if(i == zero_velocity_level){
-            //     std::cout << "[INFO] Adding single Task with zero velocity for x " << 0 << ":y " << 0 <<  "a " << j << ":s " << i << std::endl;    
-            //     ProxyTask nTask;    
-            //     nTask = {0,0,j,i,timestep_ms};
-            //     m_proxyTaskQueue.push_back(nTask);
-            // }
 
             //Check for each candidate node if we can find a connection between these two, but use all system threads
             for(int32_t x = 0; x <= reachable_node_span; x ++){
@@ -145,24 +125,6 @@ void ProxyGraph::computeProxyEdges(){
                      
                     if(x == m_proxyMapCarOffset && y == m_proxyMapCarOffset){
                         continue;
-                    }
-
-                    dynamics::data::Vector2Df position_to_evaluate =  m_proxyMap[x][y][0][0].rel_pose.pos;
-                    position_to_evaluate.normalize();
-                
-                    dynamics::data::Vector2Df dp = {-1.f , 0.f};
-                    Eigen::Rotation2Df rotation(api * static_cast<float>(j));
-                    auto target_direction = rotation * dp;   
-                    
-                    float angle = atan2(target_direction[0], target_direction[1]) - atan2(position_to_evaluate[0], position_to_evaluate[1]);
-                    std::cout << "Eval Angle: " << atan2(position_to_evaluate[0], position_to_evaluate[1]) << std::endl;
-                    std::cout << "View Angle: " << atan2(target_direction[0], target_direction[1]) << std::endl;
-                    std::cout << " Angle: " << angle << std::endl;
-
-                    std::cout << "[INFO] Adding Task for x " << x << ":y " << y <<  "a " << j << ":s " << i << std::endl;    
-                    if(abs(angle) > state_change_fit_threshold_angle_difference){
-                        // continue;
-                        std::cout << "IGNORING" << std::endl;
                     }
 
                     ProxyTask nTask;    

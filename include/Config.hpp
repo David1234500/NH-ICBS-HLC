@@ -3,12 +3,12 @@
 
 #define PI 3.14159265f
 
-constexpr int map_size_x = 100;
-constexpr int map_size_y = 100;
+constexpr int map_size_x = 90;
+constexpr int map_size_y = 90;
 constexpr int map_size_angle = 8;
 constexpr int map_size_speed = 4;
 
-constexpr float timestep_ms = 300.f;
+constexpr float timestep_ms = 400.f;
 
 constexpr int map_size_x_cm = 450;
 constexpr int map_size_y_cm = 400;
@@ -24,15 +24,13 @@ constexpr int zero_velocity_level = 1;
 constexpr float m_speedsFactor[map_size_speed] = { -0.3, 0.f, 0.3f, 0.6f}; 
 
 
-
-/* Cons
-traints what the allow angle range is for the edge */
-constexpr float state_change_fit_quality_angle = api / 6;
-constexpr float state_change_fit_quality_position =  xpc / 10;
-constexpr float state_change_fit_allowed_speed_difference = 0.2f;
+/* Constraints what the allow angle range is for the edge */
+constexpr float state_change_fit_quality_angle = api / 4;
+constexpr float state_change_fit_quality_position =  xpc / 4;
+constexpr float state_change_fit_allowed_speed_difference = 0.15f;
 constexpr float state_change_fit_threshold_angle_index_difference = 3;
 constexpr float state_change_fit_threshold_angle_difference = 0.5f * PI;
 
-constexpr int worker_counter = 12;
+constexpr int worker_counter = 26;
 
 #endif

@@ -65,11 +65,19 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
         float next_angle = (-(1.f/2.f) * current_angle_span) + current_angle_span * ((float)i / (float)angle_count);
         
         for(uint32_t j = 0; j <= vel_count; j ++){ 
-            float center_average_speed = ((current_pose.vel + target_pose.vel) / 2.f);
-            float allowed_deviation_from_target_speed = (-(state_change_fit_allowed_speed_difference/2.f) + (state_change_fit_allowed_speed_difference/vel_count) * j) * SimpleDynamicsModel::velocity_limit();
-            float next_speed = center_average_speed + allowed_deviation_from_target_speed;
+            // float center_average_speed = ((current_pose.vel + target_pose.vel) / 2.f);
+            
+            // float allowed_deviation_from_target_speed = (-(state_change_fit_allowed_speed_difference/2.f) + (state_change_fit_allowed_speed_difference/static_cast<float>(vel_count)) * static_cast<float>(j)) * SimpleDynamicsModel::velocity_limit();
+            // float next_speed = 0.f;
+            // if(target_pose.vel == zero_velocity_level){
+            //     next_speed = current_pose.vel + allowed_deviation_from_target_speed;
+            // }else{
+            //     next_speed = target_pose.vel + allowed_deviation_from_target_speed;
+            // }
 
-            //TODO COMPUTE CORRECT ACCELERATION CURVE SOMEWHERE
+            float center_average_speed = ((current_pose.vel + target_pose.vel) / 2.f);
+            float allowed_deviation_from_target_speed = (-(state_change_fit_allowed_speed_difference/2.f) + (state_change_fit_allowed_speed_difference/ static_cast<float>(vel_count)) * static_cast<float>(j)) * SimpleDynamicsModel::velocity_limit();
+            float next_speed =  center_average_speed + allowed_deviation_from_target_speed;
 
             // Project Vehicle for one timestep with these settings
             auto next_pose_step_1 = SimpleDynamicsModel::computeNextPose(current_pose, next_angle, next_speed, timestep);
@@ -80,9 +88,8 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
                 for(uint32_t j2 = 0; j2 <= vel_count; j2 ++){    
                     
                     //Compute next speed for second step of planning for the vehicle
-                    float center_average_speed2 = ((current_pose.vel + target_pose.vel) / 2.f);
-                    float allowed_deviation_from_target_speed2 = (-(state_change_fit_allowed_speed_difference/2.f) + (state_change_fit_allowed_speed_difference/vel_count) * j2) * SimpleDynamicsModel::velocity_limit();
-                    float next_speed2 =  center_average_speed2 + allowed_deviation_from_target_speed2;
+                    float allowed_deviation_from_target_speed2 = (-(state_change_fit_allowed_speed_difference/2.f) + (state_change_fit_allowed_speed_difference/static_cast<float>(vel_count)) * static_cast<float>(j2)) * SimpleDynamicsModel::velocity_limit();
+                    float next_speed2 =  center_average_speed + allowed_deviation_from_target_speed2;
 
                     // Project Vehicle for one timestep with these settings
                     auto next_pose_step_2 = SimpleDynamicsModel::computeNextPose(next_pose_step_1, next_angle2, next_speed2, timestep);
