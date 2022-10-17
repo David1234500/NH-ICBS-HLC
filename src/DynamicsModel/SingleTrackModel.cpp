@@ -49,79 +49,81 @@ auto new_head = current_pose.h + circ_comp;
 return Pose2D{new_pos, new_head, velocity};
 }
 
-dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D current_pose, PoseByIndex tpi, Pose2D target_pose, float timestep){
+dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D& current_pose, Pose2D& target_pose, float& timestep_min_ms, float& timestep_max_ms){
    
     dynamics::data::Pose2DWithError current_best_pose;
-    current_best_pose.bi_pose = tpi;
 
+    Pose2D pose = current_pose;
     float current_angle_span = SimpleDynamicsModel::angle_limit();
-    float current_error = 1000.f;
+    float current_error = 10000.f;
 
-    // Iterate over all possible combinations of speeds and steering angles to find best configuration for reaching the target node
-    uint32_t angle_count = 50;
-    uint32_t vel_count = 50;
+    uint32_t solver_angle_count = 100;
+    uint32_t solver_vel_count = 100;
+    uint32_t simulation_velocity_interpolation_count = 4;
+    uint32_t solver_timestep_count = 20;
 
-    for(uint32_t i = 0; i <= angle_count; i ++){
-        float next_angle = (-(1.f/2.f) * current_angle_span) + current_angle_span * ((float)i / (float)angle_count);
-        
-        for(uint32_t j = 0; j <= vel_count; j ++){ 
-            // float center_average_speed = ((current_pose.vel + target_pose.vel) / 2.f);
-            
-            // float allowed_deviation_from_target_speed = (-(state_change_fit_allowed_speed_difference/2.f) + (state_change_fit_allowed_speed_difference/static_cast<float>(vel_count)) * static_cast<float>(j)) * SimpleDynamicsModel::velocity_limit();
-            // float next_speed = 0.f;
-            // if(target_pose.vel == zero_velocity_level){
-            //     next_speed = current_pose.vel + allowed_deviation_from_target_speed;
-            // }else{
-            //     next_speed = target_pose.vel + allowed_deviation_from_target_speed;
-            // }
+    float timestep_size_ms = (timestep_max_ms - timestep_min_ms)/ solver_timestep_count;
+    float itp_velocity_step_cms = std::abs(current_pose.vel - target_pose.vel) / simulation_velocity_interpolation_count;
+    float itp_velocity_base_cms = std::min(current_pose.vel, target_pose.vel);
 
-            float center_average_speed = ((current_pose.vel + target_pose.vel) / 2.f);
-            float allowed_deviation_from_target_speed = (-(state_change_fit_allowed_speed_difference/2.f) + (state_change_fit_allowed_speed_difference/ static_cast<float>(vel_count)) * static_cast<float>(j)) * SimpleDynamicsModel::velocity_limit();
-            float next_speed =  center_average_speed + allowed_deviation_from_target_speed;
+    for(float ts_ms = timestep_min_ms; ts_ms < timestep_max_ms; ts_ms += timestep_size_ms){
 
-            // Project Vehicle for one timestep with these settings
-            auto next_pose_step_1 = SimpleDynamicsModel::computeNextPose(current_pose, next_angle, next_speed, timestep);
+        for(uint32_t i = 0; i < solver_angle_count; i ++){
+            float next_angle = (-0.5f * current_angle_span) + current_angle_span * ((float)i / (float)solver_angle_count);
 
-            for(uint32_t i2 = 0; i2 <= angle_count; i2 ++){
-                float next_angle2 = (-(1.f/2.f)*current_angle_span) + current_angle_span * ((float)i2 / (float)angle_count);
+            for(uint32_t i2 = 0; i2 < solver_angle_count; i2 ++){
+                float next_angle2 = (-0.5f * current_angle_span) + current_angle_span * ((float)i2 / (float)solver_angle_count);
                 
-                for(uint32_t j2 = 0; j2 <= vel_count; j2 ++){    
-                    
-                    //Compute next speed for second step of planning for the vehicle
-                    float allowed_deviation_from_target_speed2 = (-(state_change_fit_allowed_speed_difference/2.f) + (state_change_fit_allowed_speed_difference/static_cast<float>(vel_count)) * static_cast<float>(j2)) * SimpleDynamicsModel::velocity_limit();
-                    float next_speed2 =  center_average_speed + allowed_deviation_from_target_speed2;
+                for(uint32_t svic = 1; svic < simulation_velocity_interpolation_count; svic ++){
 
-                    // Project Vehicle for one timestep with these settings
-                    auto next_pose_step_2 = SimpleDynamicsModel::computeNextPose(next_pose_step_1, next_angle2, next_speed2, timestep);
+                    float velocity = itp_velocity_base_cms + (itp_velocity_step_cms * svic);
+                    pose = SimpleDynamicsModel::computeNextPose(current_pose, next_angle, velocity, ts_ms);
 
-                    // Compute error from target position 
-                    float position_pose_error = (next_pose_step_2.pos - target_pose.pos).norm(); 
-                    float angle_pose_error =  std::abs(next_pose_step_2.h - target_pose.h);
-                    float combined_pose_error = position_pose_error + angle_pose_error;
+                }
+                for(uint32_t svic = 1; svic < simulation_velocity_interpolation_count; svic ++){
 
-                    if(position_pose_error < current_error){
+                    float velocity = itp_velocity_base_cms + (itp_velocity_step_cms * svic);
+                    pose = SimpleDynamicsModel::computeNextPose(current_pose, next_angle, velocity, ts_ms);
 
-                        current_error = position_pose_error;
+                }
+                
+                        
+                        //Compute next speed for second step of planning for the vehicle
+                        float allowed_deviation_from_target_speed2 = (-(state_change_fit_allowed_speed_difference/2.f) + (state_change_fit_allowed_speed_difference/static_cast<float>(vel_count)) * static_cast<float>(j2)) * SimpleDynamicsModel::velocity_limit();
+                        float next_speed2 =  center_average_speed + allowed_deviation_from_target_speed2;
 
-                        current_best_pose.pos = next_pose_step_2.pos;
-                        current_best_pose.h = next_pose_step_2.h;
-                        current_best_pose.vel = next_pose_step_2.vel;
+                        // Project Vehicle for one timestep with these settings
+                        
 
-                        current_best_pose.a_error = angle_pose_error;
-                        current_best_pose.p_error = position_pose_error;
-                    
-                        current_best_pose.s_a = next_angle;
-                        current_best_pose.s_v = next_speed;
+                        // Compute error from target position 
+                        float position_pose_error = (next_pose_step_2.pos - target_pose.pos).norm(); 
+                        float angle_pose_error =  std::abs(next_pose_step_2.h - target_pose.h);
+                        float combined_pose_error = position_pose_error + angle_pose_error;
 
-                        current_best_pose.s_a_2 = next_angle2;
-                        current_best_pose.s_v_2 = next_speed2;
+                        if(position_pose_error < current_error){
 
+                            current_error = position_pose_error;
+
+                            current_best_pose.pos = next_pose_step_2.pos;
+                            current_best_pose.h = next_pose_step_2.h;
+                            current_best_pose.vel = next_pose_step_2.vel;
+
+                            current_best_pose.a_error = angle_pose_error;
+                            current_best_pose.p_error = position_pose_error;
+                        
+                            current_best_pose.s_a = next_angle;
+                            current_best_pose.s_v = next_speed;
+
+                            current_best_pose.s_a_2 = next_angle2;
+                            current_best_pose.s_v_2 = next_speed2;
+
+                        }
                     }
                 }
             }
-        }
             
-    }
+        
+    
     // exit(-1);
     return current_best_pose;
 }

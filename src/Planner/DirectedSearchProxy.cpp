@@ -1,4 +1,4 @@
-#include <Planner/ProxyGraph.hpp>
+#include <Planner/DirectedSearchProxy.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -9,12 +9,9 @@
 
 using json = nlohmann::json;
 
-ProxyGraph::ProxyGraph(){
-    // m_proxyMap = (ProxyNode*) malloc(sizeof(ProxyGraph) * map_size_x *map_size_y* map_size_angle * map_size_speed);
+DirectedSearchProxy::DirectedSearchProxy(){}
 
-}
-
-void ProxyGraph::workerThreadProxyEdges(uint32_t index){
+void DirectedSearchProxy::workerThreadProxyEdges(uint32_t index){
     while(!m_terminateProxyThreads){
         
         bool hasTask = false;
@@ -73,82 +70,89 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
     }
 }
 
-void ProxyGraph::computeProxyEdges(){
-    float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
+void DirectedSearchProxy::computeProxyEdges(){
+    float base_node_distance = m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
+    uint32_t map_node_count = static_cast<uint32_t>(map_size_x_cm / base_node_distance);
+    float api = 2 * PI / static_cast<float>(m_config_map_size_angle);
 
-    //Compute size of the proxy field based on reachable distance at the given speed
-    uint32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / xpc);
-    uint32_t reachable_node_span = (2 * reachable_node_count); 
-    m_proxyMapReachableSpan = reachable_node_span;
-    m_proxyMapCarOffset = reachable_node_count; 
+    LatticeNode  lattice[m_config_map_size_speed][m_config_map_size_speed][map_size_angle][map_size_speed];
 
-    std::cout << "[INFO] Allocated all proxy nodes." << std::endl;
+    for(int32_t x = -m_config_map_size_speed; x < m_config_map_size_speed; x ++){
+        for(int32_t y = -m_config_map_size_speed; y < m_config_map_size_speed; y ++){
+            for(int32_t a = 0; a < map_size_angle; a ++){
+                for(int32_t s = 0; s < map_size_speed; s ++){
 
-    //Set the positions of each proxy node relative to the car
-    for(uint32_t x = 0; x <= reachable_node_span; x ++){
-        for(uint32_t y = 0; y <= reachable_node_span; y ++){
-            for(uint32_t a = 0; a < map_size_angle; a ++){
-                for(uint32_t s = 0; s < map_size_speed; s ++){
-                    //Compute position, heading and velocity of the node
-
-                    m_proxyMap[x][y][a][s].rel_pose.pos[0] = -(reachable_node_count * xpc) + (xpc*x);
-                    m_proxyMap[x][y][a][s].rel_pose.pos[1] = -(reachable_node_count * ypc) + (ypc*y);
-                    m_proxyMap[x][y][a][s].rel_pose.h = api * static_cast<float>(a);
-                    m_proxyMap[x][y][a][s].rel_pose.vel = m_speedsFactor[s] * dynamics::SimpleDynamicsModel::velocity_limit();
+                    lattice[x][y][a][s].rel_pose.pos[0] = (base_node_distance*x);
+                    lattice[x][y][a][s].rel_pose.pos[1] = (base_node_distance*y);
+                    lattice[x][y][a][s].rel_pose.h = api * static_cast<float>(a);
+                    lattice[x][y][a][s].rel_pose.vel = m_config_speedsFactor[s] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();
+                
                 }
             }
         }
     }
 
-    std::cout << "[INFO] Created all proxy nodes: [#] " << reachable_node_span * reachable_node_span * map_size_angle * map_size_speed << std::endl;
-    std::cout << "[INFO] Reachable distance: [cm] " << reachable_distance << std::endl;
-    std::cout << "[INFO] Car position : [cm] " << m_proxyMap[m_proxyMapCarOffset][m_proxyMapCarOffset][0][0].rel_pose.pos[0] << ":" << m_proxyMap[m_proxyMapCarOffset][m_proxyMapCarOffset][0][0].rel_pose.pos[0] << std::endl;
-    std::cout << "[INFO] X Extends: [cm] " << -(reachable_node_count * xpc) << " - " <<  -(reachable_node_count * xpc) + (xpc*reachable_node_span) << " stp:" << xpc << " cnt:" << reachable_node_span << std::endl;
-    std::cout << "[INFO] Y Extends: [cm] " << -(reachable_node_count * ypc) << " - " <<  -(reachable_node_count * ypc) + (ypc*reachable_node_span) << " stp:" << ypc << " cnt:" << reachable_node_span << std::endl;
-    std::cout << "[INFO] A Extends: [rad] " << 0 << " - " <<  api * map_size_angle << " stp:" << api << " cnt:" << map_size_angle << std::endl;
-    std::cout << "[INFO] S Extends: [cm/s] " <<  m_speedsFactor[0] * dynamics::SimpleDynamicsModel::velocity_limit() << " - " <<   m_speedsFactor[4] * dynamics::SimpleDynamicsModel::velocity_limit()  
-                                      << " cnt:" << map_size_speed << std::endl;
-
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    //Angles that we need to check, assume symmetry for all points
+    uint32_t map_angle_offset = m_config_map_size_angle / 4; 
     
 
-    // Compute for each heading and speed from our original vehicle
-    for(int32_t i = 0; i < map_size_speed; i ++){
-        for(int32_t j = 0; j < map_size_angle; j ++){
+    for(uint32_t a = 0; a < map_angle_offset; a ++){
+        float heading = api * static_cast<float>(a);
+
+        for(uint32_t s = 0; s < map_size_speed; s ++){
+            float velocity = m_config_speedsFactor[s] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();
             
-            //Compute pose of current node/vehicle
-            dynamics::data::Pose2D veh_pose = {{0.f,0.f}, m_proxyMap[0][0][j][i].rel_pose.h, m_proxyMap[0][0][j][i].rel_pose.vel};
+            auto epose = dynamics::SimpleDynamicsModel::computeBestFit(veh_pose, target_pose_by_index, m_proxyMap[threadTask.txi][threadTask.tyi][a][s].rel_pose, );
 
-            //Check for each candidate node if we can find a connection between these two, but use all system threads
-            for(int32_t x = 0; x <= reachable_node_span; x ++){
-                for(int32_t y = 0; y <= reachable_node_span; y ++){
-                     
-                    if(x == m_proxyMapCarOffset && y == m_proxyMapCarOffset){
-                        continue;
-                    }
-
-                    ProxyTask nTask;    
-                    nTask = {x,y,j,i,timestep_ms};
-                    m_proxyTaskQueue.push_back(nTask);
-                
-                }
-            }   
         }
+        //m_proxyEdgeList[][]
     }
+    
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    
 
-    std::vector<std::thread> workers;
-    for(uint32_t i = 0; i < worker_counter; i++){
-        workers.push_back(std::thread(&ProxyGraph::workerThreadProxyEdges, this, i));
-    }
-    for(uint32_t i = 0; i < worker_counter; i++){
-        workers.at(i).join();
-    }
+   
+
+    // std::this_thread::sleep_for(std::chrono::seconds(1));
+    
+
+    // // Compute for each heading and speed from our original vehicle
+    // for(int32_t i = 0; i < map_size_speed; i ++){
+    //     for(int32_t j = 0; j < map_size_angle; j ++){
+            
+    //         //Compute pose of current node/vehicle
+    //         dynamics::data::Pose2D veh_pose = {{0.f,0.f}, m_proxyMap[0][0][j][i].rel_pose.h, m_proxyMap[0][0][j][i].rel_pose.vel};
+
+    //         //Check for each candidate node if we can find a connection between these two, but use all system threads
+    //         for(int32_t x = 0; x <= reachable_node_span; x ++){
+    //             for(int32_t y = 0; y <= reachable_node_span; y ++){
+                     
+    //                 if(x == m_proxyMapCarOffset && y == m_proxyMapCarOffset){
+    //                     continue;
+    //                 }
+
+    //                 ProxyTask nTask;    
+    //                 nTask = {x,y,j,i,timestep_ms};
+    //                 m_proxyTaskQueue.push_back(nTask);
+                
+    //             }
+    //         }   
+    //     }
+    // }
+
+    // std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    // std::vector<std::thread> workers;
+    // for(uint32_t i = 0; i < worker_counter; i++){
+    //     workers.push_back(std::thread(&DirectedSearchProxy::workerThreadProxyEdges, this, i));
+    // }
+    // for(uint32_t i = 0; i < worker_counter; i++){
+    //     workers.at(i).join();
+    // }
 }
 
 
-void ProxyGraph::writeGraphToDisk(){
+void DirectedSearchProxy::writeGraphToDisk(){
    json proxy_map_dump;
 
     proxy_map_dump["info"]["m_proxyMapReachableSpan"] = m_proxyMapReachableSpan;
@@ -241,11 +245,11 @@ void ProxyGraph::writeGraphToDisk(){
     o.close();
 }
 
-void ProxyGraph::loadGraphFromDisk(){
+void DirectedSearchProxy::loadGraphFromDisk(){
     loadGraphFromDisk("proxy_state_graph.json");
 }
 
-void ProxyGraph::loadGraphFromDisk(std::string path){
+void DirectedSearchProxy::loadGraphFromDisk(std::string path){
     std::ifstream ifs(path);
     json jf = json::parse(ifs);
     m_proxyMapReachableSpan = jf["info"]["m_proxyMapReachableSpan"];
@@ -296,7 +300,7 @@ void ProxyGraph::loadGraphFromDisk(std::string path){
 }
 
 
-void ProxyGraph::printPositions(){
+void DirectedSearchProxy::printPositions(){
     json proxy_map_dump;
     // Dump array to list
     for(uint32_t x = 0; x < m_proxyMapReachableSpan; x ++){

@@ -159,6 +159,8 @@ struct Pose2DWithError{
 
     PoseByIndex bi_pose;
 
+    uint32_t timestep_length_ms = 0;
+
     float a_error = 0.f;
     float p_error = 0.f;
 
