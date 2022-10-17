@@ -11,8 +11,10 @@
 
 
 struct MotionPrimitiv{
-    dynamics::data::Pose2DWithError link;
+    dynamics::data::Pose2DWithMotionData link;
     dynamics::data::PoseByIndex target;
+
+    
 };
 
 struct LatticeNode{
@@ -39,11 +41,10 @@ int m_config_map_size_x_cm = 450;
 int m_config_map_size_y_cm = 400;
 int m_config_map_size_angle = 8;
 
+float m_config_ts_min = 200.f;
+float m_config_ts_max = 500.f;
 
-uint32_t m_proxyMapReachableSpanSingleDirection = 0;
-uint32_t m_proxyMapCarOffset = 0;
-
-std::map<uint32_t, std::map<uint32_t, std::vector<TraversableEdge>>> m_proxyEdgeList;
+std::map<uint32_t, std::map<uint32_t, std::vector<MotionPrimitiv>>> motion_primitive_map;
 
 // debug functions
 void writeGraphToDisk();

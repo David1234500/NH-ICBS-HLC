@@ -147,35 +147,20 @@ struct Pose2WithTime{
 };
 
 
-struct Pose2DWithError{
-    /* 2D Position in cm */
+struct Pose2DWithMotionData{
     Position2Df pos = {0.f,0.f};
-    
-    /* Heading in radians and index */
     float h = 0.f; 
-
-    /* Velocity in m/s and node index */
     float vel = 0.f;
-
-    PoseByIndex bi_pose;
-
-    uint32_t timestep_length_ms = 0;
-
     float a_error = 0.f;
     float p_error = 0.f;
-
-    /* settings values for the associated fit */
     float s_a = 0.f;
-    float s_v = 0.f;
-
     float s_a_2 = 0.f;
-    float s_v_2 = 0.f;
+    uint32_t ts_ms = 0;
 
-    inline void operator=(const PoseByIndex& e){
-       bi_pose.x = e.x; 
-       bi_pose.y = e.y; 
-       bi_pose.a = e.a;
-       bi_pose.s = e.s;
+    inline void operator=(const Pose2D& e){
+        pos = e.pos;
+        h = e.h;
+        vel = e.vel;
     }
 };
 

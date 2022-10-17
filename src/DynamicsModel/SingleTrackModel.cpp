@@ -2,11 +2,12 @@
 
 #include <iostream>
 #include <math.h> 
+#include <memory>
 
 using namespace dynamics;
 using namespace dynamics::data;
 
-Pose2D SimpleDynamicsModel::computeNextPose(Pose2D current_pose, float steering_angle, float velocity, float time){
+Pose2D SimpleDynamicsModel::computeNextPose(Pose2D& current_pose, float& steering_angle, float& velocity, float& time){
 
 // Compute driven distance 
 float time_sec = time / 1000; //millisec
@@ -49,9 +50,31 @@ auto new_head = current_pose.h + circ_comp;
 return Pose2D{new_pos, new_head, velocity};
 }
 
-dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D& current_pose, Pose2D& target_pose, float& timestep_min_ms, float& timestep_max_ms){
+dynamics::data::Pose2D SimpleDynamicsModel::computeNextPoseWithVelocityInterpolation(dynamics::data::Pose2D& start_pose, float& angle_step_a, float& angle_step_b,
+                                                                                     float& start_vel, float& target_vel, uint32_t& simulation_velocity_interpolation_count,
+                                                                                     float& ts_ms){
+
+    float itp_velocity_step_cms = std::abs(start_vel - target_vel) / static_cast<float>(simulation_velocity_interpolation_count);
+    float itp_velocity_base_cms = std::min(start_vel, target_vel);
+    dynamics::data::Pose2D pose = start_pose;
+
+    for(uint32_t svic = 1; svic < simulation_velocity_interpolation_count; svic ++){
+        float velocity = itp_velocity_base_cms + (itp_velocity_step_cms * svic);
+        pose = SimpleDynamicsModel::computeNextPose(pose, angle_step_a, velocity, ts_ms);
+
+    }
+    for(uint32_t svic = 1; svic < simulation_velocity_interpolation_count; svic ++){
+        float velocity = itp_velocity_base_cms + (itp_velocity_step_cms * svic);
+        pose = SimpleDynamicsModel::computeNextPose(pose, angle_step_b, velocity, ts_ms);
+
+    }
+
+    return pose;
+}
+
+dynamics::data::Pose2DWithMotionData SimpleDynamicsModel::computeBestFit(Pose2D& current_pose, Pose2D& target_pose, float& timestep_min_ms, float& timestep_max_ms){
    
-    dynamics::data::Pose2DWithError current_best_pose;
+    dynamics::data::Pose2DWithMotionData current_best_pose;
 
     Pose2D pose = current_pose;
     float current_angle_span = SimpleDynamicsModel::angle_limit();
@@ -63,8 +86,7 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D& curr
     uint32_t solver_timestep_count = 20;
 
     float timestep_size_ms = (timestep_max_ms - timestep_min_ms)/ solver_timestep_count;
-    float itp_velocity_step_cms = std::abs(current_pose.vel - target_pose.vel) / simulation_velocity_interpolation_count;
-    float itp_velocity_base_cms = std::min(current_pose.vel, target_pose.vel);
+    
 
     for(float ts_ms = timestep_min_ms; ts_ms < timestep_max_ms; ts_ms += timestep_size_ms){
 
@@ -74,61 +96,69 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D& curr
             for(uint32_t i2 = 0; i2 < solver_angle_count; i2 ++){
                 float next_angle2 = (-0.5f * current_angle_span) + current_angle_span * ((float)i2 / (float)solver_angle_count);
                 
-                for(uint32_t svic = 1; svic < simulation_velocity_interpolation_count; svic ++){
+                auto result_pose = computeNextPoseWithVelocityInterpolation(current_pose, next_angle, next_angle2, current_pose.vel, target_pose.vel, simulation_velocity_interpolation_count, ts_ms);
 
-                    float velocity = itp_velocity_base_cms + (itp_velocity_step_cms * svic);
-                    pose = SimpleDynamicsModel::computeNextPose(current_pose, next_angle, velocity, ts_ms);
+                // Compute error from target position 
+                float position_pose_error = (result_pose.pos - target_pose.pos).norm(); 
+                float angle_pose_error =  std::abs(result_pose.h - target_pose.h);
+                float combined_pose_error = position_pose_error + angle_pose_error;
 
-                }
-                for(uint32_t svic = 1; svic < simulation_velocity_interpolation_count; svic ++){
+                if(position_pose_error < current_error){
 
-                    float velocity = itp_velocity_base_cms + (itp_velocity_step_cms * svic);
-                    pose = SimpleDynamicsModel::computeNextPose(current_pose, next_angle, velocity, ts_ms);
+                    current_best_pose = result_pose;
 
-                }
+                    current_best_pose.a_error = angle_pose_error;
+                    current_best_pose.p_error = position_pose_error;
                 
-                        
-                        //Compute next speed for second step of planning for the vehicle
-                        float allowed_deviation_from_target_speed2 = (-(state_change_fit_allowed_speed_difference/2.f) + (state_change_fit_allowed_speed_difference/static_cast<float>(vel_count)) * static_cast<float>(j2)) * SimpleDynamicsModel::velocity_limit();
-                        float next_speed2 =  center_average_speed + allowed_deviation_from_target_speed2;
+                    current_best_pose.s_a = next_angle;
+                    current_best_pose.s_a_2 = next_angle2;
 
-                        // Project Vehicle for one timestep with these settings
-                        
-
-                        // Compute error from target position 
-                        float position_pose_error = (next_pose_step_2.pos - target_pose.pos).norm(); 
-                        float angle_pose_error =  std::abs(next_pose_step_2.h - target_pose.h);
-                        float combined_pose_error = position_pose_error + angle_pose_error;
-
-                        if(position_pose_error < current_error){
-
-                            current_error = position_pose_error;
-
-                            current_best_pose.pos = next_pose_step_2.pos;
-                            current_best_pose.h = next_pose_step_2.h;
-                            current_best_pose.vel = next_pose_step_2.vel;
-
-                            current_best_pose.a_error = angle_pose_error;
-                            current_best_pose.p_error = position_pose_error;
-                        
-                            current_best_pose.s_a = next_angle;
-                            current_best_pose.s_v = next_speed;
-
-                            current_best_pose.s_a_2 = next_angle2;
-                            current_best_pose.s_v_2 = next_speed2;
-
-                        }
-                    }
+                    current_best_pose.ts_ms = ts_ms;
                 }
             }
-            
-        
-    
-    // exit(-1);
+        }
+    }
     return current_best_pose;
 }
 
+std::shared_ptr<std::vector<dynamics::data::Pose2DWithMotionData>> SimpleDynamicsModel::computeReachableSet(Pose2D& current_pose, float& timestep_min_ms, float& timestep_max_ms){
+   
+    auto reachable_pose_set = std::make_shared<std::vector<dynamics::data::Pose2DWithMotionData>>();
 
+    Pose2D pose = current_pose;
+    float current_angle_span = SimpleDynamicsModel::angle_limit();
+    float current_error = 10000.f;
+
+    uint32_t solver_angle_count = 100;
+    uint32_t solver_vel_count = 100;
+    uint32_t simulation_velocity_interpolation_count = 4;
+    uint32_t solver_timestep_count = 20;
+
+    float timestep_size_ms = (timestep_max_ms - timestep_min_ms)/ solver_timestep_count;
+    
+
+    for(float ts_ms = timestep_min_ms; ts_ms < timestep_max_ms; ts_ms += timestep_size_ms){
+
+        for(uint32_t i = 0; i < solver_angle_count; i ++){
+            float next_angle = (-0.5f * current_angle_span) + current_angle_span * ((float)i / (float)solver_angle_count);
+
+            for(uint32_t i2 = 0; i2 < solver_angle_count; i2 ++){
+                float next_angle2 = (-0.5f * current_angle_span) + current_angle_span * ((float)i2 / (float)solver_angle_count);
+                
+                auto result_pose = computeNextPoseWithVelocityInterpolation(current_pose, next_angle, next_angle2, current_pose.vel, target_pose.vel, simulation_velocity_interpolation_count, ts_ms);
+
+                dynamics::data::Pose2DWithMotionData reachable_pose;
+                reachable_pose = result_pose;
+                reachable_pose.ts_ms = ts_ms;
+                reachable_pose.s_a = next_angle;
+                reachable_pose.s_a_2 = next_angle2;
+
+                reachable_pose_set->push_back(reachable_pose);
+            }
+        }
+    }
+    return reachable_pose_set;
+}
 
  
 
