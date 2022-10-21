@@ -8,7 +8,7 @@
 using json = nlohmann::json;
 
 dynamics::data::PoseByIndex CBSPlanner::toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative){
-    return  (relative + base) - m_proxGraph.m_proxyMapCarOffset;
+    return  (relative + base);
 }
 
 dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PoseByIndex global){
@@ -16,40 +16,40 @@ dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PoseByIndex globa
     
     global_pose.pos[0] = (xpc * global.x);
     global_pose.pos[1] = (ypc * global.y);
-    global_pose.h = api * static_cast<float>(global.a);
-    global_pose.vel = m_speedsFactor[global.s] * dynamics::SimpleDynamicsModel::velocity_limit();
+    global_pose.h = api * static_cast<double>(global.a);
+    // global_pose.vel = m_speedsFactor[global.s] * dynamics::SimpleDynamicsModel::velocity_limit();
     
     return global_pose;
 }
 
 dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PBIConstraint global){
-    dynamics::data::Pose2D global_pose;
+    // dynamics::data::Pose2D global_pose;
     
-    global_pose.pos[0] = (xpc * global.x);
-    global_pose.pos[1] = (ypc * global.y);
-    global_pose.h = api * static_cast<float>(global.a);
-    global_pose.vel = m_speedsFactor[global.s] * dynamics::SimpleDynamicsModel::velocity_limit();
+    // global_pose.pos[0] = (xpc * global.x);
+    // global_pose.pos[1] = (ypc * global.y);
+    // global_pose.h = api * static_cast<double>(global.a);
+    // // global_pose.vel = m_speedsFactor[global.s] * dynamics::SimpleDynamicsModel::velocity_limit();
     
-    return global_pose;
+    // return global_pose;
 }
 
 
 
 dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::Pose2D pose){
-    float near_x = pose.pos[0] / xpc;
-    float near_y = pose.pos[1] / ypc;
+    // double near_x = pose.pos[0] / xpc;
+    // double near_y = pose.pos[1] / ypc;
     
-    pose.h = fmod(pose.h + 2*PI , 2*PI);
+    // pose.h = fmod(pose.h + 2*PI , 2*PI);
 
-    float near_a = pose.h / api;
+    // double near_a = pose.h / api;
 
-    dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)round(near_a),zero_velocity_level};
+    // dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)round(near_a),zero_velocity_level};
 
-    return result;
+    // return result;
 }
 
 dynamics::data::PoseByIndex CBSPlanner::toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global){
-    return (global - base) +  m_proxGraph.m_proxyMapCarOffset;
+    return (global - base);
 }
 
 bool CBSPlanner::validatePosition(dynamics::data::PoseByIndex base){
@@ -75,15 +75,15 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
     std::priority_queue<dynamics::data::LLNode> openQueue;
     std::unordered_set<dynamics::data::PoseByIndex> openSet;
     std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
-    std::unordered_map<dynamics::data::PoseByIndex, TraversableEdge> usedEdge;
+    std::unordered_map<dynamics::data::PoseByIndex, MotionPrimitiv> usedEdge;
 
     auto current_pose = indexToPose(start);
     auto target_pose = indexToPose(target);
 
-    std::unordered_map<dynamics::data::PoseByIndex, float> fScore;
+    std::unordered_map<dynamics::data::PoseByIndex, double> fScore;
     fScore[start] = (target_pose.pos - current_pose.pos).norm(); //+ 1 * (start.a - target.a);
     
-    std::unordered_map<dynamics::data::PoseByIndex, float> gScore;
+    std::unordered_map<dynamics::data::PoseByIndex, double> gScore;
     gScore[start] = 0.f;
 
     dynamics::data::LLNode initial = {start, fScore[start], 0};
@@ -110,7 +110,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
         // std::cout << "Visited node: " << current.pose.x << ":" << current.pose.y << ":" << current.pose.a  << ":" << current.pose.s << std::endl;
 
         openQueue.pop();
-        for(auto rel_neighbor: m_proxGraph.m_proxyEdgeList[current.pose.a][current.pose.s]){
+        for(auto rel_neighbor: m_proxGraph.motion_primitive_map[current.pose.a][current.pose.s]){
 
             dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(current.pose, rel_neighbor.target);
             auto neigh_pose = indexToPose(gl_neighbor);
@@ -135,18 +135,18 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             }
 
             auto current_pose = indexToPose(current.pose); 
-            float dist = (neigh_pose.pos - current_pose.pos).norm();
+            double dist = (neigh_pose.pos - current_pose.pos).norm();
             if(neigh_pose.vel < 0.f){ //TODO REMOVE THIS with correct veloctiy handling
                dist = heuristic_factor_backwards * dist; 
             }
                         
-            float tentative_score = gScore[current.pose] + dist; 
+            double tentative_score = gScore[current.pose] + dist; 
             if(gScore.count(gl_neighbor) == 0 || tentative_score < gScore[gl_neighbor]){
                 cameFrom[gl_neighbor] = current.pose;
                 usedEdge[gl_neighbor] = rel_neighbor;
                 gScore[gl_neighbor] = tentative_score;
                 
-                float h = (neigh_pose.pos - target_pose.pos).norm();
+                double h = (neigh_pose.pos - target_pose.pos).norm();
                 fScore[gl_neighbor] = tentative_score + h;
                 
                 if(openSet.count(gl_neighbor) == 0){
@@ -180,10 +180,10 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::getPath(st
     return result;
 }
 
-std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target){
+std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,MotionPrimitiv>& edge_map, dynamics::data::PoseByIndex target){
     auto current = target;
     std::vector<dynamics::data::PoseByIndex> nodes;
-    std::vector<TraversableEdge> edges;
+    std::vector<MotionPrimitiv> edges;
 
     do{
         nodes.push_back(current);
@@ -200,23 +200,23 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
     uint32_t time_index = 0;
     for(int64_t i = nodes.size() - 1; i > 0; i --){
         dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(i));
-        dynamics::data::Pose2D next_pose;
+        // dynamics::data::Pose2D next_pose;
 
-        for(float ts = 0; ts <= timestep_ms; ts += 50.f){    
-            next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, ts);
-            dynamics::data::Pose2WithTime next_with_time;
-            next_with_time = next_pose;
-            next_with_time.time_ms = time_index * 2 * timestep_ms + ts;
-            result.push_back(next_with_time);
-        }
+        // for(double ts = 0; ts <= timestep_ms; ts += 50.f){    
+        //     next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, ts);
+        //     dynamics::data::Pose2WithTime next_with_time;
+        //     next_with_time = next_pose;
+        //     next_with_time.time_ms = time_index * 2 * timestep_ms + ts;
+        //     result.push_back(next_with_time);
+        // }
         
-        for(float ts = 0; ts <= timestep_ms; ts += 50.f){
-            auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, ts);
-            dynamics::data::Pose2WithTime next_pose2_with_time;
-            next_pose2_with_time = next_pose2;
-            next_pose2_with_time.time_ms = time_index * 2 * timestep_ms + timestep_ms + ts;
-            result.push_back(next_pose2_with_time);
-        }
+        // for(double ts = 0; ts <= timestep_ms; ts += 50.f){
+        //     auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, ts);
+        //     dynamics::data::Pose2WithTime next_pose2_with_time;
+        //     next_pose2_with_time = next_pose2;
+        //     next_pose2_with_time.time_ms = time_index * 2 * timestep_ms + timestep_ms + ts;
+        //     result.push_back(next_pose2_with_time);
+        // }
 
         time_index += 1;
     }

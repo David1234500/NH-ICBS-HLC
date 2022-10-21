@@ -32,30 +32,30 @@ public:
         
         // std::random_device rd;     // only used once to initialise (seed) engine
         // std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
-        // std::uniform_int_distribution<float> uni(0,config->getFloatByKey("map_size")); // guaranteed unbiased
+        // std::uniform_int_distribution<double> uni(0,config->getdoubleByKey("map_size")); // guaranteed unbiased
 
         // auto random_integer = uni(rng);
 
-        // float rx = (float)  uni(rng);;
-        // float ry = (float)  uni(rng);;
+        // double rx = (double)  uni(rng);;
+        // double ry = (double)  uni(rng);;
         // pose.vel = 0;
         // std::cout << "start " << rx << ":" << ry << std::endl;
 
-        // pose.h = (float) (rand()) / ((float) (RAND_MAX/6.3));
+        // pose.h = (double) (rand()) / ((double) (RAND_MAX/6.3));
         // pose.pos = {rx,ry};
         // pose.vel = 0;
 
         // start.pos = {rx,ry};
-        // start.h = (float) (rand()) / ((float) (RAND_MAX/6.3));
+        // start.h = (double) (rand()) / ((double) (RAND_MAX/6.3));
         // pose.vel = 0;
 
-        // rx = (float)  uni(rng);;
-        // ry = (float)  uni(rng);;
+        // rx = (double)  uni(rng);;
+        // ry = (double)  uni(rng);;
 
         // std::cout << "target " << rx << ":" << ry << std::endl;
 
         // target.pos = {rx,ry};
-        // target.h = (float) (rand()) / ((float) (RAND_MAX/6.3));
+        // target.h = (double) (rand()) / ((double) (RAND_MAX/6.3));
         // target.vel = 0;
     }
 };

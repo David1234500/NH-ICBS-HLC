@@ -2,7 +2,7 @@
 #define STATEG_GRAPH_HPP
 
 #include <Config.hpp>
-#include <Planner/ProxyGraph.hpp>
+#include <Planner/DirectedSearchProxy.hpp>
 
 struct StateNode{
     uint64_t uiid;

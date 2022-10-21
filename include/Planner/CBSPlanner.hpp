@@ -4,7 +4,7 @@
 #include <util/Pose.hpp>
 
 #include <DynamicsModel/SingleTrackModel.hpp>
-#include <Planner/ProxyGraph.hpp>
+#include <Planner/DirectedSearchProxy.hpp>
 #include <Planner/StateGraph.hpp>
 #include <unordered_set>
 #include <unordered_map>
@@ -77,14 +77,18 @@ public:
 
     LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles);
 
-    ProxyGraph m_proxGraph;
+    DirectedSearchProxy m_proxGraph;
+
+    double api = 0.f;
+    double xpc = 0.f;
+    double ypc = 0.f;
 
     void writePathToDisk( std::vector<dynamics::data::PoseByIndex> path, std::string name);
     void writeCurveToDisk(std::vector<dynamics::data::Pose2WithTime> path, std::string name);
     void writeMultiplePathsToDisk(constraint_node cnode, std::string name);
     
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> getPath(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target);
-    std::vector<dynamics::data::Pose2WithTime> getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target);
+    std::vector<dynamics::data::Pose2WithTime> getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,MotionPrimitiv>& edge_map, dynamics::data::PoseByIndex target);
     
 
 };

@@ -104,7 +104,7 @@ struct PBIConstraint{
 
 struct LLNode{
     PoseByIndex pose;
-    float fScore = 10000000.f;
+    double fScore = 10000000.f;
     uint32_t timestep = 0;
 
     bool operator < (const dynamics::data::LLNode r) const {
@@ -121,10 +121,10 @@ struct Pose2D{
     Position2Df pos = {0.f,0.f}; 
     
     /* Heading in radians */
-    float h = 0.f; 
+    double h = 0.f; 
 
     /* Velocity in m/s */
-    float vel = 0.f;
+    double vel = 0.f;
 };
 
 struct Pose2WithTime{
@@ -132,12 +132,12 @@ struct Pose2WithTime{
     Position2Df pos = {0.f,0.f}; 
     
     /* Heading in radians */
-    float h = 0.f; 
+    double h = 0.f; 
 
     /* Velocity in m/s */
-    float vel = 0.f;
+    double vel = 0.f;
 
-    float time_ms = 0.f;
+    double time_ms = 0.f;
 
     inline void operator=(Pose2D e){
         pos = e.pos;
@@ -149,12 +149,14 @@ struct Pose2WithTime{
 
 struct Pose2DWithMotionData{
     Position2Df pos = {0.f,0.f};
-    float h = 0.f; 
-    float vel = 0.f;
-    float a_error = 0.f;
-    float p_error = 0.f;
-    float s_a = 0.f;
-    float s_a_2 = 0.f;
+    double h = 0.f; 
+    double vel = 0.f;
+
+    double start_vel = 0.f;
+    double target_vel = 0.f;
+
+    double s_a = 0.f;
+    double s_a_2 = 0.f;
     uint32_t ts_ms = 0;
 
     inline void operator=(const Pose2D& e){
