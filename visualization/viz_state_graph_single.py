@@ -6,7 +6,7 @@ f = open("proxy_state_graph.json", "r")
 x = f.read() 
 y = json.loads(x)
   
-fig, ax = plt.subplots(nrows=y["info"]["size_a"], ncols=y["info"]["size_s"])
+fig, ax = plt.subplots(nrows= int(y["info"]["size_a"]/4) + 1, ncols=3 * y["info"]["size_s"])
 r_index = 0
 c_index = 0
 
@@ -20,14 +20,12 @@ for edge in y["edges"]:
         ex.append(curve_point["x"])
         ey.append(curve_point["y"])
 
-    if(edge["source"]["s"] == 1):
-        print("edges from zero velocity: x {} y {}".format(edge["target"]["x"], edge["target"]["y"]))
+    ex.append(edge["t_pose"]["x"])
+    ey.append(edge["t_pose"]["y"])
 
-    ex.append(edge["target"]["x"])
-    ey.append(edge["target"]["y"])
-    ax[edge["source"]["a"]][edge["source"]["s"]].plot(ex,ey)
-    ax[edge["source"]["a"]][edge["source"]["s"]].set_xlim([-50,50])
-    ax[edge["source"]["a"]][edge["source"]["s"]].set_ylim([-50,50])
+    ax[edge["source"]["a"]][int(3 * edge["source"]["s"] + edge["t_index"]["s"])].plot(ex,ey)
+    ax[edge["source"]["a"]][int(3 * edge["source"]["s"] + edge["t_index"]["s"])].set_xlim([-50,50])
+    ax[edge["source"]["a"]][int(3 * edge["source"]["s"] + edge["t_index"]["s"])].set_ylim([-50,50])
 
 print("edges cnt: {}".format(len(y["edges"])))
 

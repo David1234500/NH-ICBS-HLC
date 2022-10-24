@@ -34,15 +34,15 @@ void computeProxyEdges();
 
 double m_config_baseVelocityFactor = 0.5;
 
-double m_config_speedsFactor[3] = {0.f, 1.f, 2.f}; 
-int m_config_map_size_speed = 3;
+double m_config_speedsFactor[1] = {1.f}; 
+int m_config_map_size_speed = 1;
 
 int m_config_map_size_x_cm = 450;
 int m_config_map_size_y_cm = 400;
 int m_config_map_size_angle = 8;
 
 double m_config_ts_min = 250.f;
-double m_config_ts_max = 500.f;
+double m_config_ts_max = 350.f;
 
 std::map<int32_t, std::map<int32_t, std::vector<MotionPrimitiv>>> motion_primitive_map;
 

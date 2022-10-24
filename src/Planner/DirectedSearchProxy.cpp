@@ -16,23 +16,6 @@ void DirectedSearchProxy::computeProxyEdges(){
     uint32_t map_node_count = static_cast<uint32_t>(map_size_x_cm / base_node_distance);
     double api = 2 * PI / static_cast<double>(m_config_map_size_angle);
 
-    LatticeNode lattice[m_config_map_size_speed][m_config_map_size_speed][map_size_angle][map_size_speed];
-
-    for(int32_t x = -m_config_map_size_speed; x < m_config_map_size_speed; x ++){
-        for(int32_t y = -m_config_map_size_speed; y < m_config_map_size_speed; y ++){
-            for(int32_t a = 0; a < map_size_angle; a ++){
-                for(int32_t s = 0; s < map_size_speed; s ++){
-
-                    lattice[x][y][a][s].rel_pose.pos[0] = (base_node_distance*x);
-                    lattice[x][y][a][s].rel_pose.pos[1] = (base_node_distance*y);
-                    lattice[x][y][a][s].rel_pose.h = api * static_cast<double>(a);
-                    lattice[x][y][a][s].rel_pose.vel = m_config_speedsFactor[s] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();
-                
-                }
-            }
-        }
-    }
-
     std::vector<double> velocities;
     for(uint32_t s = 0; s < map_size_speed; s ++){
         double velocity = m_config_speedsFactor[s] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();
@@ -62,18 +45,22 @@ void DirectedSearchProxy::computeProxyEdges(){
         double heading = api * static_cast<double>(a);
 
         for(int32_t s = 0; s < map_size_speed; s ++){
-            double velocity = m_config_speedsFactor[s] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();
 
-                for(int32_t x = -m_config_map_size_speed; x < m_config_map_size_speed; x ++){
-                    for(int32_t y = -m_config_map_size_speed; y < m_config_map_size_speed; y ++){
+                for(int32_t x = -m_config_map_size_speed; x <= m_config_map_size_speed; x ++){
+                    for(int32_t y = -m_config_map_size_speed; y <= m_config_map_size_speed; y ++){
                     
                     if(x == 0 && y == 0){
                         continue;
                     }
 
-                    dynamics::data::Pose2D target_pose = lattice[x][y][a][s].rel_pose;
+                    dynamics::data::Pose2D target_pose;
+                    target_pose.pos[0] = (base_node_distance*x);
+                    target_pose.pos[1] = (base_node_distance*y);
+                    target_pose.h = api * static_cast<double>(a);
+                    target_pose.vel = m_config_speedsFactor[s] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();
+
                     for(auto reachable_pose: *reachable_set_map[a][s]){
-                        
+
                         double position_pose_error = (reachable_pose.pos - target_pose.pos).norm(); 
                         double angle_pose_error =  std::abs(reachable_pose.h - target_pose.h);
 
@@ -87,7 +74,7 @@ void DirectedSearchProxy::computeProxyEdges(){
                         // Motion Primitive for upper right quadrant with positiv velocity
                         MotionPrimitiv prim;
                         prim.link = reachable_pose;
-                        prim.target = {x,y,a,s};
+                        prim.target = {x,y,a,reachable_pose.target_vel_index};
                         motion_primitive_map[a][s].push_back(prim);
 
                         std::cout << std::endl;
@@ -126,6 +113,9 @@ void DirectedSearchProxy::computeProxyEdges(){
                         // Negativ Velocity
 
                         
+
+                       
+
                     }
                 }
             }
@@ -179,7 +169,7 @@ void DirectedSearchProxy::writeGraphToDisk(){
                 double velocity = m_config_speedsFactor[j] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();;
                 double heading = api * static_cast<double>(i);
                 dynamics::data::Pose2D start_pose = {{0.f,0.f}, heading, velocity};
-                uint32_t sim_vel_intp = 20;
+                uint32_t sim_vel_intp = 8;
                 double timestep = static_cast<double>(edge.link.ts_ms);
                 auto pose_series = dynamics::SimpleDynamicsModel::computePoseSeries(start_pose, edge.link.s_a, edge.link.s_a_2, edge.link.start_vel, edge.link.target_vel, sim_vel_intp, timestep);
                 
@@ -224,52 +214,32 @@ void DirectedSearchProxy::loadGraphFromDisk(){
 }
 
 void DirectedSearchProxy::loadGraphFromDisk(std::string path){
-    // std::ifstream ifs(path);
-    // json jf = json::parse(ifs);
+    std::ifstream ifs(path);
+    json jf = json::parse(ifs);
     // m_proxyMapReachableSpan = jf["info"]["m_proxyMapReachableSpan"];
     // m_proxyMapReachableSpan += 1;
     // m_proxyMapCarOffset = jf["info"]["m_proxyMapCarOffset"];
 
-    // std::cout << "Loading map with: " << jf["map"].size() << " and expected " << m_proxyMapReachableSpan * m_proxyMapReachableSpan * map_size_angle * map_size_speed <<std::endl;
-    // assert(jf["map"].size() == m_proxyMapReachableSpan * m_proxyMapReachableSpan * map_size_angle * map_size_speed);
-    // uint32_t index = 0;
+    uint32_t index = 0;
     
-    // for(auto node: jf["map"]){
+    for(auto edge: jf["edges"]){
+        MotionPrimitiv tedge;
 
-    //     uint32_t x = node["pose"]["xi"];
-    //     uint32_t y = node["pose"]["yi"];
-    //     uint32_t a = node["pose"]["ai"];
-    //     uint32_t s = node["pose"]["si"];
-        
-    //     m_proxyMap[x][y][a][s].rel_pose.h = node["pose"]["h"];
-    //     m_proxyMap[x][y][a][s].rel_pose.vel = node["pose"]["v"];
-    //     m_proxyMap[x][y][a][s].rel_pose.pos[0] = node["pose"]["x"];
-    //     m_proxyMap[x][y][a][s].rel_pose.pos[1] = node["pose"]["y"];
-    // }
+        tedge.link.s_a = edge["settings"]["a1"];
+        tedge.link.s_a_2 = edge["settings"]["a2"];
 
 
-    // for(auto edge: jf["edges"]){
-    //     MotionPrimitiv tedge;
+        tedge.link.h = edge["target"]["a"];
+        tedge.link.pos[1] = edge["target"]["y"];
+        tedge.link.pos[0] = edge["target"]["x"];
+        tedge.link.vel = edge["target"]["s"];
 
-    //     tedge.link.s_a = edge["settings"]["a1"];
-    //     tedge.link.s_a_2 = edge["settings"]["a2"];
-    //     tedge.link.s_v = edge["settings"]["v1"];
-    //     tedge.link.s_v_2 = edge["settings"]["v2"];
+        tedge.target.s = edge["targeti"]["s"];
+        tedge.target.a = edge["targeti"]["a"];
+        tedge.target.x = edge["targeti"]["x"];
+        tedge.target.y = edge["targeti"]["y"];
 
-    //     tedge.link.a_error = edge["error"]["ae"];
-    //     tedge.link.p_error = edge["error"]["pe"];
-
-    //     tedge.link.h = edge["target"]["a"];
-    //     tedge.link.pos[1] = edge["target"]["y"];
-    //     tedge.link.pos[0] = edge["target"]["x"];
-    //     tedge.link.vel = edge["target"]["s"];
-
-    //     tedge.target.s = edge["targeti"]["s"];
-    //     tedge.target.a = edge["targeti"]["a"];
-    //     tedge.target.x = edge["targeti"]["x"];
-    //     tedge.target.y = edge["targeti"]["y"];
-
-    //     m_proxyEdgeList[edge["source"]["a"]][edge["source"]["s"]].push_back(tedge);
-    // }
+        // m_proxyEdgeList[edge["source"]["a"]][edge["source"]["s"]].push_back(tedge);
+    }
 }
 

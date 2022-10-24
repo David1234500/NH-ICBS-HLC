@@ -154,6 +154,7 @@ struct Pose2DWithMotionData{
 
     double start_vel = 0.f;
     double target_vel = 0.f;
+    int32_t target_vel_index = 0;
 
     double s_a = 0.f;
     double s_a_2 = 0.f;

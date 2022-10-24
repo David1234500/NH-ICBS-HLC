@@ -6,7 +6,7 @@
 constexpr int map_size_x = 90;
 constexpr int map_size_y = 90;
 constexpr int map_size_angle = 8;
-constexpr int map_size_speed = 3;
+constexpr int map_size_speed = 1;
 
 
 

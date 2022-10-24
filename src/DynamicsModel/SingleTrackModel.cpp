@@ -53,18 +53,18 @@ return Pose2D{new_pos, new_head, velocity};
 dynamics::data::Pose2D SimpleDynamicsModel::computeNextPoseWithVelocityInterpolation(dynamics::data::Pose2D& start_pose, double& angle_step_a, double& angle_step_b,
                                                                                      double& start_vel, double& target_vel, uint32_t& simulation_velocity_interpolation_count,
                                                                                      double& ts_ms){
-
+    
     double itp_velocity_step_cms = std::abs(start_vel - target_vel) / static_cast<double>(simulation_velocity_interpolation_count);
     double itp_velocity_base_cms = std::min(start_vel, target_vel);
     double itp_time_base_ms = ts_ms / static_cast<double>(simulation_velocity_interpolation_count);
     dynamics::data::Pose2D pose = start_pose;
 
     double itp_vel_step = 0.f;
-    for(uint32_t svic = 0; svic < simulation_velocity_interpolation_count/2; svic ++){
+    for(uint32_t svic = 0; svic <= simulation_velocity_interpolation_count/2; svic ++){
         itp_vel_step = itp_velocity_base_cms + (itp_velocity_step_cms * svic);
         pose = SimpleDynamicsModel::computeNextPose(pose, angle_step_a, itp_vel_step, itp_time_base_ms);
     }
-    for(uint32_t svic = 0; svic < simulation_velocity_interpolation_count/2; svic ++){
+    for(uint32_t svic = 0; svic <= simulation_velocity_interpolation_count/2; svic ++){
         double velocity = itp_vel_step + (itp_velocity_step_cms * svic);
         pose = SimpleDynamicsModel::computeNextPose(pose, angle_step_b, velocity, itp_time_base_ms);
     }
@@ -81,12 +81,12 @@ std::vector<dynamics::data::Pose2D> SimpleDynamicsModel::computePoseSeries(dynam
     dynamics::data::Pose2D pose = start_pose;
 
     double itp_vel_step = 0.f;
-    for(uint32_t svic = 0; svic < simulation_velocity_interpolation_count/2; svic ++){
+    for(uint32_t svic = 0; svic <= simulation_velocity_interpolation_count/2; svic ++){
         itp_vel_step = itp_velocity_base_cms + (itp_velocity_step_cms * svic);
         pose = SimpleDynamicsModel::computeNextPose(pose, angle_step_a, itp_vel_step, itp_time_base_ms);
         pose_vector.push_back(pose);
     }
-    for(uint32_t svic = 0; svic < simulation_velocity_interpolation_count/2; svic ++){
+    for(uint32_t svic = 0; svic <= simulation_velocity_interpolation_count/2; svic ++){
         double velocity = itp_vel_step + (itp_velocity_step_cms * svic);
         pose = SimpleDynamicsModel::computeNextPose(pose, angle_step_b, velocity, itp_time_base_ms);
         pose_vector.push_back(pose);
@@ -159,19 +159,15 @@ std::shared_ptr<std::vector<dynamics::data::Pose2DWithMotionData>> SimpleDynamic
     double timestep_size_ms = (timestep_max_ms - timestep_min_ms)/ solver_timestep_count;
     double current_angle_base =  (-SimpleDynamicsModel::angle_limit());
 
-    for(double target_vel: velocities){
-
-        if(target_vel <= 0.1f){
-            continue;
-        }
-
+    for(uint32_t vel_index = 0; vel_index < velocities.size(); vel_index ++){
+        double target_vel = velocities.at(vel_index);
         for(double ts_ms = timestep_min_ms; ts_ms < timestep_max_ms; ts_ms += timestep_size_ms){
 
             for(uint32_t i = 1; i < solver_angle_count; i ++){
-                double next_angle = current_angle_base + 2.f * SimpleDynamicsModel::angle_limit() * (static_cast<double>(i) / static_cast<double>(solver_angle_count));
+                double next_angle = current_angle_base + (2.f * SimpleDynamicsModel::angle_limit() * (static_cast<double>(i) / static_cast<double>(solver_angle_count)));
 
                 for(uint32_t i2 = 1; i2 < solver_angle_count; i2 ++){
-                    double next_angle2 = current_angle_base + 2.f * SimpleDynamicsModel::angle_limit() * (static_cast<double>(i2) / static_cast<double>(solver_angle_count));
+                    double next_angle2 = current_angle_base + (2.f * SimpleDynamicsModel::angle_limit() * (static_cast<double>(i2) / static_cast<double>(solver_angle_count)));
                     
                     auto result_pose = computeNextPoseWithVelocityInterpolation(current_pose, next_angle, next_angle2 , current_pose.vel, target_vel, simulation_velocity_interpolation_count, ts_ms);
 
@@ -181,6 +177,7 @@ std::shared_ptr<std::vector<dynamics::data::Pose2DWithMotionData>> SimpleDynamic
 
                     reachable_pose.start_vel = current_pose.vel;
                     reachable_pose.target_vel = target_vel;
+                    reachable_pose.target_vel_index = vel_index;
 
                     reachable_pose.s_a = next_angle;
                     reachable_pose.s_a_2 = next_angle2;
