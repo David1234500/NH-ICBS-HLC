@@ -12,7 +12,7 @@ using json = nlohmann::json;
 DirectedSearchProxy::DirectedSearchProxy(){}
 
 void DirectedSearchProxy::computeProxyEdges(){
-    double base_node_distance = m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<double>(m_config_ts_min) / 1000.f);
+    double base_node_distance = m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<double>(m_config_ts_base) / 1000.f);
     uint32_t map_node_count = static_cast<uint32_t>(map_size_x_cm / base_node_distance);
     double api = 2 * PI / static_cast<double>(m_config_map_size_angle);
 
@@ -23,10 +23,10 @@ void DirectedSearchProxy::computeProxyEdges(){
         velocities.push_back(velocity);
     }
 
-    uint32_t map_angle_offset = m_config_map_size_angle / 4; 
+    // int32_t map_angle_offset = m_config_map_size_angle / 4; 
     std::map<uint32_t, std::map<uint32_t, std::shared_ptr<std::vector<dynamics::data::Pose2DWithMotionData>>>> reachable_set_map;
 
-    for(uint32_t a = 0; a < map_angle_offset; a ++){
+    for(uint32_t a = 0; a <= m_config_map_size_angle; a ++){
         double heading = api * static_cast<double>(a);
 
         for(uint32_t s = 0; s < map_size_speed; s ++){
@@ -37,11 +37,10 @@ void DirectedSearchProxy::computeProxyEdges(){
             reachable_set_map[a][s] = set;
         }
     }
-    
-    double negativ_direction_shift_cm = base_node_distance * (-m_config_map_size_speed - 1);
-    double positiv_direction_shift_cm = base_node_distance * (m_config_map_size_speed + 1);
 
-    for(int32_t a = 0; a < map_angle_offset; a ++){
+    std::vector<std::thread> workers;
+
+    for(int32_t a = 0; a <= m_config_map_size_angle; a ++){
         double heading = api * static_cast<double>(a);
 
         for(int32_t s = 0; s < map_size_speed; s ++){
@@ -59,73 +58,83 @@ void DirectedSearchProxy::computeProxyEdges(){
                     target_pose.h = api * static_cast<double>(a);
                     target_pose.vel = m_config_speedsFactor[s] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();
 
-                    for(auto reachable_pose: *reachable_set_map[a][s]){
-
-                        double position_pose_error = (reachable_pose.pos - target_pose.pos).norm(); 
-                        double angle_pose_error =  std::abs(reachable_pose.h - target_pose.h);
-
-                        if(angle_pose_error > base_node_distance * state_change_fit_quality_position){
-                            continue;
-                        }
-                        if(position_pose_error > api * state_change_fit_quality_angle){
-                            continue;
-                        }
-
-                        // Motion Primitive for upper right quadrant with positiv velocity
-                        MotionPrimitiv prim;
-                        prim.link = reachable_pose;
-                        prim.target = {x,y,a,reachable_pose.target_vel_index};
-                        motion_primitive_map[a][s].push_back(prim);
-
-                        std::cout << std::endl;
-                        std::cout << "pose " << reachable_pose.pos[0] <<":"<< reachable_pose.pos[1] << ":" << reachable_pose.h << ":" << reachable_pose.vel << std::endl;
-                        std::cout << "target" << x <<":"<< y << ":" << a << ":" << s << std::endl;
-                        std::cout << "angle_pose_error " << angle_pose_error << std::endl;
-                        std::cout << "position_pose_error " << position_pose_error << std::endl;
-                        std::cout << "s_a " << reachable_pose.s_a << ":" << reachable_pose.s_a_2 << std::endl;
-
-                        break;
-
-                        // Motion Primitive for upper left quadrant with positiv velocity
-                        
-                        // prim.link = reachable_pose;
-                        // dynamics::data::Vector2Df neg_x_offset_cm = {negativ_direction_shift_cm, 0.f};
-                        // prim.link.pos -= neg_x_offset_cm;
-                        // prim.target = {x - m_config_map_size_speed,y,a,s};
-                        // motion_primitive_map[a + map_angle_offset][s].push_back(prim);
-
-                        // // Motion Primitive for lower left quadrant with positiv velocity
-                        
-                        // prim.link = reachable_pose;
-                        // neg_x_offset_cm = {negativ_direction_shift_cm, positiv_direction_shift_cm};
-                        // prim.link.pos -= neg_x_offset_cm;
-                        // prim.target = {x - m_config_map_size_speed - 1,y + m_config_map_size_speed + 1,a,s};
-                        // motion_primitive_map[a + 2*map_angle_offset][s].push_back(prim);
-
-                        // // Motion Primitive for lower right quadrant with positiv velocity
-                        
-                        // prim.link = reachable_pose;
-                        // neg_x_offset_cm = {0.f, positiv_direction_shift_cm};
-                        // prim.link.pos -= neg_x_offset_cm;
-                        // prim.target = {x,y + m_config_map_size_speed + 1,a,s};
-                        // motion_primitive_map[a + 3*map_angle_offset][s].push_back(prim);
-
-                        // Negativ Velocity
-
-                        
-
-                       
-
-                    }
+                    searchJob job = {m_config_map_size_angle, x,y,a,api,base_node_distance,target_pose, reachable_set_map};
+                    job_queue.push_back(job);
                 }
+            }
+        }
+    }
+    for(uint32_t i = 0; i < 12; i ++){
+        workers.push_back(std::thread(&DirectedSearchProxy::dispatch, this));
+    }
+
+    for(uint32_t i = 0; i < 12; i ++){
+        workers.at(i).join();
+    }
+
+}
+
+void DirectedSearchProxy::dispatch(){
+    while(true){
+        searchJob job;
+
+        job_mutex.lock();
+        
+        if(job_queue.empty()){
+            job_mutex.unlock();
+            return;
+        }else{
+            job = job_queue.back();
+            job_queue.pop_back();
+            std::cout << "Queue size: " << std::to_string(job_queue.size()) << std::endl;
+
+            job_mutex.unlock();
+        }
+        
+        worker(job);
+    }
+}
+
+void DirectedSearchProxy::worker(searchJob job){
+     for(int32_t source_a = 0; source_a <= m_config_map_size_angle; source_a ++){
+
+        for(int32_t source_s = 0; source_s < map_size_speed; source_s ++){
+
+            for(auto reachable_pose: *job.reachable_set_map[source_a][source_s]){
+
+                double position_pose_error = (reachable_pose.pos - job.target_pose.pos).norm(); 
+                double angle_pose_error =  std::abs(reachable_pose.h - job.target_pose.h);
+
+                if(angle_pose_error > job.base_node_distance * state_change_fit_quality_position){
+                    continue;
+                }
+
+                if(position_pose_error > job.api * state_change_fit_quality_angle){
+                    continue;
+                }
+
+                MotionPrimitiv prim;
+                prim.link = reachable_pose;
+                prim.target = {job.x,job.y,job.a,reachable_pose.target_vel_index};
+                motion_primitive_map_mutex.lock();
+                motion_primitive_map[source_a][source_s].push_back(prim);
+                motion_primitive_map_mutex.unlock();
+
+                std::cout << std::endl;
+                std::cout << "pose " << reachable_pose.pos[0] <<":"<< reachable_pose.pos[1] << ":" << reachable_pose.h << ":" << reachable_pose.vel << std::endl;
+                std::cout << "target" << job.x <<":"<< job.y << ":" << job.a << std::endl;
+                std::cout << "angle_pose_error " << angle_pose_error << std::endl;
+                std::cout << "position_pose_error " << position_pose_error << std::endl;
+                std::cout << "s_a " << reachable_pose.s_a << ":" << reachable_pose.s_a_2 << std::endl;
+                
+                break;
             }
         }
     }
 }
 
-
 void DirectedSearchProxy::writeGraphToDisk(){
-    double base_node_distance = m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<double>(m_config_ts_min) / 1000.f);
+    double base_node_distance = m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<double>(m_config_ts_base) / 1000.f);
     uint32_t map_node_count = static_cast<uint32_t>(map_size_x_cm / base_node_distance);
     double api = 2 * PI / static_cast<double>(m_config_map_size_angle);
 
@@ -166,7 +175,7 @@ void DirectedSearchProxy::writeGraphToDisk(){
                 jedge["source"]["a"] = i;
                 jedge["source"]["s"] = j;
                 
-                double velocity = m_config_speedsFactor[j] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();;
+                double velocity = m_config_speedsFactor[j] * (m_config_baseVelocityFactor - 0.1 ) * dynamics::SimpleDynamicsModel::velocity_limit();;
                 double heading = api * static_cast<double>(i);
                 dynamics::data::Pose2D start_pose = {{0.f,0.f}, heading, velocity};
                 uint32_t sim_vel_intp = 8;
@@ -182,10 +191,10 @@ void DirectedSearchProxy::writeGraphToDisk(){
                 }
                 
 
-                jedge["t_pose"]["x"] = edge.link.pos[0];
-                jedge["t_pose"]["y"] = edge.link.pos[1];
-                jedge["t_pose"]["s"] = edge.link.vel;
-                jedge["t_pose"]["a"] = edge.link.h;
+                jedge["t_pose"]["x"] = pose_series.back().pos[0];
+                jedge["t_pose"]["y"] = pose_series.back().pos[1];
+                jedge["t_pose"]["s"] = pose_series.back().vel;
+                jedge["t_pose"]["a"] = pose_series.back().h;
 
                 jedge["settings"]["a1"] = edge.link.s_a;
                 jedge["settings"]["a2"] = edge.link.s_a_2;
@@ -216,9 +225,7 @@ void DirectedSearchProxy::loadGraphFromDisk(){
 void DirectedSearchProxy::loadGraphFromDisk(std::string path){
     std::ifstream ifs(path);
     json jf = json::parse(ifs);
-    // m_proxyMapReachableSpan = jf["info"]["m_proxyMapReachableSpan"];
-    // m_proxyMapReachableSpan += 1;
-    // m_proxyMapCarOffset = jf["info"]["m_proxyMapCarOffset"];
+    
 
     uint32_t index = 0;
     
@@ -227,19 +234,21 @@ void DirectedSearchProxy::loadGraphFromDisk(std::string path){
 
         tedge.link.s_a = edge["settings"]["a1"];
         tedge.link.s_a_2 = edge["settings"]["a2"];
+        tedge.link.ts_ms = edge["settings"]["ts"];
+        tedge.link.start_vel = edge["settings"]["sv"];
+        tedge.link.target_vel = edge["settings"]["tv"];
 
+        tedge.link.h = edge["t_pose"]["a"];
+        tedge.link.pos[1] = edge["t_pose"]["y"];
+        tedge.link.pos[0] = edge["t_pose"]["x"];
+        tedge.link.vel = edge["t_pose"]["s"];
 
-        tedge.link.h = edge["target"]["a"];
-        tedge.link.pos[1] = edge["target"]["y"];
-        tedge.link.pos[0] = edge["target"]["x"];
-        tedge.link.vel = edge["target"]["s"];
+        tedge.target.s = edge["t_index"]["s"];
+        tedge.target.a = edge["t_index"]["a"];
+        tedge.target.x = edge["t_index"]["x"];
+        tedge.target.y = edge["t_index"]["y"];
 
-        tedge.target.s = edge["targeti"]["s"];
-        tedge.target.a = edge["targeti"]["a"];
-        tedge.target.x = edge["targeti"]["x"];
-        tedge.target.y = edge["targeti"]["y"];
-
-        // m_proxyEdgeList[edge["source"]["a"]][edge["source"]["s"]].push_back(tedge);
+        motion_primitive_map[edge["source"]["a"]][edge["source"]["s"]].push_back(tedge);
     }
 }
 

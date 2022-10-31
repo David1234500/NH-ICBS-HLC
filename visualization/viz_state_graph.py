@@ -21,7 +21,7 @@ for edge in y["edges"]:
         ex.append(curve_point["x"])
         ey.append(curve_point["y"])
 
-    print("target: {}:{} {} {}".format(edge["t_pose"]["x"],edge["t_pose"]["y"],edge["t_pose"]["a"],edge["t_pose"]["s"]))
+    print("target: {} -> {} {} {} {}".format(edge["source"]["a"], edge["t_index"]["x"],edge["t_index"]["y"],edge["t_index"]["a"],edge["t_index"]["s"]))
     ex.append(edge["t_pose"]["x"])
     ey.append(edge["t_pose"]["y"])
     plt.plot(ex,ey)

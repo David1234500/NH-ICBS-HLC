@@ -23,7 +23,7 @@ constexpr int zero_velocity_level = 1;
 
 /* Constraints what the allow angle range is for the edge */
 constexpr double state_change_fit_quality_angle = 0.3f;
-constexpr double state_change_fit_quality_position =  0.1f;
+constexpr double state_change_fit_quality_position =  0.3f;
 constexpr double state_change_fit_allowed_speed_difference = 0.15f;
 constexpr double state_change_fit_threshold_angle_index_difference = 3;
 constexpr double state_change_fit_threshold_angle_difference = 0.5f * PI;

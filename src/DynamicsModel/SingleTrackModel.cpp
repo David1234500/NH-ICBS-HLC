@@ -130,9 +130,6 @@ dynamics::data::Pose2DWithMotionData SimpleDynamicsModel::computeBestFit(Pose2D&
                 if(position_pose_error < current_error){
 
                     current_best_pose = result_pose;
-
-                    // current_best_pose.a_error = angle_pose_error;
-                    // current_best_pose.p_error = position_pose_error;
                 
                     current_best_pose.s_a = next_angle;
                     current_best_pose.s_a_2 = next_angle2;
@@ -151,16 +148,17 @@ std::shared_ptr<std::vector<dynamics::data::Pose2DWithMotionData>> SimpleDynamic
 
     Pose2D pose = current_pose;
 
-    uint32_t solver_angle_count = 200;
-    uint32_t solver_vel_count = 200;
+    uint32_t solver_angle_count = 400;
+    uint32_t solver_vel_count = 400;
     uint32_t simulation_velocity_interpolation_count = 8;
-    uint32_t solver_timestep_count = 100;
+    uint32_t solver_timestep_count = 200;
 
     double timestep_size_ms = (timestep_max_ms - timestep_min_ms)/ solver_timestep_count;
     double current_angle_base =  (-SimpleDynamicsModel::angle_limit());
 
     for(uint32_t vel_index = 0; vel_index < velocities.size(); vel_index ++){
         double target_vel = velocities.at(vel_index);
+        
         for(double ts_ms = timestep_min_ms; ts_ms < timestep_max_ms; ts_ms += timestep_size_ms){
 
             for(uint32_t i = 1; i < solver_angle_count; i ++){

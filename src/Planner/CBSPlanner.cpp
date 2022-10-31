@@ -17,21 +17,11 @@ dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PoseByIndex globa
     global_pose.pos[0] = (xpc * global.x);
     global_pose.pos[1] = (ypc * global.y);
     global_pose.h = api * static_cast<double>(global.a);
-    // global_pose.vel = m_speedsFactor[global.s] * dynamics::SimpleDynamicsModel::velocity_limit();
+    global_pose.vel = 75.f;
     
     return global_pose;
 }
 
-dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PBIConstraint global){
-    // dynamics::data::Pose2D global_pose;
-    
-    // global_pose.pos[0] = (xpc * global.x);
-    // global_pose.pos[1] = (ypc * global.y);
-    // global_pose.h = api * static_cast<double>(global.a);
-    // // global_pose.vel = m_speedsFactor[global.s] * dynamics::SimpleDynamicsModel::velocity_limit();
-    
-    // return global_pose;
-}
 
 
 
@@ -69,6 +59,40 @@ bool CBSPlanner::validatePosition(dynamics::data::PoseByIndex base){
 }
 
 
+void CBSPlanner::writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target,  std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom){
+    json visited_nodes;
+    
+    visited_nodes["target"]["x"] = target.x;
+    visited_nodes["target"]["y"] = target.y;
+    visited_nodes["target"]["a"] = target.a;
+    visited_nodes["target"]["s"] = target.s;
+
+    visited_nodes["start"]["x"] = start.x;
+    visited_nodes["start"]["y"] = start.y;
+    visited_nodes["start"]["a"] = start.a;
+    visited_nodes["start"]["s"] = start.s;
+
+    for(auto it: cameFrom){
+
+        json node;
+        node["x"] = it.second.x;
+        node["y"] = it.second.y;
+        node["a"] = it.second.a;
+        node["s"] = it.second.s;
+
+        node["px"] = it.first.x;
+        node["py"] = it.first.y;
+        node["pa"] = it.first.a;
+        node["ps"] = it.first.s;
+
+        visited_nodes["nodes"].push_back(node);
+    }
+
+    std::ofstream o("visited_nodes.json");
+    o << visited_nodes << std::endl;
+    o.close();
+
+}
 
 LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles){
     
@@ -81,7 +105,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
     auto target_pose = indexToPose(target);
 
     std::unordered_map<dynamics::data::PoseByIndex, double> fScore;
-    fScore[start] = (target_pose.pos - current_pose.pos).norm(); //+ 1 * (start.a - target.a);
+    fScore[start] = (target_pose.pos - current_pose.pos).norm(); 
     
     std::unordered_map<dynamics::data::PoseByIndex, double> gScore;
     gScore[start] = 0.f;
@@ -102,12 +126,13 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             LLResult res;
             res.path = getPath(cameFrom, current.pose);
             res.spline = getSplines(cameFrom, usedEdge, current.pose);
+            writeVisitedNodesToDisk(start,target,cameFrom);
             res.found_path = true;
 
             return res;
         }
 
-        // std::cout << "Visited node: " << current.pose.x << ":" << current.pose.y << ":" << current.pose.a  << ":" << current.pose.s << std::endl;
+        std::cout << "Visited node: " << current.pose.x << ":" << current.pose.y << ":" << current.pose.a  << ":" << current.pose.s << std::endl;
 
         openQueue.pop();
         for(auto rel_neighbor: m_proxGraph.motion_primitive_map[current.pose.a][current.pose.s]){
@@ -121,18 +146,18 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             }
             
             // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP or KD Tree to avoid this computation every time
-            bool discard_due_to_obstacle = false;
-            for(auto obstacle : obstacles){
-                auto obstPose = indexToPose(obstacle);
-                if(obstacle.t == current.timestep + 1 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
-                    discard_due_to_obstacle = true;
-                    break;
-                }
-            }
+            // bool discard_due_to_obstacle = false;
+            // for(auto obstacle : obstacles){
+            //     auto obstPose = indexToPose(obstacle);
+            //     if(obstacle.t == current.timestep + 1 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
+            //         discard_due_to_obstacle = true;
+            //         break;
+            //     }
+            // }
 
-            if(discard_due_to_obstacle){
-                continue;
-            }
+            // if(discard_due_to_obstacle){
+            //     continue;
+            // }
 
             auto current_pose = indexToPose(current.pose); 
             double dist = (neigh_pose.pos - current_pose.pos).norm();
@@ -142,6 +167,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
                         
             double tentative_score = gScore[current.pose] + dist; 
             if(gScore.count(gl_neighbor) == 0 || tentative_score < gScore[gl_neighbor]){
+
                 cameFrom[gl_neighbor] = current.pose;
                 usedEdge[gl_neighbor] = rel_neighbor;
                 gScore[gl_neighbor] = tentative_score;
@@ -160,9 +186,12 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
     std::cout << "a star infeasible with explored nodes: " << explored_nodes << std::endl;
     std::cout << "START: " << start.x << ":" << start.y << ":" << start.a << ":" << start.s << std::endl;
     std::cout << "TARGET: " << target.x << ":" << target.y << ":" << target.a << ":" << target.s << std::endl;
+    
     LLResult res;
     res.found_path = false;
     res.spline.clear();
+
+    writeVisitedNodesToDisk(start,target,cameFrom);
     
     return res;
 }

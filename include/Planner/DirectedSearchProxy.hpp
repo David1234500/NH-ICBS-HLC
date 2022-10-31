@@ -22,15 +22,33 @@ struct LatticeNode{
     dynamics::data::Pose2D rel_pose;
 };
 
+
+
+struct searchJob{
+    int m_config_map_size_angle;
+    int32_t x; 
+    int32_t y; 
+    int32_t a; 
+    double api; 
+    double base_node_distance; 
+    dynamics::data::Pose2D target_pose;                     
+    std::map<uint32_t, std::map<uint32_t, std::shared_ptr<std::vector<dynamics::data::Pose2DWithMotionData>>>> reachable_set_map;
+};
+
 class DirectedSearchProxy{
+
 public:
 
 DirectedSearchProxy();
 
 
 // Proxy Edges/Node
-
+void worker(searchJob job);
 void computeProxyEdges();
+void dispatch();
+
+std::vector<searchJob> job_queue;
+std::mutex job_mutex;
 
 double m_config_baseVelocityFactor = 0.5;
 
@@ -41,9 +59,11 @@ int m_config_map_size_x_cm = 450;
 int m_config_map_size_y_cm = 400;
 int m_config_map_size_angle = 8;
 
-double m_config_ts_min = 250.f;
-double m_config_ts_max = 350.f;
+double m_config_ts_base = 300.f;
+double m_config_ts_min = 200.f;
+double m_config_ts_max = 400.f;
 
+std::mutex motion_primitive_map_mutex;
 std::map<int32_t, std::map<int32_t, std::vector<MotionPrimitiv>>> motion_primitive_map;
 
 // debug functions
