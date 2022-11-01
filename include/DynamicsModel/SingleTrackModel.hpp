@@ -4,6 +4,7 @@
 #include <util/Pose.hpp>
 #include <Config.hpp>
 #include <vector>
+#include <memory>
 
 namespace dynamics{
 

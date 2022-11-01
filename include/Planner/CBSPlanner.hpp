@@ -5,7 +5,6 @@
 
 #include <DynamicsModel/SingleTrackModel.hpp>
 #include <Planner/DirectedSearchProxy.hpp>
-#include <Planner/StateGraph.hpp>
 #include <unordered_set>
 #include <unordered_map>
 #include <Config.hpp>
@@ -26,7 +25,7 @@ struct LLJob{
 struct LLResult{
     bool found_path = false;
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> path;
-    std::vector<dynamics::data::Pose2WithTime> spline;
+    std::vector<dynamics::data::Pose2D> spline;
     uint32_t job_id = 0;
     uint16_t car_id = 0;
 };
@@ -79,17 +78,13 @@ public:
 
     DirectedSearchProxy m_proxGraph;
 
-    double api = 1.f;
-    double xpc = 1.f;
-    double ypc = 1.f;
-
     void writePathToDisk( std::vector<dynamics::data::PoseByIndex> path, std::string name);
-    void writeCurveToDisk(std::vector<dynamics::data::Pose2WithTime> path, std::string name);
+    void writeCurveToDisk(std::vector<dynamics::data::Pose2D> path, std::string name);
     void writeMultiplePathsToDisk(constraint_node cnode, std::string name);
     void writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target,  std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom);
     
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> getPath(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target);
-    std::vector<dynamics::data::Pose2WithTime> getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,MotionPrimitiv>& edge_map, dynamics::data::PoseByIndex target);
+    std::vector<dynamics::data::Pose2D>  getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,MotionPrimitiv>& edge_map, dynamics::data::PoseByIndex target);
     
 
 };

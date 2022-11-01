@@ -8,18 +8,12 @@
 #include <vector>
 #include <map>
 #include <mutex>
-
+#include <memory>
 
 struct MotionPrimitiv{
     dynamics::data::Pose2DWithMotionData link;
     dynamics::data::PoseByIndex target;
-
-    
-};
-
-struct LatticeNode{
-    //Stores the relativ position of this node to the center
-    dynamics::data::Pose2D rel_pose;
+    bool is_zero_connection = false;    
 };
 
 
@@ -51,17 +45,22 @@ std::vector<searchJob> job_queue;
 std::mutex job_mutex;
 
 double m_config_baseVelocityFactor = 0.5;
+double m_base_node_distance = 0.f;
 
-double m_config_speedsFactor[1] = {1.f}; 
-int m_config_map_size_speed = 1;
+std::vector<double> m_config_speedsFactor = {1.f, 0.f, -1.f}; 
+int m_config_map_size_zero_velocity_level = 1;
+int m_config_map_size_speed = 3;
+int m_config_map_extent = 1;
 
+int m_comp_map_size_x = 0;
+int m_comp_map_size_y = 0;
 int m_config_map_size_x_cm = 450;
 int m_config_map_size_y_cm = 400;
 int m_config_map_size_angle = 8;
 
-double m_config_ts_base = 300.f;
-double m_config_ts_min = 200.f;
-double m_config_ts_max = 400.f;
+double m_config_ts_base = 150.f;
+double m_config_ts_min = 100.f;
+double m_config_ts_max = 200.f;
 
 std::mutex motion_primitive_map_mutex;
 std::map<int32_t, std::map<int32_t, std::vector<MotionPrimitiv>>> motion_primitive_map;

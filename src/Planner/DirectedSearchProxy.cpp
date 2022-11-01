@@ -12,12 +12,12 @@ using json = nlohmann::json;
 DirectedSearchProxy::DirectedSearchProxy(){}
 
 void DirectedSearchProxy::computeProxyEdges(){
-    double base_node_distance = m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<double>(m_config_ts_base) / 1000.f);
-    uint32_t map_node_count = static_cast<uint32_t>(map_size_x_cm / base_node_distance);
+    m_base_node_distance = m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<double>(m_config_ts_base) / 1000.f);
+    uint32_t map_node_count = static_cast<uint32_t>(m_config_map_size_x_cm / m_base_node_distance);
     double api = 2 * PI / static_cast<double>(m_config_map_size_angle);
 
     std::vector<double> velocities;
-    for(uint32_t s = 0; s < map_size_speed; s ++){
+    for(uint32_t s = 0; s < m_config_map_size_speed; s ++){
         double velocity = m_config_speedsFactor[s] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();
         std::cout << "velocity values: " << velocity << std::endl;
         velocities.push_back(velocity);
@@ -26,10 +26,10 @@ void DirectedSearchProxy::computeProxyEdges(){
     // int32_t map_angle_offset = m_config_map_size_angle / 4; 
     std::map<uint32_t, std::map<uint32_t, std::shared_ptr<std::vector<dynamics::data::Pose2DWithMotionData>>>> reachable_set_map;
 
-    for(uint32_t a = 0; a <= m_config_map_size_angle; a ++){
+    for(int32_t a = 0; a <= m_config_map_size_angle; a ++){
         double heading = api * static_cast<double>(a);
 
-        for(uint32_t s = 0; s < map_size_speed; s ++){
+        for(int32_t s = 0; s < m_config_map_size_speed; s ++){
             double velocity = m_config_speedsFactor[s] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();
 
             dynamics::data::Pose2D current_pose = {{0.f,0.f},heading,velocity};
@@ -38,37 +38,55 @@ void DirectedSearchProxy::computeProxyEdges(){
         }
     }
 
+    // for(int32_t a = 0; a <= m_config_map_size_angle; a ++){
+    //     double heading = api * static_cast<double>(a);
+
+    //     int32_t vel_to_zero_1 = std::max(0, m_config_map_size_zero_velocity_level - 1);
+    //     int32_t vel_to_zero_2 = std::min(m_config_map_size_zero_velocity_level + 1, m_config_map_size_speed);
+        
+    //     MotionPrimitiv prim;
+    //     prim.is_zero_connection = true;
+    //     prim.link = {heading, vel}
+    //     prim.target = {0,0,a,0};
+    //     motion_primitive_map[a][vel_to_zero_1].push_back(prim);
+
+    // }
+
     std::vector<std::thread> workers;
 
     for(int32_t a = 0; a <= m_config_map_size_angle; a ++){
         double heading = api * static_cast<double>(a);
 
-        for(int32_t s = 0; s < map_size_speed; s ++){
+        for(int32_t s = 0; s < m_config_map_size_speed; s ++){
 
-                for(int32_t x = -m_config_map_size_speed; x <= m_config_map_size_speed; x ++){
-                    for(int32_t y = -m_config_map_size_speed; y <= m_config_map_size_speed; y ++){
+                for(int32_t x = -m_config_map_extent; x <= m_config_map_extent; x ++){
+                    for(int32_t y = -m_config_map_extent; y <= m_config_map_extent; y ++){
                     
                     if(x == 0 && y == 0){
                         continue;
                     }
 
+                    if(std::abs(m_config_speedsFactor[s]) < 0.01f){
+                        continue;
+                    }
+
                     dynamics::data::Pose2D target_pose;
-                    target_pose.pos[0] = (base_node_distance*x);
-                    target_pose.pos[1] = (base_node_distance*y);
+                    target_pose.pos[0] = (m_base_node_distance*x);
+                    target_pose.pos[1] = (m_base_node_distance*y);
                     target_pose.h = api * static_cast<double>(a);
                     target_pose.vel = m_config_speedsFactor[s] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();
 
-                    searchJob job = {m_config_map_size_angle, x,y,a,api,base_node_distance,target_pose, reachable_set_map};
+                    searchJob job = {m_config_map_size_angle, x,y,a,api,m_base_node_distance,target_pose, reachable_set_map};
                     job_queue.push_back(job);
                 }
             }
         }
     }
-    for(uint32_t i = 0; i < 12; i ++){
+    for(uint32_t i = 0; i < 28; i ++){
         workers.push_back(std::thread(&DirectedSearchProxy::dispatch, this));
     }
 
-    for(uint32_t i = 0; i < 12; i ++){
+    for(uint32_t i = 0; i < 28; i ++){
         workers.at(i).join();
     }
 
@@ -98,7 +116,7 @@ void DirectedSearchProxy::dispatch(){
 void DirectedSearchProxy::worker(searchJob job){
      for(int32_t source_a = 0; source_a <= m_config_map_size_angle; source_a ++){
 
-        for(int32_t source_s = 0; source_s < map_size_speed; source_s ++){
+        for(int32_t source_s = 0; source_s < m_config_map_size_speed; source_s ++){
 
             for(auto reachable_pose: *job.reachable_set_map[source_a][source_s]){
 
@@ -134,26 +152,38 @@ void DirectedSearchProxy::worker(searchJob job){
 }
 
 void DirectedSearchProxy::writeGraphToDisk(){
-    double base_node_distance = m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<double>(m_config_ts_base) / 1000.f);
-    uint32_t map_node_count = static_cast<uint32_t>(map_size_x_cm / base_node_distance);
+    m_base_node_distance = m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<double>(m_config_ts_base) / 1000.f);
+    uint32_t map_node_count = static_cast<uint32_t>(m_config_map_size_x_cm / m_base_node_distance);
+    m_comp_map_size_x = map_node_count;
+    m_comp_map_size_y = map_node_count;
     double api = 2 * PI / static_cast<double>(m_config_map_size_angle);
 
-   json proxy_map_dump;
+    json proxy_map_dump;
 
     proxy_map_dump["info"]["m_config_map_size_speed"] = m_config_map_size_speed;
+    proxy_map_dump["info"]["m_config_map_extent"] = m_config_map_extent;
+    proxy_map_dump["info"]["m_base_node_distance"] = m_base_node_distance;
     proxy_map_dump["info"]["m_config_baseVelocityFactor"] = m_config_baseVelocityFactor;
+    proxy_map_dump["info"]["m_comp_map_size_x"] = m_comp_map_size_x;
+    proxy_map_dump["info"]["m_comp_map_size_y"] = m_comp_map_size_y;
 
-    proxy_map_dump["info"]["size_a"] = map_size_angle;
-    proxy_map_dump["info"]["size_s"] = map_size_speed;
+    for(auto speed: m_config_speedsFactor){
+        proxy_map_dump["info"]["m_config_speedsFactor"].push_back(speed);
+    }
 
-     for(int32_t x = -m_config_map_size_speed; x <= m_config_map_size_speed; x ++){
-        for(int32_t y = -m_config_map_size_speed; y <= m_config_map_size_speed; y ++){
-            for(int32_t a = 0; a < map_size_angle; a ++){
-                for(int32_t s = 0; s < map_size_speed; s ++){
+    proxy_map_dump["info"]["size_a"] = m_config_map_size_angle;
+    proxy_map_dump["info"]["size_s"] = m_config_map_size_speed;
+    proxy_map_dump["info"]["size_y_cm"] = m_config_map_size_y_cm;
+    proxy_map_dump["info"]["size_x_cm"] = m_config_map_size_x_cm;
+
+     for(int32_t x = -m_config_map_extent; x <= m_config_map_extent; x ++){
+        for(int32_t y = -m_config_map_extent; y <= m_config_map_extent; y ++){
+            for(int32_t a = 0; a < m_config_map_size_angle; a ++){
+                for(int32_t s = 0; s < m_config_map_size_speed; s ++){
 
                     json node;
-                    node["pose"]["x"] =  (base_node_distance*x);
-                    node["pose"]["y"] =  (base_node_distance*y);
+                    node["pose"]["x"] =  (m_base_node_distance*x);
+                    node["pose"]["y"] =  (m_base_node_distance*y);
                     node["pose"]["h"] =  api * static_cast<double>(a);
                     node["pose"]["v"] =  m_config_speedsFactor[s] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();
 
@@ -168,8 +198,8 @@ void DirectedSearchProxy::writeGraphToDisk(){
         }
     }
 
-    for(uint32_t i = 0; i < map_size_angle; i ++){
-        for(uint32_t j = 0; j < map_size_speed; j ++){
+    for(uint32_t i = 0; i < m_config_map_size_angle; i ++){
+        for(uint32_t j = 0; j < m_config_map_size_speed; j ++){
             for(auto edge: motion_primitive_map[i][j]){
                 json jedge;
                 jedge["source"]["a"] = i;
@@ -226,6 +256,25 @@ void DirectedSearchProxy::loadGraphFromDisk(std::string path){
     std::ifstream ifs(path);
     json jf = json::parse(ifs);
     
+    m_comp_map_size_x = jf["info"]["m_comp_map_size_x"];
+    m_comp_map_size_y = jf["info"]["m_comp_map_size_y"];
+    
+    m_config_map_size_speed = jf["info"]["m_config_map_size_speed"];
+    m_config_map_extent = jf["info"]["m_config_map_extent"];
+    m_config_baseVelocityFactor = jf["info"]["m_config_baseVelocityFactor"];
+    m_base_node_distance = jf["info"]["m_base_node_distance"];
+
+    m_config_map_size_angle = jf["info"]["size_a"] ;
+    m_config_map_size_speed = jf["info"]["size_s"];
+
+    m_config_map_size_y_cm = jf["info"]["size_y_cm"];
+    m_config_map_size_x_cm = jf["info"]["size_y_cm"];
+
+    m_config_speedsFactor.clear();
+    
+    for(auto speed: jf["info"]["m_config_speedsFactor"]){
+        m_config_speedsFactor.push_back(speed);
+    }
 
     uint32_t index = 0;
     
