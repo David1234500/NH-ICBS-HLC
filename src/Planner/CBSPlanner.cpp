@@ -26,20 +26,40 @@ dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PoseByIndex globa
     return global_pose;
 }
 
+dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PBIConstraint global){
+    dynamics::data::Pose2D global_pose;
+    
+    double xpc = m_proxGraph.m_base_node_distance;
+    double ypc = m_proxGraph.m_base_node_distance;
+    double api = 2.f * PI / m_proxGraph.m_config_map_size_angle;
+
+    global_pose.pos[0] = (xpc * global.x);
+    global_pose.pos[1] = (ypc * global.y);
+    global_pose.h = api * static_cast<double>(global.a);
+    global_pose.vel = m_proxGraph.m_config_speedsFactor.at(global.s);
+    
+    return global_pose;
+}
+
 
 
 
 dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::Pose2D pose){
-    // double near_x = pose.pos[0] / xpc;
-    // double near_y = pose.pos[1] / ypc;
+
+    double xpc = m_proxGraph.m_base_node_distance;
+    double ypc = m_proxGraph.m_base_node_distance;
+    double api = 2.f * PI / m_proxGraph.m_config_map_size_angle;
+
+    double near_x = pose.pos[0] / xpc;
+    double near_y = pose.pos[1] / ypc;
     
-    // pose.h = fmod(pose.h + 2*PI , 2*PI);
+    pose.h = fmod(pose.h + 2*PI , 2*PI);
 
-    // double near_a = pose.h / api;
+    double near_a = pose.h / api;
 
-    // dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)round(near_a),zero_velocity_level};
+    dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)round(near_a),zero_velocity_level};
 
-    // return result;
+    return result;
 }
 
 dynamics::data::PoseByIndex CBSPlanner::toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global){
@@ -124,7 +144,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             LLResult res;
             res.path = getPath(cameFrom, current.pose);
             res.spline = getSplines(cameFrom, usedEdge, current.pose);
-            writeVisitedNodesToDisk(start,target,cameFrom);
+            //writeVisitedNodesToDisk(start,target,cameFrom);
             res.found_path = true;
 
             return res;
@@ -144,18 +164,18 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             }
             
             // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP or KD Tree to avoid this computation every time
-            // bool discard_due_to_obstacle = false;
-            // for(auto obstacle : obstacles){
-            //     auto obstPose = indexToPose(obstacle);
-            //     if(obstacle.t == current.timestep + 1 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
-            //         discard_due_to_obstacle = true;
-            //         break;
-            //     }
-            // }
+            bool discard_due_to_obstacle = false;
+            for(auto obstacle : obstacles){
+                auto obstPose = indexToPose(obstacle);
+                if(obstacle.t == current.timestep + 1 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
+                    discard_due_to_obstacle = true;
+                    break;
+                }
+            }
 
-            // if(discard_due_to_obstacle){
-            //     continue;
-            // }
+            if(discard_due_to_obstacle){
+                continue;
+            }
 
             auto current_pose = indexToPose(current.pose); 
             double dist = (neigh_pose.pos - current_pose.pos).norm() + rel_neighbor.link.s_a + rel_neighbor.link.s_a_2;
@@ -204,7 +224,7 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::getPath(st
     return result;
 }
 
-std::vector<dynamics::data::Pose2D> CBSPlanner::getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,MotionPrimitiv>& edge_map, dynamics::data::PoseByIndex target){
+std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,MotionPrimitiv>& edge_map, dynamics::data::PoseByIndex target){
     auto current = target;
     std::vector<dynamics::data::PoseByIndex> nodes;
     std::vector<MotionPrimitiv> edges;
@@ -218,16 +238,22 @@ std::vector<dynamics::data::Pose2D> CBSPlanner::getSplines(std::unordered_map<dy
     nodes.push_back(current);
     edges.push_back(edge_map[current]);
 
-    dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(nodes.size() - 1));
-    std::vector<dynamics::data::Pose2D> result;
+    dynamics::data::Pose2D veh_pose;
+    veh_pose = indexToPose(nodes.at(nodes.size() - 1));
+    std::vector<dynamics::data::Pose2WithTime> result;
+    double time = 0.f;
     for(int64_t i = nodes.size() - 1; i > 0; i --){
         
         uint32_t intp = 8;
-        double timestep =  static_cast<double>(edges.at(i - 1).link.ts_ms);
-        auto pose_series = dynamics::SimpleDynamicsModel::computePoseSeries(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.start_vel, edges.at(i - 1).link.target_vel, intp, timestep);
+        double timestep = static_cast<double>(edges.at(i - 1).link.ts_ms);
+        auto pose_series = dynamics::SimpleDynamicsModel::computePoseSeries(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.start_vel, edges.at(i - 1).link.target_vel, intp, timestep, time);
         
         result.insert(result.end(), pose_series.begin(), pose_series.end());
-        veh_pose = pose_series.back();
+        time = pose_series.back().time_ms;
+        
+        veh_pose.pos = pose_series.back().pos;
+        veh_pose.h = pose_series.back().h;
+        veh_pose.vel = pose_series.back().vel;
     }
     
     return result;

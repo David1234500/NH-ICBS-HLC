@@ -71,27 +71,40 @@ dynamics::data::Pose2D SimpleDynamicsModel::computeNextPoseWithVelocityInterpola
     return pose;
 }
 
-std::vector<dynamics::data::Pose2D> SimpleDynamicsModel::computePoseSeries(dynamics::data::Pose2D& start_pose, double& angle_step_a, double& angle_step_b,
+std::vector<dynamics::data::Pose2WithTime> SimpleDynamicsModel::computePoseSeries(dynamics::data::Pose2D& start_pose, double& angle_step_a, double& angle_step_b,
                                                                                      double& start_vel, double& target_vel, uint32_t& simulation_velocity_interpolation_count,
-                                                                                     double& ts_ms){
-    std::vector<dynamics::data::Pose2D> pose_vector;
+                                                                                     double& ts_ms, double base_time){
+    std::vector<dynamics::data::Pose2WithTime> pose_vector;
     double itp_velocity_step_cms = std::abs(start_vel - target_vel) / static_cast<double>(simulation_velocity_interpolation_count);
     double itp_velocity_base_cms = std::min(start_vel, target_vel);
     double itp_time_base_ms = ts_ms / static_cast<double>(simulation_velocity_interpolation_count);
     dynamics::data::Pose2D pose = start_pose;
 
     double itp_vel_step = 0.f;
+    double time = base_time;
     for(uint32_t svic = 0; svic <= simulation_velocity_interpolation_count/2; svic ++){
         itp_vel_step = itp_velocity_base_cms + (itp_velocity_step_cms * svic);
         pose = SimpleDynamicsModel::computeNextPose(pose, angle_step_a, itp_vel_step, itp_time_base_ms);
-        pose_vector.push_back(pose);
+        time += itp_velocity_base_cms;
+
+        dynamics::data::Pose2WithTime timepose;
+        timepose = pose;
+        timepose.time_ms = time;
+
+        pose_vector.push_back(timepose);
     }
     for(uint32_t svic = 0; svic <= simulation_velocity_interpolation_count/2; svic ++){
         double velocity = itp_vel_step + (itp_velocity_step_cms * svic);
         pose = SimpleDynamicsModel::computeNextPose(pose, angle_step_b, velocity, itp_time_base_ms);
-        pose_vector.push_back(pose);
-    }
+        time += itp_velocity_base_cms;
 
+        dynamics::data::Pose2WithTime timepose;
+        timepose = pose;
+        timepose.time_ms = time;
+
+        pose_vector.push_back(timepose);
+    }
+    
     return pose_vector;
 }
 
