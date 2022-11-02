@@ -5,6 +5,7 @@
 
 
 constexpr double safe_radius = 30.f;
+constexpr double safe_time = 50.f;
 constexpr double heuristic_factor_backwards = 2.f;
 
 constexpr int zero_velocity_level = 1;

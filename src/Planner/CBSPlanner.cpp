@@ -26,23 +26,6 @@ dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PoseByIndex globa
     return global_pose;
 }
 
-dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PBIConstraint global){
-    dynamics::data::Pose2D global_pose;
-    
-    double xpc = m_proxGraph.m_base_node_distance;
-    double ypc = m_proxGraph.m_base_node_distance;
-    double api = 2.f * PI / m_proxGraph.m_config_map_size_angle;
-
-    global_pose.pos[0] = (xpc * global.x);
-    global_pose.pos[1] = (ypc * global.y);
-    global_pose.h = api * static_cast<double>(global.a);
-    global_pose.vel = m_proxGraph.m_config_speedsFactor.at(global.s);
-    
-    return global_pose;
-}
-
-
-
 
 dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::Pose2D pose){
 
@@ -286,6 +269,42 @@ void CBSPlanner::low_level_astar_worker(uint32_t threadid){
     }
 }
 
+std::pair<bool, dynamics::data::Constraint> CBSPlanner::computeCollisions(constraint_node node, std::vector<dynamics::data::PoseByIndex> start_positions){
+        
+        std::pair<bool, dynamics::data::Constraint> result;
+        result.first = false;
+
+        for(int32_t car_index = 0; car_index < start_positions.size(); car_index ++){
+            for (int32_t car_index2 = 0; car_index2 < start_positions.size(); car_index2 ++){
+                
+                if(car_index == car_index2){
+                    continue;
+                }
+
+                for(uint32_t i = 0; i < node.result[car_index].spline.size() && i < node.result[car_index2].spline.size(); i ++){
+                    
+                    if((node.result[car_index].spline.at(i).pos - node.result[car_index2].spline.at(i).pos).norm() < safe_radius
+                    && node.result[car_index].spline.at(i).time_ms - node.result[car_index2].spline.at(i).time_ms < safe_time){
+                        
+                        dynamics::data::Constraint con;
+                        con.vehicle_a = car_index;
+                        con.vehicle_b = car_index2;
+                        con.time_ms = node.result[car_index].spline.at(i).time_ms;
+                        con.pos = node.result[car_index].spline.at(i).pos;
+
+                        std::cout << "FOUND CONFLICT!" << std::endl;
+                    
+                        result.first = true;
+                        result.second =  con;            
+                        return result;
+
+                    }
+                }   
+            }
+        }
+    return result;
+}
+
 constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions){
     std::cout << "CBS start" << std::endl;
 
@@ -360,78 +379,20 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         }
 
         //Validate Solution in first node to find conflicts
-        dynamics::data::PoseByIndex conflict_pose;
-        int32_t conflict_step = -1;
-        std::array<int32_t,2> conflicting_vehicles = {-1,-1};
-
-        for(int32_t car_index = 0; car_index < start_positions.size(); car_index ++){
-            for (int32_t car_index2 = 0; car_index2 < start_positions.size(); car_index2 ++){
-                
-                if(car_index == car_index2){
-                    continue;
-                }
-
-                for(uint32_t i = 0; i < node.result[car_index].path->size() && i < node.result[car_index2].path->size(); i ++){
-                
-                    auto p = node.result[car_index].path->at(i) - node.result[car_index2].path->at(i);    
-                    auto pose_car_a = indexToPose(node.result[car_index].path->at(i));
-                    auto pose_car_b = indexToPose(node.result[car_index2].path->at(i));
-                    
-                    if((pose_car_a.pos - pose_car_b.pos).norm() < safe_radius){
-                        conflict_step = i;
-                        conflicting_vehicles = {car_index, car_index2};
-                        conflict_pose = node.result[car_index2].path->at(i);
-                        std::cout << "FOUND CONFLICT!" << std::endl;
-                    }
-                }   
-            }
-        }
-
-        std::cout << "[INFO CBS] Conflict at: " << conflict_step << " with " << conflicting_vehicles[0] << ":" << conflicting_vehicles[1] << std::endl;
+       auto collision = computeCollisions(node, start_positions);
+        
         // Check if we have just obtained a valid solution -> terminate if yes
-        if(conflict_step == -1){
+        if(!collision.first){
             std::cout << "CBS TERMINATION!" << std::endl;
             return node;
-        }
+        }else{
+           
+           
 
-        // Add new constraints and replan
-        for(auto vehicle_in_conflict: conflicting_vehicles){
-            // Create new constraint node
-            constraint_node constraint = node;
-
-            dynamics::data::PBIConstraint constr;
-            constr.id = vehicle_in_conflict;
-            constr = conflict_pose;
-            constr.t = conflict_step;
-            std::cout << "[INFO CBS] Adding new constraint to situation " << conflict_pose.x << ":" << conflict_pose.y << std::endl;
-
-            constraint.avoid.push_back(constr);
-
-            // TODO: maybe restore astar compute from here
-            // Just add path again until conflict with all neighbors as open nodes and recompute scores
-            // potentially also adjust the heuristict to account for new obstacle
+            
 
             // Enqueu all jobs to astar workers
-            for(uint32_t i = 0; i < start_positions.size(); i ++){
-                LLJob job;
-                job.job_id = i;
-                job.avoid.clear();
-
-                for(auto c: constraint.avoid){
-                    if(c.id == i){
-                        job.avoid.push_back(c);
-                    }
-                }
-
-                job.start_positions = start_positions.at(i);
-                job.target_positions = target_positions.at(i);
-                
-                job.car_id = i;
-                
-                m_lowLevelSearchJobLock.lock();
-                m_lowLevelJobs.push_back(job);
-                m_lowLevelSearchJobLock.unlock();
-            }
+            
 
             //Wait for all threads to termiante
             while(true){
@@ -480,7 +441,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 }
 
 
-void CBSPlanner::writeCurveToDisk(std::vector<dynamics::data::Pose2D> path, std::string name){
+void CBSPlanner::writeCurveToDisk(std::vector<dynamics::data::Pose2WithTime> path, std::string name){
     json astar_path;
     
     for(auto current: path){

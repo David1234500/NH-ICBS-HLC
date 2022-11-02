@@ -16,7 +16,7 @@
 struct LLJob{
     dynamics::data::PoseByIndex start_positions; 
     dynamics::data::PoseByIndex target_positions;
-    std::vector<dynamics::data::PBIConstraint> avoid;
+    std::vector<dynamics::data::Constraint> avoid;
     uint32_t job_id = 0;
     uint16_t car_id = 0;  
 };
@@ -32,7 +32,7 @@ struct LLResult{
 
 struct constraint_node{
     uint64_t sic = 0;
-    std::vector<dynamics::data::PBIConstraint> avoid;
+    std::vector<dynamics::data::Constraint> constraints;
     std::map<int32_t, LLResult> result;
    
     bool operator < (const constraint_node r) const {
@@ -59,10 +59,10 @@ public:
     dynamics::data::PoseByIndex toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative);
     dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex);
     dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global);
-    dynamics::data::Pose2D indexToPose(dynamics::data::PBIConstraint global);
 
     dynamics::data::PoseByIndex findNearestPoseByIndex(dynamics::data::Pose2D pose);
 
+    std::pair<bool, dynamics::data::Constraint> computeCollisions(constraint_node node, std::vector<dynamics::data::PoseByIndex> start_positions);
     constraint_node cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions);
     
     std::mutex m_lowLevelSearchJobLock;
@@ -79,7 +79,7 @@ public:
     DirectedSearchProxy m_proxGraph;
 
     void writePathToDisk( std::vector<dynamics::data::PoseByIndex> path, std::string name);
-    void writeCurveToDisk(std::vector<dynamics::data::Pose2D> path, std::string name);
+    void writeCurveToDisk(std::vector<dynamics::data::Pose2WithTime> path, std::string name);
     void writeMultiplePathsToDisk(constraint_node cnode, std::string name);
     void writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target,  std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom);
     

@@ -77,30 +77,7 @@ struct PoseByIndex{
 
 
 
-struct PBIConstraint{
-    int32_t x = 0;
-    int32_t y = 0;
-    int32_t a = 0;
-    int32_t s = 0;
-    int32_t t = 0;
-    int32_t id = 0;
 
-    inline void operator=(const PoseByIndex& e){
-       x = e.x; 
-       y = e.y; 
-       a = e.a;
-       s = e.s;
-    }
-
-    inline bool operator==(const PBIConstraint &e) const {
-        if(e.x==x && e.y == y && e.a == a && e.s== s && e.t == t){
-            return true;
-        }else{
-            return false;
-        }
-    }
-
-};
 
 struct LLNode{
     PoseByIndex pose;
@@ -146,6 +123,13 @@ struct Pose2WithTime{
     }
 };
 
+
+struct Constraint{
+    uint32_t vehicle_a;
+    uint32_t vehicle_b;
+    double time_ms;
+    dynamics::data::Position2Df pos;  
+};
 
 struct Pose2DWithMotionData{
     Position2Df pos = {0.f,0.f};
