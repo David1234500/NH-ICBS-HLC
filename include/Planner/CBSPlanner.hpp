@@ -79,7 +79,7 @@ public:
     DirectedSearchProxy m_proxGraph;
 
     void writePathToDisk( std::vector<dynamics::data::PoseByIndex> path, std::string name);
-    void writeCurveToDisk(std::vector<dynamics::data::Pose2D> path, std::string name);
+    void writeCurveToDisk(std::vector<dynamics::data::Pose2WithTime> path, std::string name);
     void writeMultiplePathsToDisk(constraint_node cnode, std::string name);
     void writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target,  std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom);
     

@@ -18,8 +18,8 @@ int main() {
     std::cout << "Finished loading graph from disk!" << std::endl;
 
     
-    dynamics::data::PoseByIndex end = {25,1,3,0};
-    dynamics::data::PoseByIndex start = {25,2,7,0};
+    dynamics::data::PoseByIndex end = {3,1,3,0};
+    dynamics::data::PoseByIndex start = {23,2,7,0};
     std::vector<uint32_t> times;
     std::cout << "Start AStar!" << std::endl;
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -28,7 +28,7 @@ int main() {
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
         planner->writePathToDisk(*res.path, "path1.json");
-        // planner->writeCurveToDisk(res.spline, "curve.json");
+        planner->writeCurveToDisk(res.spline, "curve.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }
@@ -47,7 +47,7 @@ int main() {
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
         planner->writePathToDisk(*res.path, "path2.json");
-        // planner->writeCurveToDisk(res.spline, "curve2.json");
+        planner->writeCurveToDisk(res.spline, "curve2.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }
@@ -56,15 +56,15 @@ int main() {
     times.push_back(tstop - tstart);
 
     tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    end = {10,25,0,0};
-    start = {28,25,3,0};
+    end = {10,23,0,0};
+    start = {17,23,3,0};
     std::cout << "Start AStar!" << std::endl;
      res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
         planner->writePathToDisk(*res.path, "path3.json");
-        // planner->writeCurveToDisk(res.spline, "curve3.json");
+        planner->writeCurveToDisk(res.spline, "curve3.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }
@@ -81,7 +81,7 @@ int main() {
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
         planner->writePathToDisk(*res.path, "path4.json");
-        // planner->writeCurveToDisk(res.spline, "curve4.json");
+        planner->writeCurveToDisk(res.spline, "curve4.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }

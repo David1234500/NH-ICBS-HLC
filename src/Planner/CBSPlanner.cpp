@@ -57,7 +57,7 @@ dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::P
 
     double near_a = pose.h / api;
 
-    dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)round(near_a),zero_velocity_level};
+    dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)round(near_a),0};
 
     return result;
 }
@@ -239,21 +239,18 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
     edges.push_back(edge_map[current]);
 
     dynamics::data::Pose2D veh_pose;
-    veh_pose = indexToPose(nodes.at(nodes.size() - 1));
+    
     std::vector<dynamics::data::Pose2WithTime> result;
     double time = 0.f;
     for(int64_t i = nodes.size() - 1; i > 0; i --){
-        
-        uint32_t intp = 8;
-        double timestep = static_cast<double>(edges.at(i - 1).link.ts_ms);
-        auto pose_series = dynamics::SimpleDynamicsModel::computePoseSeries(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.start_vel, edges.at(i - 1).link.target_vel, intp, timestep, time);
+
+        veh_pose = indexToPose(nodes.at(i));
+        uint32_t intp = 4;
+        double timestep = static_cast<double>(edges.at(i).link.ts_ms);
+        auto pose_series = dynamics::SimpleDynamicsModel::computePoseSeries(veh_pose, edges.at(i).link.s_a, edges.at(i).link.s_a_2, edges.at(i).link.start_vel, edges.at(i).link.target_vel, intp, timestep, time);
         
         result.insert(result.end(), pose_series.begin(), pose_series.end());
         time = pose_series.back().time_ms;
-        
-        veh_pose.pos = pose_series.back().pos;
-        veh_pose.h = pose_series.back().h;
-        veh_pose.vel = pose_series.back().vel;
     }
     
     return result;
@@ -364,28 +361,28 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         int32_t conflict_step = -1;
         std::array<int32_t,2> conflicting_vehicles = {-1,-1};
 
-        for(int32_t car_index = 0; car_index < start_positions.size(); car_index ++){
-            for (int32_t car_index2 = 0; car_index2 < start_positions.size(); car_index2 ++){
+        // for(int32_t car_index = 0; car_index < start_positions.size(); car_index ++){
+        //     for (int32_t car_index2 = 0; car_index2 < start_positions.size(); car_index2 ++){
                 
-                if(car_index == car_index2){
-                    continue;
-                }
+        //         if(car_index == car_index2){
+        //             continue;
+        //         }
 
-                for(uint32_t i = 0; i < node.result[car_index].path->size() && i < node.result[car_index2].path->size(); i ++){
+        //         for(uint32_t i = 0; i < node.result[car_index].path->size() && i < node.result[car_index2].path->size(); i ++){
                 
-                    auto p = node.result[car_index].path->at(i) - node.result[car_index2].path->at(i);    
-                    auto pose_car_a = indexToPose(node.result[car_index].path->at(i));
-                    auto pose_car_b = indexToPose(node.result[car_index2].path->at(i));
+        //             auto p = node.result[car_index].path->at(i) - node.result[car_index2].path->at(i);    
+        //             auto pose_car_a = indexToPose(node.result[car_index].path->at(i));
+        //             auto pose_car_b = indexToPose(node.result[car_index2].path->at(i));
                     
-                    if((pose_car_a.pos - pose_car_b.pos).norm() < safe_radius){
-                        conflict_step = i;
-                        conflicting_vehicles = {car_index, car_index2};
-                        conflict_pose = node.result[car_index2].path->at(i);
-                        std::cout << "FOUND CONFLICT!" << std::endl;
-                    }
-                }   
-            }
-        }
+        //             if((pose_car_a.pos - pose_car_b.pos).norm() < safe_radius){
+        //                 conflict_step = i;
+        //                 conflicting_vehicles = {car_index, car_index2};
+        //                 conflict_pose = node.result[car_index2].path->at(i);
+        //                 std::cout << "FOUND CONFLICT!" << std::endl;
+        //             }
+        //         }   
+        //     }
+        // }
 
         std::cout << "[INFO CBS] Conflict at: " << conflict_step << " with " << conflicting_vehicles[0] << ":" << conflicting_vehicles[1] << std::endl;
         // Check if we have just obtained a valid solution -> terminate if yes
@@ -480,7 +477,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 }
 
 
-void CBSPlanner::writeCurveToDisk(std::vector<dynamics::data::Pose2D> path, std::string name){
+void CBSPlanner::writeCurveToDisk(std::vector<dynamics::data::Pose2WithTime> path, std::string name){
     json astar_path;
     
     for(auto current: path){
