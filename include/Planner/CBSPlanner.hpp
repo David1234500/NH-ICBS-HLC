@@ -74,7 +74,7 @@ public:
     std::vector<LLResult> m_lowLevelResults;
     bool m_keepThreadsAlive = true;
 
-    LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles);
+    LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::Constraint> obstacles);
 
     DirectedSearchProxy m_proxGraph;
 

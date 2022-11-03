@@ -23,12 +23,12 @@ int main() {
     std::vector<uint32_t> times;
     std::cout << "Start AStar!" << std::endl;
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    auto res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
+    auto res = planner->astar(start,end, std::vector<dynamics::data::Constraint>());
     std::cout << "Completed Astar" << std::endl;
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
         planner->writePathToDisk(*res.path, "path1.json");
-        // planner->writeCurveToDisk(res.spline, "curve.json");
+        planner->writeCurveToDisk(res.spline, "curve.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }
@@ -39,15 +39,15 @@ int main() {
 
     tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     end = {10,3,0,0};
-    start = {10,4,3,0};
+    start = {26,26,3,0};
     std::cout << "Start AStar!" << std::endl;
-    res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
+    res = planner->astar(start,end, std::vector<dynamics::data::Constraint>());
     std::cout << "Completed Astar" << std::endl;
     
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
         planner->writePathToDisk(*res.path, "path2.json");
-        // planner->writeCurveToDisk(res.spline, "curve2.json");
+        planner->writeCurveToDisk(res.spline, "curve2.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }
@@ -55,39 +55,39 @@ int main() {
     tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     times.push_back(tstop - tstart);
 
-    tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    end = {10,25,0,0};
-    start = {28,25,3,0};
-    std::cout << "Start AStar!" << std::endl;
-     res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
-    std::cout << "Completed Astar" << std::endl;
-    if(res.found_path){ 
-        std::cout << res.path->size() << std::endl;
-        planner->writePathToDisk(*res.path, "path3.json");
-        // planner->writeCurveToDisk(res.spline, "curve3.json");
-    }else{
-        std::cout << "No viable solution found" << std::endl;
-    }
+    // tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    // end = {3,25,0,0};
+    // start = {28,3,3,0};
+    // std::cout << "Start AStar!" << std::endl;
+    //  res = planner->astar(start,end, std::vector<dynamics::data::Constraint>());
+    // std::cout << "Completed Astar" << std::endl;
+    // if(res.found_path){ 
+    //     std::cout << res.path->size() << std::endl;
+    //     planner->writePathToDisk(*res.path, "path3.json");
+    //     planner->writeCurveToDisk(res.spline, "curve3.json");
+    // }else{
+    //     std::cout << "No viable solution found" << std::endl;
+    // }
     
-    tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    times.push_back(tstop - tstart);
+    // tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    // times.push_back(tstop - tstart);
 
-    tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    end = {10,5,0,0};
-    start = {19,5,3,0};
-    std::cout << "Start AStar!" << std::endl;
-    res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
-    std::cout << "Completed Astar" << std::endl;
-    if(res.found_path){ 
-        std::cout << res.path->size() << std::endl;
-        planner->writePathToDisk(*res.path, "path4.json");
-        // planner->writeCurveToDisk(res.spline, "curve4.json");
-    }else{
-        std::cout << "No viable solution found" << std::endl;
-    }
+    // tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    // end = {10,5,0,0};
+    // start = {19,5,3,0};
+    // std::cout << "Start AStar!" << std::endl;
+    // res = planner->astar(start,end, std::vector<dynamics::data::Constraint>());
+    // std::cout << "Completed Astar" << std::endl;
+    // if(res.found_path){ 
+    //     std::cout << res.path->size() << std::endl;
+    //     planner->writePathToDisk(*res.path, "path4.json");
+    //     planner->writeCurveToDisk(res.spline, "curve4.json");
+    // }else{
+    //     std::cout << "No viable solution found" << std::endl;
+    // }
     
-    tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    times.push_back(tstop - tstart);
+    // tstop = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    // times.push_back(tstop - tstart);
     
     for(uint32_t i = 0; i < times.size(); i ++){
         std::cout << "times " << i << " " << times.at(i) << std::endl; 

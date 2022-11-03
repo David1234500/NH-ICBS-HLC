@@ -95,7 +95,7 @@ void CBSPlanner::writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dyna
 
 }
 
-LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles){
+LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::Constraint> obstacles){
     
     std::priority_queue<dynamics::data::LLNode> openQueue;
     std::unordered_set<dynamics::data::PoseByIndex> openSet;
@@ -127,7 +127,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             LLResult res;
             res.path = getPath(cameFrom, current.pose);
             res.spline = getSplines(cameFrom, usedEdge, current.pose);
-            //writeVisitedNodesToDisk(start,target,cameFrom);
+            writeVisitedNodesToDisk(start,target,cameFrom);
             res.found_path = true;
 
             return res;
@@ -148,20 +148,20 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             
             // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP or KD Tree to avoid this computation every time
             bool discard_due_to_obstacle = false;
-            for(auto obstacle : obstacles){
-                auto obstPose = indexToPose(obstacle);
-                if(obstacle.t == current.timestep + 1 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
-                    discard_due_to_obstacle = true;
-                    break;
-                }
-            }
+            // for(auto obstacle : obstacles){
+            //     auto obstPose = indexToPose(obstacle);
+            //     if(obstacle.t == current.timestep + 1 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
+            //         discard_due_to_obstacle = true;
+            //         break;
+            //     }
+            // }
 
             if(discard_due_to_obstacle){
                 continue;
             }
 
             auto current_pose = indexToPose(current.pose); 
-            double dist = (neigh_pose.pos - current_pose.pos).norm() + rel_neighbor.link.s_a + rel_neighbor.link.s_a_2;
+            double dist = (neigh_pose.pos - current_pose.pos).norm(); //+ 0.2f * (rel_neighbor.link.s_a + rel_neighbor.link.s_a_2);
                         
             double tentative_score = gScore[current.pose] + dist; 
             if(gScore.count(gl_neighbor) == 0 || tentative_score < gScore[gl_neighbor]){
@@ -353,7 +353,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     // Create initial constraint node
     constraint_node node;
     node.sic = sic;
-    node.avoid.clear();
+    node.constraints.clear();
     for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
         node.result[m_lowLevelResults.at(i).car_id] = m_lowLevelResults.at(i);
     }
@@ -417,15 +417,15 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             }
 
             // Update constraint node with new information
-            constraint.sic = sic;
-            for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
-                constraint.result[m_lowLevelResults.at(i).car_id]= m_lowLevelResults.at(i);
-            }
-            m_lowLevelResults.clear();
+            // constraint.sic = sic;
+            // for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
+            //     constraint.result[m_lowLevelResults.at(i).car_id]= m_lowLevelResults.at(i);
+            // }
+            // m_lowLevelResults.clear();
 
             // Add new constraint node if it is feasible
             if(found_paths_for_all_vehicles){
-                openSet.push(constraint);
+                // openSet.push(constraint);
             }else{
                 std::cout << "CBS Found infeasible node" << std::endl;
             }

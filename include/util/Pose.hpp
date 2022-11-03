@@ -170,16 +170,4 @@ namespace std {
     };
 }
 
-namespace std {
-    template<> struct hash<dynamics::data::PBIConstraint>
-    {
-        std::size_t operator()(const dynamics::data::PBIConstraint& p) const noexcept
-        {
-            // 4294967295
-            // 10000000 * 100
-            // = 10000000
-            return p.s + p.a * 10 + 1000 * p.y + 100000 * p.x + 10000000 * p.t;
-        }
-    };
-}
 #endif //UTIL_POSE_HPP
