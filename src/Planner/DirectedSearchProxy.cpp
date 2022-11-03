@@ -123,11 +123,11 @@ void DirectedSearchProxy::worker(searchJob job){
                 double position_pose_error = (reachable_pose.pos - job.target_pose.pos).norm(); 
                 double angle_pose_error =  std::abs(reachable_pose.h - job.target_pose.h);
 
-                if(angle_pose_error > job.base_node_distance * state_change_fit_quality_position){
+                if(position_pose_error > job.base_node_distance * state_change_fit_quality_position){
                     continue;
                 }
 
-                if(position_pose_error > job.api * state_change_fit_quality_angle){
+                if(angle_pose_error > job.api * state_change_fit_quality_angle){
                     continue;
                 }
 
@@ -208,7 +208,7 @@ void DirectedSearchProxy::writeGraphToDisk(){
                 double velocity = m_config_speedsFactor[j] * (m_config_baseVelocityFactor - 0.1 ) * dynamics::SimpleDynamicsModel::velocity_limit();;
                 double heading = api * static_cast<double>(i);
                 dynamics::data::Pose2D start_pose = {{0.f,0.f}, heading, velocity};
-                uint32_t sim_vel_intp = 8;
+                uint32_t sim_vel_intp = 4;
                 double timestep = static_cast<double>(edge.link.ts_ms);
                 auto pose_series = dynamics::SimpleDynamicsModel::computePoseSeries(start_pose, edge.link.s_a, edge.link.s_a_2, edge.link.start_vel, edge.link.target_vel, sim_vel_intp, timestep, 0);
                 

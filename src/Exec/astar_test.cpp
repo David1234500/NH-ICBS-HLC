@@ -18,8 +18,8 @@ int main() {
     std::cout << "Finished loading graph from disk!" << std::endl;
 
     
-    dynamics::data::PoseByIndex end = {25,1,3,0};
-    dynamics::data::PoseByIndex start = {25,2,7,0};
+    dynamics::data::PoseByIndex end = {3,1,3,0};
+    dynamics::data::PoseByIndex start = {23,2,7,0};
     std::vector<uint32_t> times;
     std::cout << "Start AStar!" << std::endl;
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();

@@ -40,7 +40,7 @@ dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::P
 
     double near_a = pose.h / api;
 
-    dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)round(near_a),zero_velocity_level};
+    dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)round(near_a),0};
 
     return result;
 }
@@ -222,21 +222,18 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
     edges.push_back(edge_map[current]);
 
     dynamics::data::Pose2D veh_pose;
-    veh_pose = indexToPose(nodes.at(nodes.size() - 1));
+    
     std::vector<dynamics::data::Pose2WithTime> result;
     double time = 0.f;
     for(int64_t i = nodes.size() - 1; i > 0; i --){
-        
-        uint32_t intp = 8;
-        double timestep = static_cast<double>(edges.at(i - 1).link.ts_ms);
-        auto pose_series = dynamics::SimpleDynamicsModel::computePoseSeries(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.start_vel, edges.at(i - 1).link.target_vel, intp, timestep, time);
+
+        veh_pose = indexToPose(nodes.at(i));
+        uint32_t intp = 4;
+        double timestep = static_cast<double>(edges.at(i).link.ts_ms);
+        auto pose_series = dynamics::SimpleDynamicsModel::computePoseSeries(veh_pose, edges.at(i).link.s_a, edges.at(i).link.s_a_2, edges.at(i).link.start_vel, edges.at(i).link.target_vel, intp, timestep, time);
         
         result.insert(result.end(), pose_series.begin(), pose_series.end());
         time = pose_series.back().time_ms;
-        
-        veh_pose.pos = pose_series.back().pos;
-        veh_pose.h = pose_series.back().h;
-        veh_pose.vel = pose_series.back().vel;
     }
     
     return result;

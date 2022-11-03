@@ -54,11 +54,11 @@ int m_config_map_extent = 1;
 
 int m_comp_map_size_x = 0;
 int m_comp_map_size_y = 0;
-int m_config_map_size_x_cm = 450;
-int m_config_map_size_y_cm = 400;
+int m_config_map_size_x_cm = 600;
+int m_config_map_size_y_cm = 600;
 int m_config_map_size_angle = 8;
 
-double m_config_ts_base = 150.f;
+double m_config_ts_base = 200.f;
 double m_config_ts_min = 100.f;
 double m_config_ts_max = 200.f;
 
