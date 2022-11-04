@@ -228,7 +228,7 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
     for(int64_t i = nodes.size() - 1; i > 0; i --){
 
         veh_pose = indexToPose(nodes.at(i));
-        uint32_t intp = 4;
+        uint32_t intp = 2;
 
         double timestep = static_cast<double>(edges.at(i - 1).link.ts_ms);
         auto pose_series = dynamics::SimpleDynamicsModel::computePoseSeries(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.start_vel, edges.at(i - 1).link.target_vel, intp, timestep, time);
@@ -377,13 +377,13 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         }
 
         //Validate Solution in first node to find conflicts
-       auto collision = computeCollisions(node, start_positions);
+    //    auto collision = computeCollisions(node, start_positions);
         
         // Check if we have just obtained a valid solution -> terminate if yes
-        if(!collision.first){
-            std::cout << "CBS TERMINATION!" << std::endl;
-            return node;
-        }else{
+            if(true){
+                std::cout << "CBS TERMINATION!" << std::endl;
+                return node;
+            }else{
            
            
 
