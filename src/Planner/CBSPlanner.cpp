@@ -229,8 +229,9 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
 
         veh_pose = indexToPose(nodes.at(i));
         uint32_t intp = 4;
-        double timestep = static_cast<double>(edges.at(i).link.ts_ms);
-        auto pose_series = dynamics::SimpleDynamicsModel::computePoseSeries(veh_pose, edges.at(i).link.s_a, edges.at(i).link.s_a_2, edges.at(i).link.start_vel, edges.at(i).link.target_vel, intp, timestep, time);
+
+        double timestep = static_cast<double>(edges.at(i - 1).link.ts_ms);
+        auto pose_series = dynamics::SimpleDynamicsModel::computePoseSeries(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.start_vel, edges.at(i - 1).link.target_vel, intp, timestep, time);
         
         result.insert(result.end(), pose_series.begin(), pose_series.end());
         time = pose_series.back().time_ms;

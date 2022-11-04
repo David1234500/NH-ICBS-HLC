@@ -82,11 +82,11 @@ void DirectedSearchProxy::computeProxyEdges(){
             }
         }
     }
-    for(uint32_t i = 0; i < 28; i ++){
+    for(uint32_t i = 0; i < 12; i ++){
         workers.push_back(std::thread(&DirectedSearchProxy::dispatch, this));
     }
 
-    for(uint32_t i = 0; i < 28; i ++){
+    for(uint32_t i = 0; i < 12; i ++){
         workers.at(i).join();
     }
 
