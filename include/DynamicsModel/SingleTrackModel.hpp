@@ -14,7 +14,7 @@ class SimpleDynamicsModel
 public:
     SimpleDynamicsModel();
 
-    static Pose2D computeNextPose(Pose2D current_pose, float steering_angle, float velocity, float time);
+    static Pose2D computeNextPose(Pose2D& current_pose, float& steering_angle, float& velocity, float& time);
     static dynamics::data::Pose2DWithError computeBestFit(Pose2D current_pose, PoseByIndex tpi, Pose2D target_pose, float timestep);
     static dynamics::data::Pose2DWithError computeBestFitSingleStep(Pose2D current_pose, PoseByIndex tpi, Pose2D target_pose, float timestep);
 

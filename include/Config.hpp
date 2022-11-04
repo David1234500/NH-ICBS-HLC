@@ -8,7 +8,7 @@ constexpr int map_size_y = 90;
 constexpr int map_size_angle = 8;
 constexpr int map_size_speed = 4;
 
-constexpr float timestep_ms = 150.f;
+constexpr float timestep_ms = 300.f;
 
 constexpr int map_size_x_cm = 450;
 constexpr int map_size_y_cm = 400;

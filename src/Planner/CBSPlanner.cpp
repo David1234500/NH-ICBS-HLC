@@ -100,6 +100,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             std::cout << "a star finished" << std::endl;
             
             LLResult res;
+            writeVisitedNodesToDisk(start,target,cameFrom);
             res.path = getPath(cameFrom, current.pose);
             res.spline = getSplines(cameFrom, usedEdge, current.pose);
             res.found_path = true;
@@ -142,6 +143,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
                         
             float tentative_score = gScore[current.pose] + dist; 
             if(gScore.count(gl_neighbor) == 0 || tentative_score < gScore[gl_neighbor]){
+
                 cameFrom[gl_neighbor] = current.pose;
                 usedEdge[gl_neighbor] = rel_neighbor;
                 gScore[gl_neighbor] = tentative_score;
@@ -160,6 +162,8 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
     std::cout << "a star infeasible with explored nodes: " << explored_nodes << std::endl;
     std::cout << "START: " << start.x << ":" << start.y << ":" << start.a << ":" << start.s << std::endl;
     std::cout << "TARGET: " << target.x << ":" << target.y << ":" << target.a << ":" << target.s << std::endl;
+    
+    writeVisitedNodesToDisk(start,target,cameFrom);
     LLResult res;
     res.found_path = false;
     res.spline.clear();
@@ -178,6 +182,41 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::getPath(st
     
     result->push_back(current);
     return result;
+}
+
+void CBSPlanner::writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target,  std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom){
+    json visited_nodes;
+    
+    visited_nodes["target"]["x"] = target.x;
+    visited_nodes["target"]["y"] = target.y;
+    visited_nodes["target"]["a"] = target.a;
+    visited_nodes["target"]["s"] = target.s;
+
+    visited_nodes["start"]["x"] = start.x;
+    visited_nodes["start"]["y"] = start.y;
+    visited_nodes["start"]["a"] = start.a;
+    visited_nodes["start"]["s"] = start.s;
+
+    for(auto it: cameFrom){
+
+        json node;
+        node["x"] = it.second.x;
+        node["y"] = it.second.y;
+        node["a"] = it.second.a;
+        node["s"] = it.second.s;
+
+        node["px"] = it.first.x;
+        node["py"] = it.first.y;
+        node["pa"] = it.first.a;
+        node["ps"] = it.first.s;
+
+        visited_nodes["nodes"].push_back(node);
+    }
+
+    std::ofstream o("visited_nodes.json");
+    o << visited_nodes << std::endl;
+    o.close();
+
 }
 
 std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target){
