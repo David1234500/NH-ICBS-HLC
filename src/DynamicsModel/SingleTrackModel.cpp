@@ -31,7 +31,7 @@ double radius = 15.f / std::sin(steering_angle);  /* TODO: Correct Wheelbase her
 double circ = 2.f * PI * radius;
 
 // Compute drive angle inside circle
-double circ_comp = dist / circ * 2.f * PI;
+double circ_comp = dist / circ;
 
 // Compute new x_diff offset
 double dx = std::sin(circ_comp) * radius;
@@ -172,7 +172,7 @@ std::shared_ptr<std::vector<dynamics::data::Pose2DWithMotionData>> SimpleDynamic
         double target_vel = velocities.at(vel_index);
         
         for(double ts_ms = timestep_min_ms; ts_ms < timestep_max_ms; ts_ms += timestep_size_ms){
-
+            std::cout << "ts" << ts_ms << "sv" << current_pose.vel << "tv" << target_vel << std::endl;
             for(uint32_t i = 1; i < solver_angle_count; i ++){
                 double next_angle = current_angle_base + (2.f * SimpleDynamicsModel::angle_limit() * (static_cast<double>(i) / static_cast<double>(solver_angle_count)));
 
@@ -209,5 +209,5 @@ double SimpleDynamicsModel::velocity_limit(){
 }
 
 double SimpleDynamicsModel::angle_limit(){
-    return PI / 12;
+    return PI / 3;
 }

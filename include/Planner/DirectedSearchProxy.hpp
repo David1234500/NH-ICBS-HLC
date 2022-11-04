@@ -58,9 +58,9 @@ int m_config_map_size_x_cm = 600;
 int m_config_map_size_y_cm = 600;
 int m_config_map_size_angle = 8;
 
-double m_config_ts_base = 200.f;
-double m_config_ts_min = 100.f;
-double m_config_ts_max = 200.f;
+double m_config_ts_base = 450.f;
+double m_config_ts_min = 400.f;
+double m_config_ts_max = 700.f;
 
 std::mutex motion_primitive_map_mutex;
 std::map<int32_t, std::map<int32_t, std::vector<MotionPrimitiv>>> motion_primitive_map;

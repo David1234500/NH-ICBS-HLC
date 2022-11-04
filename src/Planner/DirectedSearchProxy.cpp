@@ -22,8 +22,8 @@ void DirectedSearchProxy::computeProxyEdges(){
         std::cout << "velocity values: " << velocity << std::endl;
         velocities.push_back(velocity);
     }
+    std::cout << "velocity base values: " <<  m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() << std::endl;
 
-    // int32_t map_angle_offset = m_config_map_size_angle / 4; 
     std::map<uint32_t, std::map<uint32_t, std::shared_ptr<std::vector<dynamics::data::Pose2DWithMotionData>>>> reachable_set_map;
 
     for(int32_t a = 0; a <= m_config_map_size_angle; a ++){
@@ -38,20 +38,6 @@ void DirectedSearchProxy::computeProxyEdges(){
         }
     }
 
-    // for(int32_t a = 0; a <= m_config_map_size_angle; a ++){
-    //     double heading = api * static_cast<double>(a);
-
-    //     int32_t vel_to_zero_1 = std::max(0, m_config_map_size_zero_velocity_level - 1);
-    //     int32_t vel_to_zero_2 = std::min(m_config_map_size_zero_velocity_level + 1, m_config_map_size_speed);
-        
-    //     MotionPrimitiv prim;
-    //     prim.is_zero_connection = true;
-    //     prim.link = {heading, vel}
-    //     prim.target = {0,0,a,0};
-    //     motion_primitive_map[a][vel_to_zero_1].push_back(prim);
-
-    // }
-
     std::vector<std::thread> workers;
 
     for(int32_t a = 0; a <= m_config_map_size_angle; a ++){
@@ -63,10 +49,6 @@ void DirectedSearchProxy::computeProxyEdges(){
                     for(int32_t y = -m_config_map_extent; y <= m_config_map_extent; y ++){
                     
                     if(x == 0 && y == 0){
-                        continue;
-                    }
-
-                    if(std::abs(m_config_speedsFactor[s]) < 0.01f){
                         continue;
                     }
 
@@ -140,7 +122,7 @@ void DirectedSearchProxy::worker(searchJob job){
 
                 std::cout << std::endl;
                 std::cout << "pose " << reachable_pose.pos[0] <<":"<< reachable_pose.pos[1] << ":" << reachable_pose.h << ":" << reachable_pose.vel << std::endl;
-                std::cout << "target" << job.x <<":"<< job.y << ":" << job.a << std::endl;
+                std::cout << "target " << job.x <<":"<< job.y << ":" << job.a << std::endl;
                 std::cout << "angle_pose_error " << angle_pose_error << std::endl;
                 std::cout << "position_pose_error " << position_pose_error << std::endl;
                 std::cout << "s_a " << reachable_pose.s_a << ":" << reachable_pose.s_a_2 << std::endl;
@@ -205,11 +187,12 @@ void DirectedSearchProxy::writeGraphToDisk(){
                 jedge["source"]["a"] = i;
                 jedge["source"]["s"] = j;
                 
-                double velocity = m_config_speedsFactor[j] * (m_config_baseVelocityFactor - 0.1 ) * dynamics::SimpleDynamicsModel::velocity_limit();;
+                double velocity = m_config_speedsFactor[j] * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit();;
                 double heading = api * static_cast<double>(i);
                 dynamics::data::Pose2D start_pose = {{0.f,0.f}, heading, velocity};
                 uint32_t sim_vel_intp = 2;
                 double timestep = static_cast<double>(edge.link.ts_ms);
+                
                 auto pose_series = dynamics::SimpleDynamicsModel::computePoseSeries(start_pose, edge.link.s_a, edge.link.s_a_2, edge.link.start_vel, edge.link.target_vel, sim_vel_intp, timestep, 0);
                 
                 for(auto pose: pose_series){
