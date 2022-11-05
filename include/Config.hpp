@@ -25,9 +25,10 @@ constexpr float m_speedsFactor[map_size_speed] = { -0.3, 0.f, 0.3f, 0.6f};
 
 
 /* Constraints what the allow angle range is for the edge */
-constexpr float state_change_fit_quality_angle = api / 2;
-constexpr float state_change_fit_quality_position =  xpc / 2;
+constexpr float state_change_fit_quality_angle = api / 4;
+constexpr float state_change_fit_quality_position =  xpc / 4;
 constexpr float state_change_fit_allowed_speed_difference = 0.15f;
+
 constexpr float state_change_fit_threshold_angle_index_difference = 3;
 constexpr float state_change_fit_threshold_angle_difference = 0.5f * PI;
 

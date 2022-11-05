@@ -20,7 +20,7 @@ int main() {
     std::vector<dynamics::data::PoseByIndex> targets;
     std::vector<dynamics::data::PoseByIndex> starts;
 
-    dynamics::data::PoseByIndex end = {25,60,7,zero_velocity_level};
+    dynamics::data::PoseByIndex end = {25,45,7,zero_velocity_level};
     dynamics::data::PoseByIndex start = {25,5,5,zero_velocity_level};
     targets.push_back(end);
     starts.push_back(start);

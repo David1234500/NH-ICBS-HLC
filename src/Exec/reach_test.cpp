@@ -6,12 +6,11 @@
 int main() {
 
 
-    ProxyGraph graph;
+    std::shared_ptr<CBSPlanner> planner = std::make_shared<CBSPlanner>();
     std::cout << "Loading graph from disk!" << std::endl;
-    graph.loadGraphFromDisk();
+    planner->m_proxGraph.loadGraphFromDisk();
     std::cout << "Finished loading graph from disk!" << std::endl;
-    graph.printPositions();
-    std::cout << "Finished printing positions!" << std::endl;
+    planner->checkForReachability();
 
 }
 

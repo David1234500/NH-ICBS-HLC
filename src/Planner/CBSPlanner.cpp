@@ -1,4 +1,6 @@
 #include <Planner/CBSPlanner.hpp>
+#include <Planner/Logger.hpp>
+
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <iostream>
@@ -48,6 +50,7 @@ dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::P
     return result;
 }
 
+
 dynamics::data::PoseByIndex CBSPlanner::toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global){
     return (global - base) +  m_proxGraph.m_proxyMapCarOffset;
 }
@@ -62,6 +65,41 @@ bool CBSPlanner::validatePosition(dynamics::data::PoseByIndex base){
     return true;
 }
 
+bool CBSPlanner::checkForReachability(){
+    float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
+    uint32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / xpc);
+
+    for(uint32_t tx = 0; tx < 2 * reachable_node_count; tx ++){
+        for(uint32_t ty = 0; ty < 2 * reachable_node_count; ty ++){
+            for(uint32_t ta = 0; ta < map_size_angle; ta ++){
+                bool found_link = false;
+                for(uint32_t sa = 0; sa < map_size_angle; sa ++){
+                    
+                    dynamics::data::PoseByIndex start = {20,20,sa,0};
+                    dynamics::data::PoseByIndex target = {tx,ty,ta,0};
+                    
+                    auto gTarget = toGlobalIndex(start, target);
+                    rlog("ReachCheck", LOG_INFO, "Checking reachability for position: " + std::to_string(tx) + ":" + std::to_string(ty) + ":" + std::to_string(ta));
+                    LLResult res = astar(start,gTarget,std::vector<dynamics::data::PBIConstraint>());
+                    
+                    if(res.found_path){
+                        rlog("ReachCheck", LOG_INFO, "Reachable with path length: " + std::to_string(res.path->size()));
+                        found_link = true;
+                        break;
+                    }
+                
+                }
+
+                if(!found_link){
+                    rlog("ReachCheck", LOG_WARNING, "Found missing link for : " + std::to_string(tx) + ":" + std::to_string(ty));
+                    return false;
+                }
+            }
+        }
+    }
+    rlog("ReachCheck", LOG_WARNING, "All target and angles positions were reachable by ASTAR");
+    return true;
+}
 
 
 LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles){
@@ -70,6 +108,10 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
     std::unordered_set<dynamics::data::PoseByIndex> openSet;
     std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
     std::unordered_map<dynamics::data::PoseByIndex, TraversableEdge> usedEdge;
+
+    for(auto obstacle: obstacles){
+        rlog("ASTAR", LOG_INFO, "A*S Obstacle: " + std::to_string(obstacle.x) + ":" + std::to_string(obstacle.y) + ":" + std::to_string(obstacle.t));
+    }
 
     auto current_pose = indexToPose(start);
     auto target_pose = indexToPose(target);
@@ -83,7 +125,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
     dynamics::data::LLNode initial = {start, fScore[start], 0};
     openQueue.push(initial);
     openSet.insert(start);
-    uint32_t explored_nodes = 0;
+    uint32_t explored_nodes = 0; 
 
     while(!openQueue.empty()){
         
@@ -91,10 +133,10 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
         explored_nodes += 1;
 
         if(current.pose.x == target.x && current.pose.y == target.y && current.pose.a == target.a ){
-            std::cout << "a star finished" << std::endl;
+            rlog("ASTAR", LOG_INFO, "Found path for " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
             
             LLResult res;
-            writeVisitedNodesToDisk(start,target,cameFrom);
+            // writeVisitedNodesToDisk(start,target,cameFrom);
             res.path = getPath(cameFrom, current.pose);
             res.spline = getSplines(cameFrom, usedEdge, current.pose);
             res.found_path = true;
@@ -116,13 +158,10 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP or KD Tree to avoid this computation every time
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
-                // std::cout << "obstacle: " << obstacle.x << ":" << obstacle.y << ":" << obstacle.t << std::endl;
-                // std::cout << "pos: " << gl_neighbor.x << ":" << gl_neighbor.y << std::endl;
                 auto obstPose = indexToPose(obstacle);
-                if(obstacle.t == current.timestep  && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
+                if((obstPose.pos - neigh_pose.pos).norm() < safe_radius){
                     discard_due_to_obstacle = true;
-                    // std::cout << "discard pos" << std::to_string( (obstPose.pos - neigh_pose.pos).norm()) << std::endl;
-                    // std::cout << "        t " << std::to_string( current.timestep) << std::endl;
+                    rlog("ASTAR", LOG_INFO, "Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
                     break;
                 }
             }
@@ -133,11 +172,6 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
 
             auto current_pose = indexToPose(current.pose); 
             float dist = (neigh_pose.pos - current_pose.pos).norm();
-            
-            // if(neigh_pose.vel < 0.f){ 
-            //    dist = heuristic_factor_backwards * dist; 
-            // }
-                        
             float tentative_score = gScore[current.pose] + dist; 
             if(gScore.count(gl_neighbor) == 0 || tentative_score < gScore[gl_neighbor]){
 
@@ -156,9 +190,10 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             }
         }
     }
-    std::cout << "a star infeasible with explored nodes: " << explored_nodes << std::endl;
-    std::cout << "START: " << start.x << ":" << start.y << ":" << start.a << ":" << start.s << std::endl;
-    std::cout << "TARGET: " << target.x << ":" << target.y << ":" << target.a << ":" << target.s << std::endl;
+    
+    rlog("ASTAR", LOG_WARNING, "Found no viable path with #open: " + std::to_string(explored_nodes));
+    rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
+    rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a));
     
     writeVisitedNodesToDisk(start,target,cameFrom);
     LLResult res;
@@ -173,8 +208,11 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::getPath(st
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> result = std::make_shared<std::vector<dynamics::data::PoseByIndex>>();
 
     do{
+        
         result->push_back(current);
         current = predecessor[current];
+        rlog("GetPath", LOG_INFO, "P: " + std::to_string(current.x) + ":" + std::to_string(current.y) + ":" + std::to_string(current.a), GETPATH);
+
     } while(predecessor.find(current) != predecessor.end());
     
     result->push_back(current);
@@ -234,29 +272,35 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
 
     std::vector<dynamics::data::Pose2WithTime> result;
     uint32_t time_index = 0;
+    dynamics::data::Pose2D veh_pose = indexToPose(nodes.at( nodes.size() - 1));
     for(int64_t i = nodes.size() - 1; i > 0; i --){
-        dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(i));
-        dynamics::data::Pose2D next_pose;
+        
+        
 
         // for(float ts = 0; ts < timestep_ms; ts += 300.f){    
-            float time = timestep_ms;
-            next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, time);
-            dynamics::data::Pose2WithTime next_with_time;
-            next_with_time = next_pose;
-            
-            next_with_time.time_ms = time_index * 2 * timestep_ms;
+        
+        float time = timestep_ms;
+        veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, time);
+        dynamics::data::Pose2WithTime next_with_time;
+        next_with_time = veh_pose;
+        
+        next_with_time.time_ms = time_index * 2 * timestep_ms;
 
-            result.push_back(next_with_time);
+        result.push_back(next_with_time);
+        
         // }
         
         // for(float ts = 0; ts < timestep_ms; ts += 300.f){
-        //     auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, ts);
-        //     dynamics::data::Pose2WithTime next_pose2_with_time;
-        //     next_pose2_with_time = next_pose2;
-            
-        //     next_pose2_with_time.time_ms = time_index * 2 * timestep_ms + timestep_ms + ts;
-            
-        //     result.push_back(next_pose2_with_time);
+
+        veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, time);
+        
+        dynamics::data::Pose2WithTime next_pose2_with_time;
+        next_pose2_with_time = veh_pose;
+        
+        next_pose2_with_time.time_ms = time_index * 2 * timestep_ms + timestep_ms;
+        
+        result.push_back(next_pose2_with_time);
+        
         // }
 
         time_index += 1;
@@ -283,9 +327,10 @@ void CBSPlanner::low_level_astar_worker(uint32_t threadid){
             continue;
         }
         
-        auto res = astar(job.start_positions, job.target_positions, job.avoid);
+        LLResult res = astar(job.start_positions, job.target_positions, job.avoid);
         res.job_id = job.job_id;
         res.car_id = job.car_id;
+        
         m_lowLevelSearchResultsLock.lock();
         m_lowLevelResults.push_back(res);
         m_lowLevelSearchResultsLock.unlock();
@@ -294,6 +339,7 @@ void CBSPlanner::low_level_astar_worker(uint32_t threadid){
 
 void CBSPlanner::enqueue_astar(dynamics::data::PoseByIndex& start, dynamics::data::PoseByIndex& target, constraint_node& constraint, uint32_t& id){
     LLJob job;
+    
     job.job_id = id;
     job.avoid.clear();
     for(auto c: constraint.avoid){
@@ -304,6 +350,7 @@ void CBSPlanner::enqueue_astar(dynamics::data::PoseByIndex& start, dynamics::dat
     job.start_positions = start;
     job.target_positions = target;
     job.car_id = id;
+
     m_lowLevelSearchJobLock.lock();
     m_lowLevelJobs.push_back(job);
     m_lowLevelSearchJobLock.unlock();
@@ -370,6 +417,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         constraint_node node = openSet.top();
         openSet.pop();
 
+        
         std::cout << "[INFO CBS] Iteration, openSet: " << openSet.size() << std::endl;
         std::cout << "[INFO CBS] SIC: " << node.sic << std::endl;
 
@@ -379,15 +427,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         std::array<int32_t,2> conflicting_vehicles = {-1,-1};
 
         for(int32_t car_index = 0; car_index < start_positions.size(); car_index ++){
-            for (int32_t car_index2 = 0; car_index2 < start_positions.size(); car_index2 ++){
-                
-                if(car_index == car_index2){
-                    continue;
-                }
-
+            for (int32_t car_index2 = car_index + 1; car_index2 < start_positions.size(); car_index2 ++){
                 for(uint32_t i = 0; i < node.result[car_index].path->size() && i < node.result[car_index2].path->size(); i ++){
                 
-                    auto p = node.result[car_index].path->at(i) - node.result[car_index2].path->at(i);    
                     auto pose_car_a = indexToPose(node.result[car_index].path->at(i));
                     auto pose_car_b = indexToPose(node.result[car_index2].path->at(i));
                     
@@ -395,9 +437,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
                         
                         conflict_step = i;
                         conflicting_vehicles = {car_index, car_index2};
-                        conflicting_poses = {node.result[car_index].path->at(i), node.result[car_index].path->at(i)};
+                        conflicting_poses = {node.result[car_index2].path->at(i), node.result[car_index].path->at(i)};
                         
-                        std::cout << "[INFO CBS] Conflict at: " << conflict_step << " with " << conflicting_vehicles[0] << ":" << conflicting_vehicles[1] << std::endl;
+                        rlog("CBS", LOG_INFO, "Found Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]), FCONFLICT);
                     }
                 }   
             }
@@ -412,6 +454,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 
         // Add new constraints and replan
         for(uint32_t vehicle_index = 0; vehicle_index < 2; vehicle_index ++){
+
             auto vehicle_in_conflict = conflicting_vehicles[vehicle_index];
             auto vehicle_conflict = conflicting_poses[vehicle_index];
 
@@ -424,6 +467,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             constr.id = vehicle_in_conflict;
             constr = vehicle_conflict;
             constr.t = conflict_step;
+
             std::cout << "[INFO CBS] Adding new constraint to situation pos " << vehicle_conflict.x << ":" << vehicle_conflict.y << ":" << conflict_step << std::endl;
 
             constraint.avoid.push_back(constr);
