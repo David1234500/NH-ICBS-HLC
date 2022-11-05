@@ -65,7 +65,8 @@ public:
     dynamics::data::Pose2D indexToPose(dynamics::data::PBIConstraint global);
 
     static dynamics::data::PoseByIndex findNearestPoseByIndex(dynamics::data::Pose2D pose);
-
+    void await_astar_result(uint32_t count);
+    void enqueue_astar(dynamics::data::PoseByIndex& start, dynamics::data::PoseByIndex& target, constraint_node& constraint, uint32_t& id);
     constraint_node cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions);
     
     std::mutex m_lowLevelSearchJobLock;
