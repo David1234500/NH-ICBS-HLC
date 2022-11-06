@@ -274,34 +274,27 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
     uint32_t time_index = 0;
     dynamics::data::Pose2D veh_pose = indexToPose(nodes.at( nodes.size() - 1));
     for(int64_t i = nodes.size() - 1; i > 0; i --){
+        dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(i)); 
         
-        
-
-        // for(float ts = 0; ts < timestep_ms; ts += 300.f){    
-        
-        float time = timestep_ms;
-        veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, time);
+        float fullstep = static_cast<float>(timestep_ms);
+        float halfstep = static_cast<float>(timestep_ms) / 2.f;
+        veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, halfstep);
         dynamics::data::Pose2WithTime next_with_time;
         next_with_time = veh_pose;
-        
-        next_with_time.time_ms = time_index * 2 * timestep_ms;
-
+        next_with_time.time_ms = (time_index * 2 * timestep_ms) + halfstep; 
         result.push_back(next_with_time);
         
-        // }
-        
-        // for(float ts = 0; ts < timestep_ms; ts += 300.f){
+        veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, halfstep);
+        dynamics::data::Pose2WithTime next_with_time2;
+        next_with_time2 = veh_pose;
+        next_with_time2.time_ms = (time_index * 2 * timestep_ms) + fullstep; 
+        result.push_back(next_with_time2);
 
-        veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, time);
-        
+        veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, halfstep);     
         dynamics::data::Pose2WithTime next_pose2_with_time;
         next_pose2_with_time = veh_pose;
-        
-        next_pose2_with_time.time_ms = time_index * 2 * timestep_ms + timestep_ms;
-        
+        next_pose2_with_time.time_ms = (time_index * 2 * timestep_ms) + halfstep + fullstep;
         result.push_back(next_pose2_with_time);
-        
-        // }
 
         time_index += 1;
     }
