@@ -159,7 +159,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
                 auto obstPose = indexToPose(obstacle);
-                if((obstPose.pos - neigh_pose.pos).norm() < safe_radius){
+                if( std::abs(current.timestep - obstacle.t) == 0 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
                     discard_due_to_obstacle = true;
                     rlog("ASTAR", LOG_INFO, "Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
                     break;
@@ -189,6 +189,8 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
                 }
             }
         }
+
+        
     }
     
     rlog("ASTAR", LOG_WARNING, "Found no viable path with #open: " + std::to_string(explored_nodes));
@@ -265,8 +267,6 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
         current = predecessor[current];
     }while(predecessor.find(current) != predecessor.end());
 
-    //TODO COMPUTE CORRECT ACCELERATION CURVE SOMEWHERE
-
     nodes.push_back(current);
     edges.push_back(edge_map[current]);
 
@@ -278,23 +278,23 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
         
         float fullstep = static_cast<float>(timestep_ms);
         float halfstep = static_cast<float>(timestep_ms) / 2.f;
-        veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, halfstep);
+        veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, fullstep);
         dynamics::data::Pose2WithTime next_with_time;
         next_with_time = veh_pose;
-        next_with_time.time_ms = (time_index * 2 * timestep_ms) + halfstep; 
+        next_with_time.time_ms = (time_index * 2 * timestep_ms) + fullstep; 
         result.push_back(next_with_time);
         
-        veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, halfstep);
-        dynamics::data::Pose2WithTime next_with_time2;
-        next_with_time2 = veh_pose;
-        next_with_time2.time_ms = (time_index * 2 * timestep_ms) + fullstep; 
-        result.push_back(next_with_time2);
+        // veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, halfstep);
+        // dynamics::data::Pose2WithTime next_with_time2;
+        // next_with_time2 = veh_pose;
+        // next_with_time2.time_ms = (time_index * 2 * timestep_ms) + fullstep; 
+        // result.push_back(next_with_time2);
 
-        veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, halfstep);     
-        dynamics::data::Pose2WithTime next_pose2_with_time;
-        next_pose2_with_time = veh_pose;
-        next_pose2_with_time.time_ms = (time_index * 2 * timestep_ms) + halfstep + fullstep;
-        result.push_back(next_pose2_with_time);
+        // veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, halfstep);     
+        // dynamics::data::Pose2WithTime next_pose2_with_time;
+        // next_pose2_with_time = veh_pose;
+        // next_pose2_with_time.time_ms = (time_index * 2 * timestep_ms) + halfstep + fullstep;
+        // result.push_back(next_pose2_with_time);
 
         time_index += 1;
     }

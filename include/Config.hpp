@@ -17,7 +17,7 @@ constexpr float xpc = (float)map_size_x_cm / (float)map_size_x;
 constexpr float ypc = (float)map_size_y_cm / (float)map_size_y;
 constexpr float api = (2.f * PI) / (float)map_size_angle;
 
-constexpr float safe_radius = 20.f;
+constexpr float safe_radius = 15.f;
 constexpr float heuristic_factor_backwards = 3.f;
 
 constexpr int zero_velocity_level = 1;
