@@ -1,9 +1,11 @@
 #include <Planner/ProxyGraph.hpp>
+#include <Planner/Logger.hpp>
 
 #include <cmath>
 #include <iostream>
 #include <thread>
 #include <fstream>
+
 
 #include <nlohmann/json.hpp>
 
@@ -55,8 +57,8 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
                     // Found a link to the neighbor, add an edge for this one
                     TraversableEdge nt_edge = {epose, target_pose_by_index};
                     
-                    std::cout << "[INFO]["<< index <<"] Added edge to " << std::to_string(epose.pos[0]) <<":"<< std::to_string(epose.pos[1]) 
-                    << " >s" << epose.s_a <<"_"<< epose.s_v << "e" << epose.p_error <<  "p" << a <<"_"<< s << std::endl;
+                    rlog("workerProxyEdges", LOG_INFO,"Added edge to " + std::to_string(epose.pos[0]) +":"+ std::to_string(epose.pos[1]) 
+                    + " -> s" + std::to_string(epose.s_a) +"_"+ std::to_string(epose.s_v) + "e" + std::to_string(epose.p_error) +  "p" + std::to_string(a) +"_"+ std::to_string(s), MOTIONPRIM);
                     
                     // add new edge to the edgelist
                     m_proxyTaskMutex.lock();

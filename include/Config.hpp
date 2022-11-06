@@ -6,7 +6,7 @@
 constexpr int map_size_x = 60;
 constexpr int map_size_y = 60;
 constexpr int map_size_angle = 8;
-constexpr int map_size_speed = 4;
+constexpr int map_size_speed = 6;
 
 constexpr float timestep_ms = 500.f;
 
@@ -21,7 +21,7 @@ constexpr float safe_radius = 15.f;
 constexpr float heuristic_factor_backwards = 3.f;
 
 constexpr int zero_velocity_level = 1;
-constexpr float m_speedsFactor[map_size_speed] = { -0.3, 0.f, 0.3f, 0.6f}; 
+constexpr float m_speedsFactor[map_size_speed] = { -0.3f, -0.15f, 0.f, 0.15f, 0.3f, 0.6f}; 
 
 
 /* Constraints what the allow angle range is for the edge */

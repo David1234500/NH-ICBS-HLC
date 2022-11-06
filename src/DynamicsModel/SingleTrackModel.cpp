@@ -80,8 +80,8 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
     float current_error = 1000.f;
 
     // Iterate over all possible combinations of speeds and steering angles to find best configuration for reaching the target node
-    uint32_t angle_count = 50;
-    uint32_t vel_count = 50;
+    uint32_t angle_count = 30;
+    uint32_t vel_count = 30;
 
     for(uint32_t i = 0; i <= angle_count; i ++){
         float next_angle = (-(1.f/2.f) * current_angle_span) + current_angle_span * ((float)i / (float)angle_count);
