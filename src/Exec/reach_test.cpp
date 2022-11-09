@@ -10,8 +10,11 @@ int main() {
     std::cout << "Loading graph from disk!" << std::endl;
     planner->m_proxGraph.loadGraphFromDisk();
     std::cout << "Finished loading graph from disk!" << std::endl;
-    planner->checkForReachability();
+    auto res = planner->checkForReachability();
 
+    if(!res.reachable){
+        std::cout << "FAILED TO FIND REACHABLE PATH!" << std::endl;
+    }
 }
 
 

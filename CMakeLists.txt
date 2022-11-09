@@ -1,7 +1,5 @@
 project(planner)
 set (CMAKE_CXX_STANDARD 17)
-# set(CMAKE_BUILD_TYPE RelWithDebInfo)
-# set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_BUILD_TYPE Release)
 cmake_minimum_required(VERSION 3.10)
 
@@ -15,7 +13,7 @@ add_subdirectory(thirdparty/json)
 
 ## Compile main planner library
 include_directories("include")
-file(GLOB SRC "src/Planner/*.cpp" "src/DynamicsModel/*.cpp" "src/util/*.cpp")
+file(GLOB SRC "src/Planner/*.cpp" "src/DynamicsModel/*.cpp" "src/util/*.cpp" "src/*")
 add_library(planner_lib SHARED ${SRC})
 target_link_libraries(planner_lib pthread)
 

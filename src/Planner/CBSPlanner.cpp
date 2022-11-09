@@ -65,15 +65,29 @@ bool CBSPlanner::validatePosition(dynamics::data::PoseByIndex base){
     return true;
 }
 
-bool CBSPlanner::checkForReachability(){
+ReachabilityResult CBSPlanner::checkForReachability(){
+    ReachabilityResult result;
+    result.reachable = true;
+
     float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
     uint32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / xpc);
 
-    for(uint32_t tx = 0; tx < 2 * reachable_node_count; tx ++){
-        for(uint32_t ty = 0; ty < 2 * reachable_node_count; ty ++){
-            for(uint32_t ta = 0; ta < map_size_angle; ta ++){
+    uint32_t count = 0;
+    uint64_t path_length = 0;
+    float path_time = 0.f;
+
+    for(uint32_t i =0; i < map_size_angle; i ++){
+        for(uint32_t j = 0; j < map_size_speed; j ++){
+            result.edge_count += m_proxGraph.m_proxyEdgeList[i][j].size();
+        }
+    }
+
+    for(int32_t tx = 0; tx < 2 * reachable_node_count; tx ++){
+        for(int32_t ty = 0; ty < 2 * reachable_node_count; ty ++){
+            for(int32_t ta = 0; ta < map_size_angle; ta ++){
+                
                 bool found_link = false;
-                for(uint32_t sa = 0; sa < map_size_angle; sa ++){
+                for(int32_t sa = 0; sa < map_size_angle; sa ++){
                     
                     dynamics::data::PoseByIndex start = {20,20,sa,0};
                     dynamics::data::PoseByIndex target = {tx,ty,ta,0};
@@ -83,22 +97,30 @@ bool CBSPlanner::checkForReachability(){
                     LLResult res = astar(start,gTarget,std::vector<dynamics::data::PBIConstraint>());
                     
                     if(res.found_path){
+                        path_length += res.path->size();
+                        count += 1;
+                        for(uint32_t i = 0; i < res.spline.size(); i ++){
+                            path_time += res.spline.at(i).time_ms;
+                        }
                         rlog("ReachCheck", LOG_INFO, "Reachable with path length: " + std::to_string(res.path->size()));
                         found_link = true;
                         break;
                     }
-                
                 }
 
                 if(!found_link){
                     rlog("ReachCheck", LOG_WARNING, "Found missing link for : " + std::to_string(tx) + ":" + std::to_string(ty));
-                    return false;
+                    result.reachable = false;
+                    result.mean_time_length = path_time/static_cast<float>(count);
+                    result.mean_path_length = static_cast<float>(path_length)/static_cast<float>(count);
+                    return result;
                 }
             }
         }
     }
+    
     rlog("ReachCheck", LOG_WARNING, "All target and angles positions were reachable by ASTAR");
-    return true;
+    return result;
 }
 
 
@@ -274,27 +296,35 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
     uint32_t time_index = 0;
     dynamics::data::Pose2D veh_pose = indexToPose(nodes.at( nodes.size() - 1));
     for(int64_t i = nodes.size() - 1; i > 0; i --){
-        dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(i)); 
+        dynamics::data::Pose2D start_pose = indexToPose(nodes.at(i)); 
+        dynamics::data::Pose2D veh_pose; 
         
         float fullstep = static_cast<float>(timestep_ms);
-        float halfstep = static_cast<float>(timestep_ms) / 2.f;
-        veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, fullstep);
-        dynamics::data::Pose2WithTime next_with_time;
-        next_with_time = veh_pose;
-        next_with_time.time_ms = (time_index * 2 * timestep_ms) + fullstep; 
-        result.push_back(next_with_time);
-        
-        // veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, halfstep);
-        // dynamics::data::Pose2WithTime next_with_time2;
-        // next_with_time2 = veh_pose;
-        // next_with_time2.time_ms = (time_index * 2 * timestep_ms) + fullstep; 
-        // result.push_back(next_with_time2);
 
-        // veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, halfstep);     
-        // dynamics::data::Pose2WithTime next_pose2_with_time;
-        // next_pose2_with_time = veh_pose;
-        // next_pose2_with_time.time_ms = (time_index * 2 * timestep_ms) + halfstep + fullstep;
-        // result.push_back(next_pose2_with_time);
+        auto step_1_velocity =  edges.at(i - 1).link.s_v;
+        for(float timestep1 = 100.f; timestep1 < fullstep; timestep1 += 200.f){
+
+            veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(start_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, timestep1);
+            
+            dynamics::data::Pose2WithTime next_with_time;
+            next_with_time = veh_pose;
+            next_with_time.time_ms = (time_index * 2 * timestep_ms) + timestep1; 
+            
+            result.push_back(next_with_time);
+        }
+    
+        auto step_2_velocity =  edges.at(i - 1).link.s_v_2;
+        for(float timestep2 = 100.f; timestep2 < fullstep - 200.f; timestep2 += 200.f) {
+
+            auto final_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, timestep2);     
+            
+            dynamics::data::Pose2WithTime next_pose2_with_time;
+            next_pose2_with_time = final_pose;
+            next_pose2_with_time.time_ms = (time_index * 2 * timestep_ms) + fullstep + timestep2;
+            
+            result.push_back(next_pose2_with_time);
+        }
+    
 
         time_index += 1;
     }

@@ -10,13 +10,13 @@ using namespace dynamics::data;
 Pose2D SimpleDynamicsModel::computeNextPose(Pose2D& current_pose, float& steering_angle, float& velocity, float& time){
 
 // Compute driven distance 
-float time_sec = time / 1000.f; //millisec
+float time_sec = time / 1000; //millisec
 float dist = velocity * time_sec;
 
-// steering_angle = fmod(steering_angle + 2.f * PI , 2.f * PI);
+steering_angle = fmod(steering_angle + 2*PI , 2*PI);
 
 //Case of no steering angle
-if(std::fabs(steering_angle) <= 0.05f){
+if(steering_angle <= 0.05f){
     Vector2Df dp = {dist , 0.f};
     Eigen::Rotation2Df rotation(current_pose.h);
     auto dph = rotation * dp;
@@ -25,13 +25,13 @@ if(std::fabs(steering_angle) <= 0.05f){
 }
 
 // Compute radius of driven curve
-float radius = 15.f / std::sin(steering_angle);  /* TODO: Correct Wheelbase here! */
+float radius = 15 / std::sin(steering_angle);  /* TODO: Correct Wheelbase here! */
 
 // Compute circumference of driven circle
-float circ = 2.f * PI * radius;
+float circ = 2 * PI * radius;
 
 // Compute drive angle inside circle
-float circ_comp = dist / circ;
+float circ_comp = dist / circ * 2 * PI;
 
 // Compute new x_diff offset
 float dx = std::sin(circ_comp) * radius;
@@ -45,7 +45,7 @@ Eigen::Rotation2Df rotation(current_pose.h);
 // Compute new valid position
 auto dph = rotation * dp;
 auto new_pos = current_pose.pos + dph;
-auto new_head = current_pose.h + circ_comp * 2.f * PI;
+auto new_head = current_pose.h + circ_comp;
 
 return Pose2D{new_pos, new_head, velocity};
 }
@@ -80,8 +80,8 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
     float current_error = 1000.f;
 
     // Iterate over all possible combinations of speeds and steering angles to find best configuration for reaching the target node
-    uint32_t angle_count = 30;
-    uint32_t vel_count = 30;
+    uint32_t angle_count = 20;
+    uint32_t vel_count = 20;
 
     for(uint32_t i = 0; i <= angle_count; i ++){
         float next_angle = (-(1.f/2.f) * current_angle_span) + current_angle_span * ((float)i / (float)angle_count);
@@ -147,5 +147,5 @@ float SimpleDynamicsModel::velocity_limit(){
 }
 
 float SimpleDynamicsModel::angle_limit(){
-    return PI / 7;
+    return PI / 3; 
 }

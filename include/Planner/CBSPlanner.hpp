@@ -5,7 +5,6 @@
 
 #include <DynamicsModel/SingleTrackModel.hpp>
 #include <Planner/ProxyGraph.hpp>
-#include <Planner/StateGraph.hpp>
 #include <unordered_set>
 #include <unordered_map>
 #include <Config.hpp>
@@ -29,6 +28,13 @@ struct LLResult{
     std::vector<dynamics::data::Pose2WithTime> spline;
     uint32_t job_id = 0;
     uint16_t car_id = 0;
+};
+
+struct ReachabilityResult{
+    bool reachable = false;
+    float mean_path_length = 0.f;
+    float mean_time_length = 0.f;
+    uint32_t edge_count = 0;
 };
 
 struct constraint_node{
@@ -60,7 +66,7 @@ public:
 
     bool validatePosition(dynamics::data::PoseByIndex base);
     dynamics::data::PoseByIndex toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative);
-    dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex);
+    static dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex);
     dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global);
     dynamics::data::Pose2D indexToPose(dynamics::data::PBIConstraint global);
 
@@ -80,7 +86,7 @@ public:
     std::vector<LLResult> m_lowLevelResults;
     bool m_keepThreadsAlive = true;
 
-    bool checkForReachability();
+    ReachabilityResult checkForReachability();
     LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles);
 
     ProxyGraph m_proxGraph;

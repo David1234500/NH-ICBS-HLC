@@ -14,9 +14,11 @@ for node in y["map"]:
     plt.arrow(node["pose"]["x"],node["pose"]["y"], dx, dy)
 
 print("edges cnt: {}".format(len(y["edges"])))
+
 for edge in y["edges"]:
     ex = [0]
     ey = [0]
+
     for curve_point in edge["curve"]:
         ex.append(curve_point["x"])
         ey.append(curve_point["y"])

@@ -9,10 +9,6 @@
 #include <map>
 #include <mutex>
 
-typedef int IHeading; //Heading Index
-
-
-
 
 struct TraversableEdge{
     dynamics::data::Pose2DWithError link;
@@ -41,12 +37,9 @@ public:
 
 ProxyGraph();
 
-
-// Proxy Edges/Node
-
 void computeProxyEdges();
 
-ProxyNode m_proxyMap[map_size_x][map_size_y][map_size_angle][map_size_speed];
+
 uint32_t m_proxyMapReachableSpan = 0;
 uint32_t m_proxyMapCarOffset = 0;
 std::map<uint32_t, std::map<uint32_t, std::vector<TraversableEdge>>> m_proxyEdgeList;
@@ -57,7 +50,7 @@ bool m_terminateProxyThreads = false;
 void workerThreadProxyEdges(uint32_t index);
 
 // debug functions
-void writeGraphToDisk();
+void writeGraphToDisk(std::string name = "proxy_state_graph.json");
 void loadGraphFromDisk();
 void loadGraphFromDisk(std::string path);
 void printPositions();
