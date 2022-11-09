@@ -5,7 +5,7 @@
  int map_size_angle = 8;
  int map_size_speed = 4;
 
- float timestep_ms = 400.f;
+ float timestep_ms = 250.f;
 
  int map_size_x_cm = 450;
  int map_size_y_cm = 400;

@@ -143,9 +143,9 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
  
 
 float SimpleDynamicsModel::velocity_limit(){ 
-    return 150.0; // cm/s
+    return 400.0; // cm/s
 }
 
 float SimpleDynamicsModel::angle_limit(){
-    return PI / 3; 
+    return PI / 7; 
 }

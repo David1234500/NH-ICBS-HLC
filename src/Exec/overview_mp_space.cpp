@@ -15,7 +15,7 @@ std::shared_ptr<CBSPlanner> planner = std::make_shared<CBSPlanner>();
 json result;
 
 for(float test_timestep = 100.f; test_timestep <= 600.f; test_timestep += 50.f){
-    for(uint32_t node_count = 40; node_count < 150; node_count += 10){
+    for(uint32_t node_count = 40; node_count < 150; node_count += 5){
         for(float quality = 1.f; quality < 6.f; quality += 0.5f){
 
         state_change_fit_quality_angle = api / quality;

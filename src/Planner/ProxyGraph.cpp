@@ -184,7 +184,7 @@ void ProxyGraph::writeGraphToDisk(std::string name ){
                 // veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
                 for(float ts = 0; ts <= timestep_ms; ts += 25.f){
                 
-                    
+
                     auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edge.link.s_a_2, edge.link.s_v_2, ts);
                     
                     json point;

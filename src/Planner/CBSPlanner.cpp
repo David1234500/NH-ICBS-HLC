@@ -302,7 +302,7 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
         float fullstep = static_cast<float>(timestep_ms);
 
         auto step_1_velocity =  edges.at(i - 1).link.s_v;
-        for(float timestep1 = 100.f; timestep1 < fullstep; timestep1 += 200.f){
+        for(float timestep1 = 100.f; timestep1 < fullstep; timestep1 += 150.f){
 
             veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(start_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, timestep1);
             
@@ -314,7 +314,7 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
         }
     
         auto step_2_velocity =  edges.at(i - 1).link.s_v_2;
-        for(float timestep2 = 100.f; timestep2 < fullstep - 200.f; timestep2 += 200.f) {
+        for(float timestep2 = 100.f; timestep2 < fullstep - 200.f; timestep2 += 150.f) {
 
             auto final_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, timestep2);     
             
