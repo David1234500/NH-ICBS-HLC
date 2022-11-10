@@ -47,7 +47,7 @@ for(float test_timestep = 100.f; test_timestep <= 600.f; test_timestep += 50.f){
         test["settings"]["state_change_fit_quality_position"] = state_change_fit_quality_position;
         test["settings"]["state_change_fit_allowed_speed_difference"] = state_change_fit_allowed_speed_difference;
 
-        std::string name = "mp_eval_" + std::to_string(test_timestep) + "_" + std::to_string(node_count);
+        std::string name = "mp_eval_" + std::to_string(test_timestep) + "_" + std::to_string(node_count)  + "_" + std::to_string(quality);
         rlog("mp_space", LOG_INFO, "PARAMETER TEST: " + std::to_string(test_timestep) + ":" + std::to_string(node_count));
         
         planner->m_proxGraph.computeProxyEdges();
