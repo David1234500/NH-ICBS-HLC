@@ -27,7 +27,7 @@ for(float test_timestep_base = 200; test_timestep_base <= 700.f; test_timestep_b
 
         test["settings"]["m_config_map_size_zero_velocity_level"] = planner->m_proxGraph.m_config_map_size_zero_velocity_level;
         test["settings"]["m_config_map_size_speed"] = planner->m_proxGraph.m_config_map_size_speed;
-        test["settings"]["m_config_map_extent"] = planner->m_proxGraph.m_config_map_extent;
+        test["settings"]["m_comp_map_extent"] = planner->m_proxGraph.m_comp_map_extent;
 
        
         test["settings"]["m_config_map_size_x_cm"] = planner->m_proxGraph.m_config_map_size_x_cm;

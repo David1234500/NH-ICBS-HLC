@@ -272,9 +272,6 @@ ReachabilityResult CBSPlanner::checkForReachability(){
     ReachabilityResult result;
     result.reachable = true;
 
-    float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(m_proxGraph.m_config_ts_base) / 1000.f);
-    uint32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / m_proxGraph.m_config_map_size_x_cm);
-
     uint32_t count = 0;
     uint64_t path_length = 0;
     float path_time = 0.f;
@@ -285,8 +282,8 @@ ReachabilityResult CBSPlanner::checkForReachability(){
         }
     }
 
-    for(int32_t tx = -m_proxGraph.m_config_map_extent; tx < m_proxGraph.m_config_map_extent; tx ++){
-        for(int32_t ty = -m_proxGraph.m_config_map_extent; ty < m_proxGraph.m_config_map_extent; ty ++){
+    for(int32_t tx = -m_proxGraph.m_comp_map_extent; tx < m_proxGraph.m_comp_map_extent; tx ++){
+        for(int32_t ty = -m_proxGraph.m_comp_map_extent; ty < m_proxGraph.m_comp_map_extent; ty ++){
             for(int32_t ta = 0; ta < m_proxGraph.m_config_map_size_angle; ta ++){
                 
                 bool found_link = false;

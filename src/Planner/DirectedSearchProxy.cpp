@@ -13,8 +13,11 @@ DirectedSearchProxy::DirectedSearchProxy(){}
 
 
 void DirectedSearchProxy::computeProxyEdges(){
-    m_base_node_distance = m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<double>(m_config_ts_base) / 1000.f);
     uint32_t map_node_count = static_cast<uint32_t>(m_config_map_size_x_cm / m_base_node_distance);
+    
+    float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * m_config_baseVelocityFactor* (static_cast<float>(m_config_ts_base) / 1000.f);
+    m_comp_map_extent = reachable_distance / m_base_node_distance;
+
     double api = 2 * PI / static_cast<double>(m_config_map_size_angle);
 
     std::vector<double> velocities;
@@ -46,8 +49,8 @@ void DirectedSearchProxy::computeProxyEdges(){
 
         for(int32_t s = 0; s < m_config_map_size_speed; s ++){
 
-                for(int32_t x = -m_config_map_extent; x <= m_config_map_extent; x ++){
-                    for(int32_t y = -m_config_map_extent; y <= m_config_map_extent; y ++){
+                for(int32_t x = -m_comp_map_extent; x <= m_comp_map_extent; x ++){
+                    for(int32_t y = -m_comp_map_extent; y <= m_comp_map_extent; y ++){
                     
                     if(x == 0 && y == 0){
                         continue;
@@ -135,8 +138,7 @@ void DirectedSearchProxy::worker(searchJob job){
 }
 
 void DirectedSearchProxy::writeGraphToDisk(std::string name){
-    m_base_node_distance = m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<double>(m_config_ts_base) / 1000.f);
-    uint32_t map_node_count = static_cast<uint32_t>(m_config_map_size_x_cm / m_base_node_distance);
+    uint32_t map_node_count = static_cast<uint32_t>(m_config_map_size_x_cm / m_config_base_node_distance);
     m_comp_map_size_x = map_node_count;
     m_comp_map_size_y = map_node_count;
     double api = 2 * PI / static_cast<double>(m_config_map_size_angle);
@@ -144,7 +146,7 @@ void DirectedSearchProxy::writeGraphToDisk(std::string name){
     json proxy_map_dump;
 
     proxy_map_dump["info"]["m_config_map_size_speed"] = m_config_map_size_speed;
-    proxy_map_dump["info"]["m_config_map_extent"] = m_config_map_extent;
+    proxy_map_dump["info"]["m_comp_map_extent"] = m_comp_map_extent;
     proxy_map_dump["info"]["m_base_node_distance"] = m_base_node_distance;
     proxy_map_dump["info"]["m_config_baseVelocityFactor"] = m_config_baseVelocityFactor;
     proxy_map_dump["info"]["m_comp_map_size_x"] = m_comp_map_size_x;
@@ -159,8 +161,8 @@ void DirectedSearchProxy::writeGraphToDisk(std::string name){
     proxy_map_dump["info"]["size_y_cm"] = m_config_map_size_y_cm;
     proxy_map_dump["info"]["size_x_cm"] = m_config_map_size_x_cm;
 
-     for(int32_t x = -m_config_map_extent; x <= m_config_map_extent; x ++){
-        for(int32_t y = -m_config_map_extent; y <= m_config_map_extent; y ++){
+     for(int32_t x = -m_comp_map_extent; x <= m_comp_map_extent; x ++){
+        for(int32_t y = -m_comp_map_extent; y <= m_comp_map_extent; y ++){
             for(int32_t a = 0; a < m_config_map_size_angle; a ++){
                 for(int32_t s = 0; s < m_config_map_size_speed; s ++){
 
@@ -244,7 +246,7 @@ void DirectedSearchProxy::loadGraphFromDisk(std::string path){
     m_comp_map_size_y = jf["info"]["m_comp_map_size_y"];
     
     m_config_map_size_speed = jf["info"]["m_config_map_size_speed"];
-    m_config_map_extent = jf["info"]["m_config_map_extent"];
+    m_comp_map_extent = jf["info"]["m_comp_map_extent"];
     m_config_baseVelocityFactor = jf["info"]["m_config_baseVelocityFactor"];
     m_base_node_distance = jf["info"]["m_base_node_distance"];
 

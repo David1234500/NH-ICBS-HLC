@@ -45,15 +45,15 @@ std::vector<searchJob> job_queue;
 std::mutex job_mutex;
 
 double m_config_baseVelocityFactor = 0.5;
-double m_base_node_distance = 0.f;
+double m_base_node_distance = 8.f;
 
 std::vector<double> m_config_speedsFactor = {1.f, 0.f, -1.f}; 
 int m_config_map_size_zero_velocity_level = 1;
 int m_config_map_size_speed = 3;
-int m_config_map_extent = 1;
 
-int m_comp_map_size_x = 0;
-int m_comp_map_size_y = 0;
+
+int m_config_base_node_distance = 10.f;
+
 int m_config_map_size_x_cm = 600;
 int m_config_map_size_y_cm = 600;
 int m_config_map_size_angle = 8;
@@ -64,6 +64,10 @@ double m_config_ts_max = 700.f;
 
 double  m_config_state_change_fit_quality_angle = 0.3f;
 double  m_config_state_change_fit_quality_position =  0.025f;
+
+int m_comp_map_extent = 0;
+int m_comp_map_size_x = 0;
+int m_comp_map_size_y = 0;
 
 std::mutex motion_primitive_map_mutex;
 std::map<int32_t, std::map<int32_t, std::vector<MotionPrimitiv>>> motion_primitive_map;
