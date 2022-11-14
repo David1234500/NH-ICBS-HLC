@@ -8,15 +8,14 @@ using namespace dynamics;
 using namespace dynamics::data;
 
 Pose2D SimpleDynamicsModel::computeNextPose(Pose2D& current_pose, double& steering_angle, double& velocity, double& time){
-
 // Compute driven distance 
-double time_sec = time / 1000.f; //millisec
-double dist = velocity * time_sec;
+float time_sec = time / 1000; //millisec
+float dist = velocity * time_sec;
 
-// steering_angle = fmod(steering_angle + 2.f * PI , 2.f * PI);
+// steering_angle = fmod(steering_angle + 2*PI , 2*PI);
 
 //Case of no steering angle
-if(std::fabs(steering_angle) <= 0.05f){
+if(steering_angle <= 0.05f){
     Vector2Df dp = {dist , 0.f};
     Eigen::Rotation2Df rotation(current_pose.h);
     auto dph = rotation * dp;
@@ -25,18 +24,18 @@ if(std::fabs(steering_angle) <= 0.05f){
 }
 
 // Compute radius of driven curve
-double radius = 15.f / std::sin(steering_angle);  /* TODO: Correct Wheelbase here! */
+float radius = 15 / std::sin(steering_angle);  /* TODO: Correct Wheelbase here! */
 
 // Compute circumference of driven circle
-double circ = 2.f * PI * radius;
+float circ = 2 * PI * radius;
 
 // Compute drive angle inside circle
-double circ_comp = dist / circ;
+float circ_comp = (dist / circ) * 2 * PI;
 
 // Compute new x_diff offset
-double dx = std::sin(circ_comp) * radius;
-double dpy = std::cos(circ_comp) * radius;
-double dy = radius - dpy;
+float dx = std::sin(circ_comp) * radius;
+float dpy = std::cos(circ_comp) * radius;
+float dy = radius - dpy;
 
 // Position offset assuming car points perfectly along x axis
 Vector2Df dp = {dx,dy};
@@ -45,7 +44,7 @@ Eigen::Rotation2Df rotation(current_pose.h);
 // Compute new valid position
 auto dph = rotation * dp;
 auto new_pos = current_pose.pos + dph;
-auto new_head = current_pose.h + circ_comp * 2.f * PI;
+auto new_head = current_pose.h + circ_comp;
 
 return Pose2D{new_pos, new_head, velocity};
 }
@@ -205,9 +204,13 @@ std::shared_ptr<std::vector<dynamics::data::Pose2DWithMotionData>> SimpleDynamic
  
 
 double SimpleDynamicsModel::velocity_limit(){ 
-    return 150.0; // cm/s
+    return 350.0; // cm/s
 }
 
 double SimpleDynamicsModel::angle_limit(){
-    return PI / 3;
+    return PI / 7; // a
+}
+
+double SimpleDynamicsModel::acceleration_limit(){
+    return 0.7f; // 0.7 m/s2
 }

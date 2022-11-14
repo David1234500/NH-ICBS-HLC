@@ -13,6 +13,13 @@
 #include <thread>
 #include <memory>
 
+struct ReachabilityResult{
+    bool reachable = false;
+    float mean_path_length = 0.f;
+    float mean_time_length = 0.f;
+    uint32_t edge_count = 0;
+};
+
 struct LLJob{
     dynamics::data::PoseByIndex start_positions; 
     dynamics::data::PoseByIndex target_positions;
@@ -78,6 +85,7 @@ public:
 
     DirectedSearchProxy m_proxGraph;
 
+    ReachabilityResult checkForReachability();
     void writePathToDisk( std::vector<dynamics::data::PoseByIndex> path, std::string name);
     void writeCurveToDisk(std::vector<dynamics::data::Pose2WithTime> path, std::string name);
     void writeMultiplePathsToDisk(constraint_node cnode, std::string name);

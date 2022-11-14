@@ -27,7 +27,7 @@ public:
     static std::shared_ptr<std::vector<dynamics::data::Pose2DWithMotionData>> computeReachableSet(Pose2D& current_pose, double& timestep_min_ms, double& timestep_max_ms, std::vector<double> velocities);
     static double velocity_limit();
     static double angle_limit();
-
+    static double acceleration_limit();
 };
 
 }
