@@ -26,7 +26,7 @@
  float state_change_fit_allowed_speed_difference = 0.15f;
 
 
- int worker_counter = 28;
+ int worker_counter = 20;
 
  void recompute_inferred_values(){
     xpc = (float)map_size_x_cm / (float)map_size_x;

@@ -14,9 +14,9 @@ int main() {
 std::shared_ptr<CBSPlanner> planner = std::make_shared<CBSPlanner>();
 json result;
 
-for(float test_timestep = 100.f; test_timestep <= 600.f; test_timestep += 50.f){
-    for(uint32_t node_count = 40; node_count < 150; node_count += 5){
-        for(float quality = 1.f; quality < 6.f; quality += 0.5f){
+for(float test_timestep = 300.f; test_timestep <= 600.f; test_timestep += 100.f){
+    for(uint32_t node_count = 50; node_count < 120; node_count += 10){
+        for(float quality = 2.f; quality < 6.f; quality += 1.f){
 
         state_change_fit_quality_angle = api / quality;
         state_change_fit_quality_position =  xpc / quality;
@@ -58,6 +58,7 @@ for(float test_timestep = 100.f; test_timestep <= 600.f; test_timestep += 50.f){
         test["result"]["reachability"] = reach.reachable;
         test["result"]["edge_count"] = reach.edge_count;
         test["result"]["mean_path_length"] = reach.mean_path_length;
+        test["result"]["mean_time_length"] = reach.mean_time_length;
 
         std::chrono::milliseconds msc = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
         uint32_t ms = msc.count();

@@ -120,6 +120,8 @@ ReachabilityResult CBSPlanner::checkForReachability(){
     }
     
     rlog("ReachCheck", LOG_WARNING, "All target and angles positions were reachable by ASTAR");
+    result.mean_time_length = path_time/static_cast<float>(count);
+    result.mean_path_length = static_cast<float>(path_length)/static_cast<float>(count);
     return result;
 }
 
