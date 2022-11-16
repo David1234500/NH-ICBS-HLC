@@ -82,6 +82,23 @@ ReachabilityResult CBSPlanner::checkForReachability(){
         }
     }
 
+    // for(int32_t ta = 0; ta < map_size_angle; ta ++){
+    //     dynamics::data::PoseByIndex start = {20,20,ta,0};
+    //     dynamics::data::PoseByIndex target = {20,20,ta,1};
+    //     LLResult res = astar(start,target,std::vector<dynamics::data::PBIConstraint>());
+    //     if(res.found_path){
+           
+    //         rlog("ReachCheck", LOG_INFO, "Reachable with path length: " + std::to_string(res.path->size()));
+           
+    //     }else{
+    //         rlog("ReachCheck", LOG_WARNING, "Found missing static velocity link: " + std::to_string(ta));
+    //         result.reachable = false;
+    //         result.mean_time_length = 0;
+    //         result.mean_path_length = 0;
+    //         return result;
+    //     }
+    // }
+
     for(int32_t tx = 0; tx < 2 * reachable_node_count; tx ++){
         for(int32_t ty = 0; ty < 2 * reachable_node_count; ty ++){
             for(int32_t ta = 0; ta < map_size_angle; ta ++){
@@ -89,8 +106,8 @@ ReachabilityResult CBSPlanner::checkForReachability(){
                 bool found_link = false;
                 for(int32_t sa = 0; sa < map_size_angle; sa ++){
                     
-                    dynamics::data::PoseByIndex start = {20,20,sa,0};
-                    dynamics::data::PoseByIndex target = {tx,ty,ta,0};
+                    dynamics::data::PoseByIndex start = {30,30,sa,zero_velocity_level};
+                    dynamics::data::PoseByIndex target = {tx,ty,ta,zero_velocity_level};
                     
                     auto gTarget = toGlobalIndex(start, target);
                     rlog("ReachCheck", LOG_INFO, "Checking reachability for position: " + std::to_string(tx) + ":" + std::to_string(ty) + ":" + std::to_string(ta));

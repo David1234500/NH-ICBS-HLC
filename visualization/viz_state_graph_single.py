@@ -21,7 +21,7 @@ for edge in y["edges"]:
         ey.append(curve_point["y"])
 
     if(edge["source"]["s"] == 1):
-        print("edges from zero velocity: x {} y {}".format(edge["target"]["x"], edge["target"]["y"]))
+        print("edges from zero velocity: x {} y {} a {} s {}".format(edge["target"]["x"], edge["target"]["y"], edge["target"]["a"], edge["target"]["s"]))
 
     ex.append(edge["target"]["x"])
     ey.append(edge["target"]["y"])
