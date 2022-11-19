@@ -7,8 +7,8 @@
 
  float timestep_ms = 400.f;
 
- int map_size_x_cm = 450;
- int map_size_y_cm = 400;
+ int map_size_x_cm = 500;
+ int map_size_y_cm = 500;
 
  float xpc = (float)map_size_x_cm / (float)map_size_x;
  float ypc = (float)map_size_y_cm / (float)map_size_y;

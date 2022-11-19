@@ -82,23 +82,6 @@ ReachabilityResult CBSPlanner::checkForReachability(){
         }
     }
 
-    // for(int32_t ta = 0; ta < map_size_angle; ta ++){
-    //     dynamics::data::PoseByIndex start = {20,20,ta,0};
-    //     dynamics::data::PoseByIndex target = {20,20,ta,1};
-    //     LLResult res = astar(start,target,std::vector<dynamics::data::PBIConstraint>());
-    //     if(res.found_path){
-           
-    //         rlog("ReachCheck", LOG_INFO, "Reachable with path length: " + std::to_string(res.path->size()));
-           
-    //     }else{
-    //         rlog("ReachCheck", LOG_WARNING, "Found missing static velocity link: " + std::to_string(ta));
-    //         result.reachable = false;
-    //         result.mean_time_length = 0;
-    //         result.mean_path_length = 0;
-    //         return result;
-    //     }
-    // }
-
     for(int32_t tx = 0; tx < 2 * reachable_node_count; tx ++){
         for(int32_t ty = 0; ty < 2 * reachable_node_count; ty ++){
             for(int32_t ta = 0; ta < map_size_angle; ta ++){
@@ -121,6 +104,8 @@ ReachabilityResult CBSPlanner::checkForReachability(){
                         }
                         rlog("ReachCheck", LOG_INFO, "Reachable with path length: " + std::to_string(res.path->size()));
                         found_link = true;
+                    }else{
+                        found_link = false;
                         break;
                     }
                 }
@@ -200,7 +185,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
                 auto obstPose = indexToPose(obstacle);
-                if( std::abs(current.timestep - obstacle.t) == 0 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
+                if( std::abs(current.timestep - obstacle.t) == 0 && (obstPose.pos - neigh_pose.pos).norm() < 2.f * safe_radius){
                     discard_due_to_obstacle = true;
                     rlog("ASTAR", LOG_INFO, "Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
                     break;
@@ -321,7 +306,7 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
         float fullstep = static_cast<float>(timestep_ms);
 
         auto step_1_velocity =  edges.at(i - 1).link.s_v;
-        for(float timestep1 = 100.f; timestep1 < fullstep; timestep1 += 150.f){
+        for(float timestep1 = 200.f; timestep1 < fullstep; timestep1 += 200.f){
 
             veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(start_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, timestep1);
             
@@ -333,7 +318,7 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
         }
     
         auto step_2_velocity =  edges.at(i - 1).link.s_v_2;
-        for(float timestep2 = 100.f; timestep2 < fullstep - 200.f; timestep2 += 150.f) {
+        for(float timestep2 = 200.f; timestep2 < fullstep - 200.f; timestep2 += 200.f) {
 
             auto final_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, timestep2);     
             
