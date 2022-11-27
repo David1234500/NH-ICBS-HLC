@@ -2,7 +2,7 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <iostream>
-
+#include <Planner/Logger.hpp>
 #include <queue>
 
 using json = nlohmann::json;
@@ -266,6 +266,66 @@ void CBSPlanner::low_level_astar_worker(uint32_t threadid){
         m_lowLevelSearchResultsLock.unlock();
     }
 }
+
+
+ReachabilityResult CBSPlanner::checkForReachability(){
+    ReachabilityResult result;
+    result.reachable = true;
+
+    float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(m_proxGraph.m_config_ts_base) / 1000.f);
+    uint32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / m_proxGraph.m_config_map_size_x_cm);
+
+    uint32_t count = 0;
+    uint64_t path_length = 0;
+    float path_time = 0.f;
+
+    for(uint32_t i =0; i < m_proxGraph.m_config_map_size_angle; i ++){
+        for(uint32_t j = 0; j < m_proxGraph.m_config_map_size_speed; j ++){
+            result.edge_count += m_proxGraph.motion_primitive_map[i][j].size();
+        }
+    }
+
+    for(int32_t tx = -m_proxGraph.m_config_map_extent; tx < m_proxGraph.m_config_map_extent; tx ++){
+        for(int32_t ty = -m_proxGraph.m_config_map_extent; ty < m_proxGraph.m_config_map_extent; ty ++){
+            for(int32_t ta = 0; ta < m_proxGraph.m_config_map_size_angle; ta ++){
+                
+                bool found_link = false;
+                for(int32_t sa = 0; sa <  m_proxGraph.m_config_map_size_angle; sa ++){
+                    
+                    dynamics::data::PoseByIndex start = {0,0,sa,0};
+                    dynamics::data::PoseByIndex target = {tx,ty,ta,0};
+                    
+                    auto gTarget = toGlobalIndex(start, target);
+                    rlog("ReachCheck", LOG_INFO, "Checking reachability for position: " + std::to_string(tx) + ":" + std::to_string(ty) + ":" + std::to_string(ta));
+                    LLResult res = astar(start,gTarget,std::vector<dynamics::data::Constraint>());
+                    
+                    if(res.found_path){
+                        path_length += res.path->size();
+                        count += 1;
+                        for(uint32_t i = 0; i < res.spline.size(); i ++){
+                            path_time += res.spline.at(i).time_ms;
+                        }
+                        rlog("ReachCheck", LOG_INFO, "Reachable with path length: " + std::to_string(res.path->size()));
+                        found_link = true;
+                        break;
+                    }
+                }
+
+                if(!found_link){
+                    rlog("ReachCheck", LOG_WARNING, "Found missing link for : " + std::to_string(tx) + ":" + std::to_string(ty));
+                    result.reachable = false;
+                    result.mean_time_length = path_time/static_cast<float>(count);
+                    result.mean_path_length = static_cast<float>(path_length)/static_cast<float>(count);
+                    return result;
+                }
+            }
+        }
+    }
+    
+    rlog("ReachCheck", LOG_WARNING, "All target and angles positions were reachable by ASTAR");
+    return result;
+}
+
 
 std::pair<bool, dynamics::data::Constraint> CBSPlanner::computeCollisions(constraint_node node, std::vector<dynamics::data::PoseByIndex> start_positions){
         

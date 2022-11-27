@@ -12,6 +12,7 @@ using json = nlohmann::json;
 
 DirectedSearchProxy::DirectedSearchProxy(){}
 
+
 void DirectedSearchProxy::computeProxyEdges(){
     m_base_node_distance = 0.5f * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<double>(m_config_ts_base) / 1000.f);
     
@@ -106,11 +107,11 @@ void DirectedSearchProxy::worker(searchJob job){
                 double position_pose_error = (reachable_pose.pos - job.target_pose.pos).norm(); 
                 double angle_pose_error =  std::abs(reachable_pose.h - job.target_pose.h);
 
-                if(position_pose_error > job.base_node_distance * state_change_fit_quality_position){
+                if(position_pose_error > job.base_node_distance * m_config_state_change_fit_quality_position){
                     continue;
                 }
 
-                if(angle_pose_error > job.api * state_change_fit_quality_angle){
+                if(angle_pose_error > job.api * m_config_state_change_fit_quality_angle){
                     continue;
                 }
 
@@ -146,8 +147,13 @@ void DirectedSearchProxy::worker(searchJob job){
     }
 }
 
+<<<<<<< HEAD
 void DirectedSearchProxy::writeGraphToDisk(){
     m_base_node_distance = 0.5f * m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<double>(m_config_ts_base) / 1000.f);
+=======
+void DirectedSearchProxy::writeGraphToDisk(std::string name){
+    m_base_node_distance = m_config_baseVelocityFactor * dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<double>(m_config_ts_base) / 1000.f);
+>>>>>>> bfe9bf3d0da18d76815e50ef6da7f23de057ce6b
     uint32_t map_node_count = static_cast<uint32_t>(m_config_map_size_x_cm / m_base_node_distance);
     m_comp_map_size_x = map_node_count;
     m_comp_map_size_y = map_node_count;
@@ -239,7 +245,7 @@ void DirectedSearchProxy::writeGraphToDisk(){
     }
 
     //dump file to disc
-    std::ofstream o("proxy_state_graph.json");
+    std::ofstream o(name + ".json");
     o << proxy_map_dump << std::endl;
     o.close();
 }

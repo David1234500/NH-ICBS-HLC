@@ -8,7 +8,6 @@ using namespace dynamics;
 using namespace dynamics::data;
 
 Pose2D SimpleDynamicsModel::computeNextPose(Pose2D& current_pose, double& steering_angle, double& velocity, double& time){
-
 // Compute driven distance 
 float time_sec = time / 1000; //millisec
 float dist = velocity * time_sec;
@@ -156,9 +155,13 @@ std::shared_ptr<std::vector<dynamics::data::Pose2DWithMotionData>> SimpleDynamic
  
 
 double SimpleDynamicsModel::velocity_limit(){ 
-    return 300.0; // cm/s
+    return 350.0; // cm/s
 }
 
 double SimpleDynamicsModel::angle_limit(){
-    return PI / 6;
+    return PI / 7; // a
+}
+
+double SimpleDynamicsModel::acceleration_limit(){
+    return 0.7f; // 0.7 m/s2
 }

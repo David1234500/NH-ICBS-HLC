@@ -66,11 +66,14 @@ double m_config_ts_base = 400.f;
 double m_config_ts_min = 100.f;
 double m_config_ts_max = 700.f;
 
+double  m_config_state_change_fit_quality_angle = 0.3f;
+double  m_config_state_change_fit_quality_position =  0.025f;
+
 std::mutex motion_primitive_map_mutex;
 std::map<int32_t, std::map<int32_t, std::vector<MotionPrimitiv>>> motion_primitive_map;
 
 // debug functions
-void writeGraphToDisk();
+void writeGraphToDisk(std::string name = "proxy_state_graph");
 void loadGraphFromDisk();
 void loadGraphFromDisk(std::string path);
 
