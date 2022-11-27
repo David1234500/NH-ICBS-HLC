@@ -70,11 +70,13 @@ ReachabilityResult CBSPlanner::checkForReachability(){
     result.reachable = true;
 
     float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
-    uint32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / xpc);
+    int32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / xpc);
 
     uint32_t count = 0;
     uint64_t path_length = 0;
     float path_time = 0.f;
+
+    rlog("ReachCheck", LOG_INFO, "Checking reachability with Span: " + std::to_string(reachable_node_count) + ":" + std::to_string(reachable_distance) );
 
     for(uint32_t i =0; i < map_size_angle; i ++){
         for(uint32_t j = 0; j < map_size_speed; j ++){
@@ -82,44 +84,92 @@ ReachabilityResult CBSPlanner::checkForReachability(){
         }
     }
 
-    for(int32_t tx = 0; tx < 2 * reachable_node_count; tx ++){
-        for(int32_t ty = 0; ty < 2 * reachable_node_count; ty ++){
-            for(int32_t ta = 0; ta < map_size_angle; ta ++){
-                
-                bool found_link = false;
-                for(int32_t sa = 0; sa < map_size_angle; sa ++){
-                    
-                    dynamics::data::PoseByIndex start = {30,30,sa,zero_velocity_level};
-                    dynamics::data::PoseByIndex target = {tx,ty,ta,zero_velocity_level};
-                    
-                    auto gTarget = toGlobalIndex(start, target);
-                    rlog("ReachCheck", LOG_INFO, "Checking reachability for position: " + std::to_string(tx) + ":" + std::to_string(ty) + ":" + std::to_string(ta));
-                    LLResult res = astar(start,gTarget,std::vector<dynamics::data::PBIConstraint>());
-                    
-                    if(res.found_path){
-                        path_length += res.path->size();
-                        count += 1;
-                        for(uint32_t i = 0; i < res.spline.size(); i ++){
-                            path_time += res.spline.at(i).time_ms;
+    // Assumption 2: We can leave each configuration through at least one edge (so can always start moving)
+    rlog("ReachCheck", LOG_INFO, "Checking for unleavable start configurations...");
+    for(int32_t i =0; i < map_size_angle; i ++){
+        for(int32_t j = 0; j < map_size_speed; j ++){
+            if(m_proxGraph.m_proxyEdgeList[i][j].empty()){
+                    rlog("ReachCheck", LOG_WARNING, "Found unleavable source configuration " + std::to_string(i) + ":" + std::to_string(j));
+                    result.reachable = false;
+                    auto unleavable_configuration = std::make_pair(i,j);
+                    result.unleavable_start_configurations.push_back(unleavable_configuration);
+                    return result;
+            }
+        }
+    }
+
+    // Assumption 3: We can reach each configuration through at least one edge (so can always stop moving)
+    rlog("ReachCheck", LOG_INFO, "Checking for unreachable end configurations...");
+    for(int32_t ta = 0; ta < map_size_angle; ta ++){
+        for(int32_t ts = 0; ts < map_size_speed; ts ++){
+            bool found_link = false;
+
+            for(int32_t sh = 0; sh < map_size_angle && !found_link; sh ++ ){
+                for(int32_t sv = 0; sv < map_size_speed && !found_link; sv ++){
+                    for(auto prim: m_proxGraph.m_proxyEdgeList[sh][sv]){
+                        
+                        if(prim.target.a == ta && prim.target.s == ts){
+                            found_link = true;
+                            break;
                         }
-                        rlog("ReachCheck", LOG_INFO, "Reachable with path length: " + std::to_string(res.path->size()));
-                        found_link = true;
-                    }else{
-                        found_link = false;
-                        break;
+                    
                     }
                 }
+            }
 
-                if(!found_link){
-                    rlog("ReachCheck", LOG_WARNING, "Found missing link for : " + std::to_string(tx) + ":" + std::to_string(ty));
+            if(!found_link){
+                    rlog("ReachCheck", LOG_WARNING, "Found unreachable target configuration " + std::to_string(ta) + ":" + std::to_string(ts));
                     result.reachable = false;
-                    result.mean_time_length = path_time/static_cast<float>(count);
-                    result.mean_path_length = static_cast<float>(path_length)/static_cast<float>(count);
+                    auto unreachable_config = std::make_pair(ta,ts);
+                    result.unreachable_end_configuartions.push_back(unreachable_config);
                     return result;
+            }
+        }
+    }
+
+
+    // Assumption 1: Every node for a full level is reachable
+    for(int32_t v = 0; v < map_size_speed; v ++){
+        if(!m_speedFactorIntermediate[v]){
+            
+            for(int32_t tx = - reachable_node_count; tx < reachable_node_count; tx ++){
+                rlog("ReachCheck", LOG_INFO, "Checking reachability for speed: " + std::to_string(v) + ": " + std::to_string(m_speedFactorIntermediate[v]));
+                for(int32_t ty = - reachable_node_count; ty < reachable_node_count; ty ++){
+
+                    for(int32_t ta = 0; ta < map_size_angle; ta ++){
+                        for(int32_t sh = 0; sh < map_size_angle; sh ++){
+                    
+                            dynamics::data::PoseByIndex start = {map_size_x/2,map_size_y/2,sh,v};
+                            dynamics::data::PoseByIndex target_offset = {tx,ty,ta,v};
+                            auto gTarget = toGlobalIndex(start, target_offset);
+            
+                            rlog("ReachCheck", LOG_INFO, "Checking reachability for position: " + std::to_string(tx) + ":" + std::to_string(ty) + ":" + std::to_string(ta));
+                            
+                            LLResult res = astar(start,gTarget,std::vector<dynamics::data::PBIConstraint>());
+                        
+                            if(res.found_path){
+                                path_length += res.path->size();
+                                count += 1;
+                                for(uint32_t i = 0; i < res.spline.size(); i ++){
+                                    path_time += res.spline.at(i).time_ms;
+                                }
+                                rlog("ReachCheck", LOG_INFO, "Reachable with path length: " + std::to_string(res.path->size()));
+                                
+                            }else{
+                                rlog("ReachCheck", LOG_INFO, "Failed for a configuration! ");
+                                result.reachable = false;
+                                auto unreach_config = std::make_pair(start,gTarget);
+                                result.unreachable_configurations.push_back(unreach_config);
+                                return result;
+                            }
+                        }
+                    }
                 }
             }
         }
     }
+
+   
     
     rlog("ReachCheck", LOG_WARNING, "All target and angles positions were reachable by ASTAR");
     result.mean_time_length = path_time/static_cast<float>(count);
@@ -158,7 +208,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
         auto current = openQueue.top(); 
         explored_nodes += 1;
 
-        if(current.pose.x == target.x && current.pose.y == target.y && current.pose.a == target.a ){
+        if(current.pose == target){
             rlog("ASTAR", LOG_INFO, "Found path for " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
             
             LLResult res;
@@ -182,19 +232,19 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             }
             
             // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP or KD Tree to avoid this computation every time
-            bool discard_due_to_obstacle = false;
-            for(auto obstacle : obstacles){
-                auto obstPose = indexToPose(obstacle);
-                if( std::abs(current.timestep - obstacle.t) == 0 && (obstPose.pos - neigh_pose.pos).norm() < 2.f * safe_radius){
-                    discard_due_to_obstacle = true;
-                    rlog("ASTAR", LOG_INFO, "Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
-                    break;
-                }
-            }
+            // bool discard_due_to_obstacle = false;
+            // for(auto obstacle : obstacles){
+            //     auto obstPose = indexToPose(obstacle);
+            //     if( std::abs(current.timestep - obstacle.t) == 0 && (obstPose.pos - neigh_pose.pos).norm() < 2.f * safe_radius){
+            //         discard_due_to_obstacle = true;
+            //         rlog("ASTAR", LOG_INFO, "Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
+            //         break;
+            //     }
+            // }
 
-            if(discard_due_to_obstacle){
-                continue;
-            }
+            // if(discard_due_to_obstacle){
+            //     continue;
+            // }
 
             auto current_pose = indexToPose(current.pose); 
             float dist = (neigh_pose.pos - current_pose.pos).norm();
@@ -223,7 +273,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
     rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
     rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a));
     
-    writeVisitedNodesToDisk(start,target,cameFrom);
+    // writeVisitedNodesToDisk(start,target,cameFrom);
     LLResult res;
     res.found_path = false;
     res.spline.clear();

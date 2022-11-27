@@ -71,7 +71,7 @@ return Pose2D{new_pos, new_head, velocity};
 //     return pose;
 // }
 
-dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D current_pose, PoseByIndex tpi, Pose2D target_pose, float timestep){
+dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D current_pose, PoseByIndex tpi, Pose2D target_pose, float timestep, float allowed_speed_deviation){
    
     dynamics::data::Pose2DWithError current_best_pose;
     current_best_pose.bi_pose = tpi;
@@ -89,7 +89,7 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
         for(uint32_t j = 0; j <= vel_count; j ++){ 
 
             float center_average_speed = ((current_pose.vel + target_pose.vel) / 2.f);
-            float allowed_deviation_from_target_speed = (-(state_change_fit_allowed_speed_difference/2.f) + (state_change_fit_allowed_speed_difference/ static_cast<float>(vel_count)) * static_cast<float>(j)) * SimpleDynamicsModel::velocity_limit();
+            float allowed_deviation_from_target_speed = (-(allowed_speed_deviation/2.f) + (allowed_speed_deviation/ static_cast<float>(vel_count)) * static_cast<float>(j)) * SimpleDynamicsModel::velocity_limit();
             float next_speed =  center_average_speed + allowed_deviation_from_target_speed;
 
             // Project Vehicle for one timestep with these settings
@@ -101,7 +101,7 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
                 for(uint32_t j2 = 0; j2 <= vel_count; j2 ++){    
                     
                     //Compute next speed for second step of planning for the vehicle
-                    float allowed_deviation_from_target_speed2 = (-(state_change_fit_allowed_speed_difference/2.f) + (state_change_fit_allowed_speed_difference/static_cast<float>(vel_count)) * static_cast<float>(j2)) * SimpleDynamicsModel::velocity_limit();
+                    float allowed_deviation_from_target_speed2 = (-(allowed_speed_deviation/2.f) + (allowed_speed_deviation/static_cast<float>(vel_count)) * static_cast<float>(j2)) * SimpleDynamicsModel::velocity_limit();
                     float next_speed2 =  center_average_speed + allowed_deviation_from_target_speed2;
 
                     // Project Vehicle for one timestep with these settings

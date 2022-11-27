@@ -3,9 +3,9 @@
  int map_size_x = 60;
  int map_size_y = 60;
  int map_size_angle = 8;
- int map_size_speed = 1;
+ int map_size_speed = 3;
 
- float timestep_ms = 400.f;
+ float timestep_ms = 300.f;
 
  int map_size_x_cm = 500;
  int map_size_y_cm = 500;
@@ -17,12 +17,14 @@
  float safe_radius = 15.f;
  float heuristic_factor_backwards = 3.f;
 
- int zero_velocity_level = 0;
- float m_speedsFactor[1] = {  0.4f}; 
+ int zero_velocity_level = 1;
+ 
+ float m_speedsFactor[3] = {-0.4f, 0.f, 0.4f}; 
+ bool m_speedFactorIntermediate[3] = {false, true, false}; 
 
 /* Constraints what the allow angle range is for the edge */
  float state_change_fit_quality_angle = api / 2;
- float state_change_fit_quality_position =  xpc / 2;
+ float state_change_fit_quality_position =  xpc / 6;
  float state_change_fit_allowed_speed_difference = 0.15f;
 
 
@@ -35,5 +37,5 @@
 
     state_change_fit_quality_angle = api / 2;
     state_change_fit_quality_position =  xpc / 2;
-    state_change_fit_allowed_speed_difference = 0.15f;
+    state_change_fit_allowed_speed_difference = 0.15f; 
  }

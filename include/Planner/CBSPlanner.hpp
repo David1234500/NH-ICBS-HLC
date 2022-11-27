@@ -12,6 +12,7 @@
 #include <map>
 #include <thread>
 #include <memory>
+#include <tuple>
 
 struct LLJob{
     dynamics::data::PoseByIndex start_positions; 
@@ -35,6 +36,9 @@ struct ReachabilityResult{
     float mean_path_length = 0.f;
     float mean_time_length = 0.f;
     uint32_t edge_count = 0;
+    std::vector<std::pair<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>> unreachable_configurations;
+    std::vector<std::pair<int32_t, int32_t>> unleavable_start_configurations;
+    std::vector<std::pair<int32_t, int32_t>> unreachable_end_configuartions;
 };
 
 struct constraint_node{

@@ -24,11 +24,14 @@ struct ProxyTask{
     
     int32_t txi = 0;
     int32_t tyi = 0;
+    int32_t tsi = 0;
+    
     int32_t cai = 0;
     int32_t csi = 0;
-    float tstep = 0.0f;
-    float base_velocity = 0.f;
     
+    float tstep = 0.0f;
+
+    bool isIntermediate = false;
 };
 
 

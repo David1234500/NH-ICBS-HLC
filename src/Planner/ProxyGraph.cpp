@@ -37,16 +37,19 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
         if(hasTask){
             
             dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * static_cast<float>(threadTask.cai), m_speedsFactor[threadTask.csi] * dynamics::SimpleDynamicsModel::velocity_limit()};
-            for(int32_t a = 0; a < map_size_angle; a ++){
+           
+                for(int32_t a = 0; a < map_size_angle; a ++){
                 
-                //Constraint speed changes to one level up, same or one level down [current_speed_level - 1, current_speed_level + 1]
-                for(int32_t s = std::max(0, threadTask.csi - 1); s < std::min(map_size_speed, threadTask.csi + 1); s ++){
-            
                     //Compute best fit settings set to get from the current to the target location
-                    dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, a, s};
-                    dynamics::data::Pose2D target_pose = {{-(m_proxyMapCarOffset * xpc) + (xpc*threadTask.txi), -(m_proxyMapCarOffset * ypc) + (ypc*threadTask.tyi)},  api * static_cast<float>(a), m_speedsFactor[s] * dynamics::SimpleDynamicsModel::velocity_limit()};
+                    dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, a, threadTask.tsi};
+                    dynamics::data::Pose2D target_pose = {{-(m_proxyMapCarOffset * xpc) + (xpc*threadTask.txi), -(m_proxyMapCarOffset * ypc) + (ypc*threadTask.tyi)},  api * static_cast<float>(a), m_speedsFactor[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
 
-                    auto epose = dynamics::SimpleDynamicsModel::computeBestFit(veh_pose, target_pose_by_index, target_pose, threadTask.tstep);
+
+                    double speed_delta = state_change_fit_allowed_speed_difference;
+                    if(threadTask.isIntermediate){
+                        speed_delta += 0.1;
+                    }
+                    auto epose = dynamics::SimpleDynamicsModel::computeBestFit(veh_pose, target_pose_by_index, target_pose, threadTask.tstep, speed_delta);
                     
                     //Discard if error greater than half of the angular resolution 
                     if(epose.a_error > state_change_fit_quality_angle){
@@ -60,16 +63,15 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
                     TraversableEdge nt_edge = {epose, target_pose_by_index};
                     
                     rlog("workerProxyEdges", LOG_INFO,"Added edge to " + std::to_string(epose.pos[0]) +":"+ std::to_string(epose.pos[1]) 
-                    + " -> s" + std::to_string(epose.s_a) +"_"+ std::to_string(epose.s_v) + "e" + std::to_string(epose.p_error) +  "p" + std::to_string(a) +"_"+ std::to_string(s), MOTIONPRIM);
+                    + " -> s" + std::to_string(epose.s_a) +"_"+ std::to_string(epose.s_v) + "e" + std::to_string(epose.p_error) +  "p" + std::to_string(a) +"_"+ std::to_string(threadTask.tsi), MOTIONPRIM);
                     
                     // add new edge to the edgelist
                     m_proxyTaskMutex.lock();
                     m_proxyEdgeList[threadTask.cai][threadTask.csi].push_back(nt_edge);  
                     m_proxyTaskMutex.unlock();
-                    
-                }
+                
             }
-
+    
         }else{
             return;
         }
@@ -94,26 +96,31 @@ void ProxyGraph::computeProxyEdges(){
     std::this_thread::sleep_for(std::chrono::seconds(1));
     
     // Compute for each heading and speed from our original vehicle
-    for(int32_t i = 0; i < map_size_speed; i ++){
-        for(int32_t j = 0; j < map_size_angle; j ++){
-            
-            //Compute pose of current node/vehicle
-            dynamics::data::Pose2D veh_pose = {{0.f,0.f},  api * static_cast<float>(j),m_speedsFactor[i] * dynamics::SimpleDynamicsModel::velocity_limit()};
+    for(int32_t sv = 0; sv < map_size_speed; sv ++){
+        for(int32_t sh = 0; sh < map_size_angle; sh ++){
+            for(int32_t ts = std::max(0, sv - 1); ts < std::min(map_size_speed, sv + 1); ts ++){
 
-            //Check for each candidate node if we can find a connection between these two, but use all system threads
-            for(int32_t x = 0; x <= reachable_node_span; x ++){
-                for(int32_t y = 0; y <= reachable_node_span; y ++){
-                     
-                    if(x == m_proxyMapCarOffset && y == m_proxyMapCarOffset){
-                        continue;
+                //Compute pose of current node/vehicle
+                dynamics::data::Pose2D veh_pose = {{0.f,0.f},  api * static_cast<float>(sh),m_speedsFactor[sv] * dynamics::SimpleDynamicsModel::velocity_limit()};
+
+                //Check for each candidate node if we can find a connection between these two, but use all system threads
+                for(int32_t x = 0; x <= reachable_node_span; x ++){
+                    for(int32_t y = 0; y <= reachable_node_span; y ++){
+                            
+                        if(x == m_proxyMapCarOffset && y == m_proxyMapCarOffset){
+                            continue;
+                        }
+
+                        if(sv == zero_velocity_level && ts == zero_velocity_level){
+                            continue;
+                        }
+
+                        ProxyTask nTask;    
+                        nTask = {x,y,ts,sh,sv,timestep_ms, m_speedFactorIntermediate[ts] || m_speedFactorIntermediate[sv]};
+                        m_proxyTaskQueue.push_back(nTask);
                     }
-
-                    ProxyTask nTask;    
-                    nTask = {x,y,j,i,timestep_ms};
-                    m_proxyTaskQueue.push_back(nTask);
-                
-                }
-            }   
+                }  
+            } 
         }
     }
 
