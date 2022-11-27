@@ -13,14 +13,14 @@ constexpr int zero_velocity_level = 1;
 
 
 /* Constraints what the allow angle range is for the edge */
-constexpr double state_change_fit_quality_angle = 0.3f;
-constexpr double state_change_fit_quality_position =  0.025f;
+constexpr double state_change_fit_quality_angle = 0.15f;
+constexpr double state_change_fit_quality_position =  0.005f;
 
 
 constexpr double state_change_fit_allowed_speed_difference = 0.15f;
 ;
 
-constexpr int worker_counter = 26;
+constexpr int worker_counter = 12;
 
 #endif //test@test.com::MyPassword
 // /backend/node_modules/config/lib/config.js:182

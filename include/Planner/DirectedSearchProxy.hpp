@@ -13,7 +13,11 @@
 struct MotionPrimitiv{
     dynamics::data::Pose2DWithMotionData link;
     dynamics::data::PoseByIndex target;
-    bool is_zero_connection = false;    
+    bool is_zero_connection = false;   
+
+    bool operator<(const MotionPrimitiv& right) const {
+        return link.s_a + link.s_a_2 < right.link.s_a + right.link.s_a_2;
+    } 
 };
 
 
@@ -50,7 +54,7 @@ double m_base_node_distance = 0.f;
 std::vector<double> m_config_speedsFactor = {1.f, 0.f, -1.f}; 
 int m_config_map_size_zero_velocity_level = 1;
 int m_config_map_size_speed = 3;
-int m_config_map_extent = 1;
+int m_config_map_extent = 3;
 
 int m_comp_map_size_x = 0;
 int m_comp_map_size_y = 0;
@@ -58,8 +62,8 @@ int m_config_map_size_x_cm = 600;
 int m_config_map_size_y_cm = 600;
 int m_config_map_size_angle = 8;
 
-double m_config_ts_base = 450.f;
-double m_config_ts_min = 400.f;
+double m_config_ts_base = 400.f;
+double m_config_ts_min = 100.f;
 double m_config_ts_max = 700.f;
 
 std::mutex motion_primitive_map_mutex;
