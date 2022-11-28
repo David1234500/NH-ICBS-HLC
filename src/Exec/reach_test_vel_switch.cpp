@@ -14,12 +14,11 @@ int main() {
     //Test if we can get going from any location
     // for(){
          
-        dynamics::data::PoseByIndex start = {30,30,7,zero_velocity_level};
-
-        dynamics::data::PoseByIndex end = {28,20,5,zero_velocity_level};
+        dynamics::data::PoseByIndex start = {30,30,7,2};
+        dynamics::data::PoseByIndex end = {28,12,5,0};
         std::vector<uint32_t> times;
         
-        auto res = planner->astar(start, end, std::vector<dynamics::data::PBIConstraint>());
+        auto res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
         std::cout << "Completed Astar" << std::endl;
         
         if(res.found_path){ 

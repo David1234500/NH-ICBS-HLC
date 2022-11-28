@@ -286,14 +286,14 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::getPath(st
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> result = std::make_shared<std::vector<dynamics::data::PoseByIndex>>();
 
     do{
-        
         result->push_back(current);
         current = predecessor[current];
-        rlog("GetPath", LOG_INFO, "P: " + std::to_string(current.x) + ":" + std::to_string(current.y) + ":" + std::to_string(current.a), GETPATH);
+        rlog("GetPath", LOG_INFO, "P: " + std::to_string(current.x) + ":" + std::to_string(current.y) + ":" + std::to_string(current.a) + ":" + std::to_string(current.s), GETPATH);
 
     } while(predecessor.find(current) != predecessor.end());
     
     result->push_back(current);
+
     return result;
 }
 
