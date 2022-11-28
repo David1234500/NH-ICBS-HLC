@@ -29,8 +29,8 @@ dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PBIConstraint glo
     
     global_pose.pos[0] = (xpc * global.x);
     global_pose.pos[1] = (ypc * global.y);
-    global_pose.h = api * static_cast<float>(global.a);
-    global_pose.vel = m_speedsFactor[global.s] * dynamics::SimpleDynamicsModel::velocity_limit();
+    global_pose.vel = 0.f;
+    global_pose.h = 0;
     
     return global_pose;
 }
@@ -242,19 +242,20 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             }
             
             // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP or KD Tree to avoid this computation every time
-            // bool discard_due_to_obstacle = false;
-            // for(auto obstacle : obstacles){
-            //     auto obstPose = indexToPose(obstacle);
-            //     if( std::abs(current.timestep - obstacle.t) == 0 && (obstPose.pos - neigh_pose.pos).norm() < 2.f * safe_radius){
-            //         discard_due_to_obstacle = true;
-            //         rlog("ASTAR", LOG_INFO, "Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
-            //         break;
-            //     }
-            // }
+            bool discard_due_to_obstacle = false;
+            for(auto obstacle : obstacles){
+                // rlog("ASTAR", LOG_INFO, "Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
+                auto obstPose = indexToPose(obstacle);
+                if( std::abs(current.timestep - obstacle.t) == 1 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
+                    discard_due_to_obstacle = true;
+                    rlog("ASTAR", LOG_INFO, "Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
+                    break;
+                }
+            }
 
-            // if(discard_due_to_obstacle){
-            //     continue;
-            // }
+            if(discard_due_to_obstacle){
+                break;
+            }
 
             auto current_pose = indexToPose(current.pose); 
             float dist = (neigh_pose.pos - current_pose.pos).norm();
@@ -412,7 +413,7 @@ void CBSPlanner::low_level_astar_worker(uint32_t threadid){
         LLJob job;
 
         m_lowLevelSearchJobLock.lock();
-        rlog("low_level_astar_worker", LOG_WARNING, "Remaining queue size: " + std::to_string(m_lowLevelJobs.size()));
+        // rlog("low_level_astar_worker", LOG_WARNING, "Remaining queue size: " + std::to_string(m_lowLevelJobs.size()));
         if(!m_lowLevelJobs.empty()){
             hasJob = true;
             job = m_lowLevelJobs.back();
@@ -468,7 +469,9 @@ void CBSPlanner::await_astar_result(uint32_t count){
 constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions){
     std::cout << "CBS start" << std::endl;
 
-    
+    for(uint32_t i = 0; i < worker_counter; i ++){
+        m_lowLevelWorkers.push_back(std::thread(&CBSPlanner::low_level_astar_worker, this, i));
+    }
 
     // Enqueu all jobs to astar workers
     std::priority_queue<constraint_node> openSet;
@@ -486,6 +489,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 
     uint64_t sic = 0;
     for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
+        
         if(!m_lowLevelResults.at(i).found_path){
             std::cout << "CBS INFEASIBLE due to not finding initial path" << std::endl;
             return constraint_node();
@@ -493,7 +497,8 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         sic += m_lowLevelResults.at(i).path->size();
     }
     // Create initial constraint node
-    
+    rlog("cbs", LOG_INFO, "All results feasible, now starting main cbs iterations.");
+
     node.sic = sic;
     node.avoid.clear();
     for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
@@ -532,9 +537,11 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
                         
                         conflict_step = i;
                         conflicting_vehicles = {car_index, car_index2};
-                        conflicting_poses = {node.result[car_index2].path->at(i), node.result[car_index].path->at(i)};
+                        conflicting_poses = {node.result[car_index].path->at(i), node.result[car_index2].path->at(i)};
                         
                         rlog("CBS", LOG_INFO, "Found Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]), FCONFLICT);
+                        rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index2].path->at(i).x) + ":" +  std::to_string(node.result[car_index2].path->at(i).y) , FCONFLICT);
+                        rlog("CBS", LOG_INFO, "Position B: " + std::to_string(node.result[car_index].path->at(i).x) + ":" +  std::to_string(node.result[car_index].path->at(i).y) , FCONFLICT);
                     }
                 }   
             }
@@ -563,7 +570,8 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             constr = vehicle_conflict;
             constr.t = conflict_step;
 
-            std::cout << "[INFO CBS] Adding new constraint to situation pos " << vehicle_conflict.x << ":" << vehicle_conflict.y << ":" << conflict_step << std::endl;
+            std::cout << "[INFO CBS] Adding new constraint to situation: " << vehicle_conflict.x << ":" << vehicle_conflict.y << ":" << conflict_step << ":" << vehicle_in_conflict<< std::endl;
+
 
             constraint.avoid.push_back(constr);
 
