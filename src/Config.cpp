@@ -19,7 +19,7 @@
 
  int zero_velocity_level = 1;
  
- float m_speedsFactor[3] = {-0.3f, 0.f, 0.3f}; 
+ float m_speedsFactor[3] = {-0.1f, 0.f, 0.2f}; 
  bool m_speedFactorIntermediate[3] = {false, true, false}; 
 
 /* Constraints what the allow angle range is for the edge */
