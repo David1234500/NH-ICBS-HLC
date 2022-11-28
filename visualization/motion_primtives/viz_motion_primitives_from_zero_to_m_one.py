@@ -17,18 +17,11 @@ subfigs = fig.subfigures(nrows=y["info"]["size_a"], ncols=1)
 for row, subfig in enumerate(subfigs):
     # subfig.suptitle(f'Source Heading: {row}')
     grid[row] = {}
-    
 
     # create 1x3 subplots per subfig
     axs = subfig.subplots(nrows=1, ncols=y["info"]["size_a"])
     for col, ax in enumerate(axs):
         ax.plot()
-        if col == 0:
-            ax.set_ylabel(row, rotation=0, size='large')
-
-        if row == 0:
-            ax.set_title(f"Target Heading: {col} ")
-
         # ax.set_title(f'Target Heading: {col}')
         grid[row][col] = ax
         ax.set_aspect('equal')
@@ -47,7 +40,7 @@ for edge in y["edges"]:
     ex.append(edge["target"]["x"])
     ey.append(edge["target"]["y"])
 
-    if edge["source"]["s"] != 1:
+    if edge["targeti"]["s"] != 0 or edge["source"]["s"] != 1:
         continue
     
     grid[edge["source"]["a"]][edge["targeti"]["a"]].plot(ex,ey)

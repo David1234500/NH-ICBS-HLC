@@ -86,7 +86,7 @@ ReachabilityResult CBSPlanner::checkForReachability(){
 
     // Assumption 2: We can leave each configuration through at least one edge (so can always start moving)
     rlog("ReachCheck", LOG_INFO, "Checking for unleavable start configurations...");
-    for(int32_t i =0; i < map_size_angle; i ++){
+    for(int32_t i = 0; i < map_size_angle; i ++){
         for(int32_t j = 0; j < map_size_speed; j ++){
             if(m_proxGraph.m_proxyEdgeList[i][j].empty()){
                     rlog("ReachCheck", LOG_WARNING, "Found unleavable source configuration " + std::to_string(i) + ":" + std::to_string(j));
@@ -97,6 +97,8 @@ ReachabilityResult CBSPlanner::checkForReachability(){
             }
         }
     }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     // Assumption 3: We can reach each configuration through at least one edge (so can always stop moving)
     rlog("ReachCheck", LOG_INFO, "Checking for unreachable end configurations...");
@@ -127,8 +129,14 @@ ReachabilityResult CBSPlanner::checkForReachability(){
         }
     }
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    for(uint32_t i = 0; i < worker_counter; i ++){
+        m_lowLevelWorkers.push_back(std::thread(&CBSPlanner::low_level_astar_worker, this, i));
+    }
 
     // Assumption 1: Every node for a full level is reachable
+    uint32_t job_count = 0;
     for(int32_t v = 0; v < map_size_speed; v ++){
         if(!m_speedFactorIntermediate[v]){
             
@@ -145,23 +153,9 @@ ReachabilityResult CBSPlanner::checkForReachability(){
             
                             rlog("ReachCheck", LOG_INFO, "Checking reachability for position: " + std::to_string(tx) + ":" + std::to_string(ty) + ":" + std::to_string(ta));
                             
-                            LLResult res = astar(start,gTarget,std::vector<dynamics::data::PBIConstraint>());
-                        
-                            if(res.found_path){
-                                path_length += res.path->size();
-                                count += 1;
-                                for(uint32_t i = 0; i < res.spline.size(); i ++){
-                                    path_time += res.spline.at(i).time_ms;
-                                }
-                                rlog("ReachCheck", LOG_INFO, "Reachable with path length: " + std::to_string(res.path->size()));
-                                
-                            }else{
-                                rlog("ReachCheck", LOG_INFO, "Failed for a configuration! ");
-                                result.reachable = false;
-                                auto unreach_config = std::make_pair(start,gTarget);
-                                result.unreachable_configurations.push_back(unreach_config);
-                                return result;
-                            }
+                            constraint_node node;
+                            enqueue_astar( start, gTarget, node, job_count);
+                            job_count += 1;
                         }
                     }
                 }
@@ -169,9 +163,25 @@ ReachabilityResult CBSPlanner::checkForReachability(){
         }
     }
 
-   
-    
-    rlog("ReachCheck", LOG_WARNING, "All target and angles positions were reachable by ASTAR");
+    await_astar_result(job_count);
+    rlog("ReachCheck", LOG_INFO, "Got all reachability results... ");
+
+    bool found_all_paths = true;
+    for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
+        auto res = m_lowLevelResults.at(i);
+        if(res.found_path){
+            count += 1;
+            for(uint32_t i = 0; i < res.spline.size(); i ++){
+                path_time += res.spline.at(i).time_ms;
+            }
+            
+        }else{
+            rlog("ReachCheck", LOG_INFO, "Failed for a configuration! ");
+            result.reachable = false;
+            return result;
+        }
+    }
+
     result.mean_time_length = path_time/static_cast<float>(count);
     result.mean_path_length = static_cast<float>(path_length)/static_cast<float>(count);
     return result;
@@ -350,34 +360,43 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
     uint32_t time_index = 0;
     dynamics::data::Pose2D veh_pose = indexToPose(nodes.at( nodes.size() - 1));
     for(int64_t i = nodes.size() - 1; i > 0; i --){
+
         dynamics::data::Pose2D start_pose = indexToPose(nodes.at(i)); 
         dynamics::data::Pose2D veh_pose; 
-        
-        float fullstep = static_cast<float>(timestep_ms);
 
-        auto step_1_velocity =  edges.at(i - 1).link.s_v;
-        for(float timestep1 = 200.f; timestep1 < fullstep; timestep1 += 200.f){
+        dynamics::data::Pose2WithTime next_with_time;
+        next_with_time =  indexToPose(nodes.at(i)); 
+        next_with_time.time_ms = (time_index * 2 * timestep_ms); 
+        result.push_back(next_with_time);
 
-            veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(start_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, timestep1);
+        // dynamics::data::Pose2WithTime next_with_time;
+        // next_with_time = veh_pose;
+        // next_with_time.time_ms = (time_index * 2 * timestep_ms ) + timestep_ms; 
+        // result.push_back(next_with_time);
+
+        // auto step_1_velocity =  edges.at(i - 1).link.s_v;  
+        // for(float timestep1 = 200.f; timestep1 < fullstep; timestep1 += 250.f){
+
+        //     veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(start_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, timestep1);
             
-            dynamics::data::Pose2WithTime next_with_time;
-            next_with_time = veh_pose;
-            next_with_time.time_ms = (time_index * 2 * timestep_ms) + timestep1; 
+        //     dynamics::data::Pose2WithTime next_with_time;
+        //     next_with_time = veh_pose;
+        //     next_with_time.time_ms = (time_index * 2 * timestep_ms) + timestep1; 
             
-            result.push_back(next_with_time);
-        }
+        //     result.push_back(next_with_time);
+        // }
     
-        auto step_2_velocity =  edges.at(i - 1).link.s_v_2;
-        for(float timestep2 = 200.f; timestep2 < fullstep - 200.f; timestep2 += 200.f) {
+        // auto step_2_velocity =  edges.at(i - 1).link.s_v_2;
+        // for(float timestep2 = 200.f; timestep2 < fullstep - 200.f; timestep2 += 250.f) {
 
-            auto final_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, timestep2);     
+        //     auto final_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, timestep2);     
             
-            dynamics::data::Pose2WithTime next_pose2_with_time;
-            next_pose2_with_time = final_pose;
-            next_pose2_with_time.time_ms = (time_index * 2 * timestep_ms) + fullstep + timestep2;
+        //     dynamics::data::Pose2WithTime next_pose2_with_time;
+        //     next_pose2_with_time = final_pose;
+        //     next_pose2_with_time.time_ms = (time_index * 2 * timestep_ms) + fullstep + timestep2;
             
-            result.push_back(next_pose2_with_time);
-        }
+        //     result.push_back(next_pose2_with_time);
+        // }
     
 
         time_index += 1;
@@ -393,6 +412,7 @@ void CBSPlanner::low_level_astar_worker(uint32_t threadid){
         LLJob job;
 
         m_lowLevelSearchJobLock.lock();
+        rlog("low_level_astar_worker", LOG_WARNING, "Remaining queue size: " + std::to_string(m_lowLevelJobs.size()));
         if(!m_lowLevelJobs.empty()){
             hasJob = true;
             job = m_lowLevelJobs.back();
@@ -448,9 +468,7 @@ void CBSPlanner::await_astar_result(uint32_t count){
 constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions){
     std::cout << "CBS start" << std::endl;
 
-    for(uint32_t i = 0; i < worker_counter; i ++){
-        m_lowLevelWorkers.push_back(std::thread(&CBSPlanner::low_level_astar_worker, this, i));
-    }
+    
 
     // Enqueu all jobs to astar workers
     std::priority_queue<constraint_node> openSet;

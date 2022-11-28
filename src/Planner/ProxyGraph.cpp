@@ -26,8 +26,11 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
         if(!m_proxyTaskQueue.empty()){
             threadTask = *m_proxyTaskQueue.begin();
             m_proxyTaskQueue.erase(m_proxyTaskQueue.begin());
-            rlog("workerProxyEdges", LOG_INFO," Working now on task: " + std::to_string(threadTask.txi) +":"+ std::to_string(threadTask.tyi) + ":"+ std::to_string(threadTask.cai) +":"+ std::to_string(threadTask.csi), MOTIONPRIM);
-                    
+            
+            if(((threadTask.txi + threadTask.tyi) % 10) == 0){
+                rlog("workerProxyEdges", LOG_INFO," Working now on task: " + std::to_string(threadTask.txi) +":"+ std::to_string(threadTask.tyi) + ":"+ std::to_string(threadTask.cai) +":"+ std::to_string(threadTask.csi), MOTIONPRIM);
+            }
+            
             hasTask = true;
         }else{
             hasTask = false;
@@ -46,9 +49,9 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
 
 
                     double speed_delta = state_change_fit_allowed_speed_difference;
-                    if(threadTask.isIntermediate){
-                        speed_delta += 0.1;
-                    }
+                    // if(threadTask.isIntermediate){
+                    //     speed_delta += 0.1;
+                    // }
                     auto epose = dynamics::SimpleDynamicsModel::computeBestFit(veh_pose, target_pose_by_index, target_pose, threadTask.tstep, speed_delta);
                     
                     //Discard if error greater than half of the angular resolution 
@@ -98,9 +101,10 @@ void ProxyGraph::computeProxyEdges(){
     // Compute for each heading and speed from our original vehicle
     for(int32_t sv = 0; sv < map_size_speed; sv ++){
         for(int32_t sh = 0; sh < map_size_angle; sh ++){
-            for(int32_t ts = std::max(0, sv - 1); ts < std::min(map_size_speed, sv + 1); ts ++){
+            for(int32_t ts = std::max(0, sv - 1); ts < std::min(map_size_speed, sv + 2); ts ++){
 
                 //Compute pose of current node/vehicle
+                rlog("workerProxyEdges", LOG_INFO," Creating task for configuration: SV" + std::to_string(sv) +" SH"+ std::to_string(sh) + " TS"+ std::to_string(ts), MOTIONPRIM);
                 dynamics::data::Pose2D veh_pose = {{0.f,0.f},  api * static_cast<float>(sh),m_speedsFactor[sv] * dynamics::SimpleDynamicsModel::velocity_limit()};
 
                 //Check for each candidate node if we can find a connection between these two, but use all system threads
@@ -117,6 +121,7 @@ void ProxyGraph::computeProxyEdges(){
 
                         ProxyTask nTask;    
                         nTask = {x,y,ts,sh,sv,timestep_ms, m_speedFactorIntermediate[ts] || m_speedFactorIntermediate[sv]};
+
                         m_proxyTaskQueue.push_back(nTask);
                     }
                 }  
