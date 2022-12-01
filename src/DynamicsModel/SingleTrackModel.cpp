@@ -77,6 +77,12 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
     current_best_pose.bi_pose = tpi;
 
     float current_angle_span = SimpleDynamicsModel::angle_limit();
+    float center_average_speed = ((current_pose.vel + target_pose.vel) / 2.f);
+    
+    // if(center_average_speed < 0.f){
+    //     current_angle_span = 0.3f * current_angle_span;
+    // }
+    
     float current_error = 1000.f;
 
     // Iterate over all possible combinations of speeds and steering angles to find best configuration for reaching the target node
@@ -88,7 +94,7 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
         
         for(uint32_t j = 0; j <= vel_count; j ++){ 
 
-            float center_average_speed = ((current_pose.vel + target_pose.vel) / 2.f);
+            
             float allowed_deviation_from_target_speed = (-(allowed_speed_deviation/2.f) + (allowed_speed_deviation/ static_cast<float>(vel_count)) * static_cast<float>(j)) * SimpleDynamicsModel::velocity_limit();
             float next_speed =  center_average_speed + allowed_deviation_from_target_speed;
 

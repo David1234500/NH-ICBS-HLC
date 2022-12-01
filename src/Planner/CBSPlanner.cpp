@@ -359,46 +359,35 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
 
     std::vector<dynamics::data::Pose2WithTime> result;
     uint32_t time_index = 0;
+    float half_step =  (timestep_ms / 2);
     dynamics::data::Pose2D veh_pose = indexToPose(nodes.at( nodes.size() - 1));
     for(int64_t i = nodes.size() - 1; i > 0; i --){
 
         dynamics::data::Pose2D start_pose = indexToPose(nodes.at(i)); 
-        dynamics::data::Pose2D veh_pose; 
 
         dynamics::data::Pose2WithTime next_with_time;
-        next_with_time =  indexToPose(nodes.at(i)); 
+        next_with_time = start_pose; 
         next_with_time.time_ms = (time_index * 2 * timestep_ms); 
         result.push_back(next_with_time);
 
-        // dynamics::data::Pose2WithTime next_with_time;
-        // next_with_time = veh_pose;
-        // next_with_time.time_ms = (time_index * 2 * timestep_ms ) + timestep_ms; 
-        // result.push_back(next_with_time);
+         dynamics::data::Pose2WithTime next_with_time2;
+        auto intermediate_pose = dynamics::SimpleDynamicsModel::computeNextPose(start_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v,half_step);
+        next_with_time2 = intermediate_pose;
+        next_with_time2.time_ms = (time_index * 2 * timestep_ms ) + (timestep_ms / 2); 
+        result.push_back(next_with_time2);
 
-        // auto step_1_velocity =  edges.at(i - 1).link.s_v;  
-        // for(float timestep1 = 200.f; timestep1 < fullstep; timestep1 += 250.f){
+        dynamics::data::Pose2WithTime next_with_time3;
+        auto intermediate_pose3 = dynamics::SimpleDynamicsModel::computeNextPose(start_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, timestep_ms);
+        next_with_time3 = intermediate_pose3;
+        next_with_time3.time_ms = (time_index * 2 * timestep_ms ) + timestep_ms; 
+        result.push_back(next_with_time3);
 
-        //     veh_pose = dynamics::SimpleDynamicsModel::computeNextPose(start_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, timestep1);
-            
-        //     dynamics::data::Pose2WithTime next_with_time;
-        //     next_with_time = veh_pose;
-        //     next_with_time.time_ms = (time_index * 2 * timestep_ms) + timestep1; 
-            
-        //     result.push_back(next_with_time);
-        // }
-    
-        // auto step_2_velocity =  edges.at(i - 1).link.s_v_2;
-        // for(float timestep2 = 200.f; timestep2 < fullstep - 200.f; timestep2 += 250.f) {
-
-        //     auto final_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, timestep2);     
-            
-        //     dynamics::data::Pose2WithTime next_pose2_with_time;
-        //     next_pose2_with_time = final_pose;
-        //     next_pose2_with_time.time_ms = (time_index * 2 * timestep_ms) + fullstep + timestep2;
-            
-        //     result.push_back(next_pose2_with_time);
-        // }
-    
+        dynamics::data::Pose2WithTime next_with_time4;
+        float step =  half_step;
+        auto intermediate_pose4 = dynamics::SimpleDynamicsModel::computeNextPose(intermediate_pose3, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, step);
+        next_with_time4 = intermediate_pose4;
+        next_with_time4.time_ms = (time_index * 2 * timestep_ms ) + timestep_ms + half_step; 
+        result.push_back(next_with_time4);
 
         time_index += 1;
     }
