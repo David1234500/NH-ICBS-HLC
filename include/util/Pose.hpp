@@ -90,7 +90,15 @@ struct PBIConstraint{
     }
 
     inline bool operator==(const PBIConstraint &e) const {
-        if(e.x==x && e.y == y && e.t == t){
+        if(e.x==x && e.y == y && e.t == t && e.id == id){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    inline bool operator==(const PoseByIndex &e) const {
+        if(e.x==x && e.y == y){
             return true;
         }else{
             return false;

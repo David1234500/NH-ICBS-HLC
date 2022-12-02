@@ -47,11 +47,7 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
                     dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, a, threadTask.tsi};
                     dynamics::data::Pose2D target_pose = {{-(m_proxyMapCarOffset * xpc) + (xpc*threadTask.txi), -(m_proxyMapCarOffset * ypc) + (ypc*threadTask.tyi)},  api * static_cast<float>(a), m_speedsFactor[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
 
-
                     double speed_delta = state_change_fit_allowed_speed_difference;
-                    // if(threadTask.isIntermediate){
-                    //     speed_delta += 0.1;
-                    // }
                     auto epose = dynamics::SimpleDynamicsModel::computeBestFit(veh_pose, target_pose_by_index, target_pose, threadTask.tstep, speed_delta);
                     
                     //Discard if error greater than half of the angular resolution 

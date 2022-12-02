@@ -222,13 +222,28 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             rlog("ASTAR", LOG_INFO, "Found path for " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
             
             LLResult res;
-            // writeVisitedNodesToDisk(start,target,cameFrom);
+            
             res.path = getPath(cameFrom, current.pose);
             res.spline = getSplines(cameFrom, usedEdge, current.pose);
+            res.interprimitive = getInterPrimitivPositions(cameFrom, usedEdge, current.pose);
+
             res.found_path = true;
 
             return res;
         }
+
+        bool discard = false;
+        for(auto obstacle : obstacles){
+            if( std::abs(current.timestep - obstacle.t) <= 1 && obstacle ==  current.pose){
+                rlog("ASTAR", LOG_INFO, "2. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(current.pose.x) + ":" + std::to_string(current.pose.y), ACONFLICT);
+                discard = true;
+                break;
+            }
+        }
+        if(discard){
+            continue;
+        }
+
 
         openQueue.pop();
         for(auto rel_neighbor: m_proxGraph.m_proxyEdgeList[current.pose.a][current.pose.s]){
@@ -244,37 +259,41 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP or KD Tree to avoid this computation every time
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
-                // rlog("ASTAR", LOG_INFO, "Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
+               
+                // rlog("ASTAR", LOG_INFO, "Obstacle, time: " + std::to_string(current.timestep) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
+               
                 auto obstPose = indexToPose(obstacle);
-                if( std::abs(current.timestep - obstacle.t) == 1 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
+
+                if( std::abs((current.timestep + 1) - obstacle.t) <= 1 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
                     discard_due_to_obstacle = true;
-                    rlog("ASTAR", LOG_INFO, "Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
+                    rlog("ASTAR", LOG_INFO, "1. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + "-" + std::to_string(std::abs(current.timestep - obstacle.t)) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
                     break;
                 }
+
             }
 
-            if(discard_due_to_obstacle){
-                break;
-            }
+            if(!discard_due_to_obstacle){
 
-            auto current_pose = indexToPose(current.pose); 
-            float dist = (neigh_pose.pos - current_pose.pos).norm();
-            float tentative_score = gScore[current.pose] + dist; 
-            if(gScore.count(gl_neighbor) == 0 || tentative_score < gScore[gl_neighbor]){
+                auto current_pose = indexToPose(current.pose); 
+                float dist = (neigh_pose.pos - current_pose.pos).norm();
+                float tentative_score = gScore[current.pose] + dist; 
+                if(gScore.count(gl_neighbor) == 0 || tentative_score < gScore[gl_neighbor]){
 
-                cameFrom[gl_neighbor] = current.pose;
-                usedEdge[gl_neighbor] = rel_neighbor;
-                gScore[gl_neighbor] = tentative_score;
-                
-                float h = (neigh_pose.pos - target_pose.pos).norm();
-                fScore[gl_neighbor] = tentative_score + h;
-                
-                if(openSet.count(gl_neighbor) == 0){
-                    dynamics::data::LLNode node = {gl_neighbor, fScore[gl_neighbor], current.timestep + 1};
-                    openQueue.push(node);
-                    openSet.insert(gl_neighbor);
+                    cameFrom[gl_neighbor] = current.pose;
+                    usedEdge[gl_neighbor] = rel_neighbor;
+                    gScore[gl_neighbor] = tentative_score;
+                    
+                    float h = (neigh_pose.pos - target_pose.pos).norm();
+                    fScore[gl_neighbor] = tentative_score + h;
+                    
+                    if(openSet.count(gl_neighbor) == 0){
+                        dynamics::data::LLNode node = {gl_neighbor, fScore[gl_neighbor], current.timestep + 1};
+                        openQueue.push(node);
+                        openSet.insert(gl_neighbor);
+                    }
                 }
             }
+
         }
 
         
@@ -295,12 +314,14 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
 std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::getPath(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target){
     auto current = target;
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> result = std::make_shared<std::vector<dynamics::data::PoseByIndex>>();
-
+    uint32_t index = 0;
     do{
+
         result->push_back(current);
         current = predecessor[current];
-        rlog("GetPath", LOG_INFO, "P: " + std::to_string(current.x) + ":" + std::to_string(current.y) + ":" + std::to_string(current.a) + ":" + std::to_string(current.s), GETPATH);
+        rlog("GetPath", LOG_INFO, "P: " + std::to_string(current.x) + ":" + std::to_string(current.y) + ":" + std::to_string(current.a) + ":" + std::to_string(current.s) + " index: " + std::to_string(index), GETPATH);
 
+        index ++;
     } while(predecessor.find(current) != predecessor.end());
     
     result->push_back(current);
@@ -370,7 +391,59 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
         next_with_time.time_ms = (time_index * 2 * timestep_ms); 
         result.push_back(next_with_time);
 
-         dynamics::data::Pose2WithTime next_with_time2;
+        //  dynamics::data::Pose2WithTime next_with_time2;
+        // auto intermediate_pose = dynamics::SimpleDynamicsModel::computeNextPose(start_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v,half_step);
+        // next_with_time2 = intermediate_pose;
+        // next_with_time2.time_ms = (time_index * 2 * timestep_ms ) + (timestep_ms / 2); 
+        // result.push_back(next_with_time2);
+
+        // dynamics::data::Pose2WithTime next_with_time3;
+        // auto intermediate_pose3 = dynamics::SimpleDynamicsModel::computeNextPose(start_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, timestep_ms);
+        // next_with_time3 = intermediate_pose3;
+        // next_with_time3.time_ms = (time_index * 2 * timestep_ms ) + timestep_ms; 
+        // result.push_back(next_with_time3);
+
+        // dynamics::data::Pose2WithTime next_with_time4;
+        // float step =  half_step;
+        // auto intermediate_pose4 = dynamics::SimpleDynamicsModel::computeNextPose(intermediate_pose3, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, step);
+        // next_with_time4 = intermediate_pose4;
+        // next_with_time4.time_ms = (time_index * 2 * timestep_ms ) + timestep_ms + half_step; 
+        // result.push_back(next_with_time4);
+
+        time_index += 1;
+    }
+    
+    return result;
+}
+
+std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getInterPrimitivPositions(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target){
+    auto current = target;
+    std::vector<dynamics::data::PoseByIndex> nodes;
+    std::vector<TraversableEdge> edges;
+
+    do{
+        nodes.push_back(current);
+        edges.push_back(edge_map[current]);
+        current = predecessor[current];
+    }while(predecessor.find(current) != predecessor.end());
+
+    nodes.push_back(current);
+    edges.push_back(edge_map[current]);
+
+    std::vector<dynamics::data::Pose2WithTime> result;
+    uint32_t time_index = 0;
+    float half_step =  (timestep_ms / 2);
+    dynamics::data::Pose2D veh_pose = indexToPose(nodes.at( nodes.size() - 1));
+    for(int64_t i = nodes.size() - 1; i > 0; i --){
+
+        dynamics::data::Pose2D start_pose = indexToPose(nodes.at(i)); 
+
+        dynamics::data::Pose2WithTime next_with_time;
+        next_with_time = start_pose; 
+        next_with_time.time_ms = (time_index * 2 * timestep_ms); 
+        result.push_back(next_with_time);
+
+        dynamics::data::Pose2WithTime next_with_time2;
         auto intermediate_pose = dynamics::SimpleDynamicsModel::computeNextPose(start_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v,half_step);
         next_with_time2 = intermediate_pose;
         next_with_time2.time_ms = (time_index * 2 * timestep_ms ) + (timestep_ms / 2); 
@@ -394,6 +467,7 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
     
     return result;
 }
+
 
 void CBSPlanner::low_level_astar_worker(uint32_t threadid){
     while(m_keepThreadsAlive){
@@ -430,9 +504,9 @@ void CBSPlanner::enqueue_astar(dynamics::data::PoseByIndex& start, dynamics::dat
     job.job_id = id;
     job.avoid.clear();
     for(auto c: constraint.avoid){
-        if(c.id == id){
+        // if(c.id == id){
             job.avoid.push_back(c);
-        }
+        // }
     }
     job.start_positions = start;
     job.target_positions = target;
@@ -457,6 +531,7 @@ void CBSPlanner::await_astar_result(uint32_t count){
 
 constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions){
     std::cout << "CBS start" << std::endl;
+    uint32_t node_id = 0;
 
     for(uint32_t i = 0; i < worker_counter; i ++){
         m_lowLevelWorkers.push_back(std::thread(&CBSPlanner::low_level_astar_worker, this, i));
@@ -489,6 +564,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     rlog("cbs", LOG_INFO, "All results feasible, now starting main cbs iterations.");
 
     node.sic = sic;
+    node.node_id = node_id;
     node.avoid.clear();
     for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
         node.result[m_lowLevelResults.at(i).car_id] = m_lowLevelResults.at(i);
@@ -509,6 +585,12 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         
         std::cout << "[INFO CBS] Iteration, openSet: " << openSet.size() << std::endl;
         std::cout << "[INFO CBS] SIC: " << node.sic << std::endl;
+        std::cout << "[INFO CBS] Current Node ID: " << node.node_id << std::endl;
+        std::cout << "[INFO CBS] Obstacles:";
+        for(auto obst: node.avoid){
+            std::cout << "[" + std::to_string(obst.x) + ":" + std::to_string(obst.y) + ":" + std::to_string(obst.t) + "],";
+        }
+        std::cout << std::endl;
 
         //Validate Solution in first node to find conflicts
         std::array<dynamics::data::PoseByIndex,2> conflicting_poses; 
@@ -517,20 +599,38 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 
         for(int32_t car_index = 0; car_index < start_positions.size(); car_index ++){
             for (int32_t car_index2 = car_index + 1; car_index2 < start_positions.size(); car_index2 ++){
-                for(uint32_t i = 0; i < node.result[car_index].path->size() && i < node.result[car_index2].path->size(); i ++){
                 
-                    auto pose_car_a = indexToPose(node.result[car_index].path->at(i));
-                    auto pose_car_b = indexToPose(node.result[car_index2].path->at(i));
+                for(int32_t i = 1; i < node.result[car_index].path->size() && i < node.result[car_index2].path->size(); i ++){
+                
+                    int32_t path_index_car_a = node.result[car_index].path->size() - i;
+                    int32_t path_index_car_b = node.result[car_index2].path->size() - i;
+
+                    auto pose_car_a = indexToPose(node.result[car_index].path->at(path_index_car_a));
+                    auto pose_car_b = indexToPose(node.result[car_index2].path->at(path_index_car_b));
                     
+                    //Level 1: Detection of close intersection
                     if((pose_car_a.pos - pose_car_b.pos).norm() < safe_radius){
                         
+                        // //Level 2: Switch to denser representation
+                        // for(uint32_t interprim = 3 * (i - 1); interprim < node.result[car_index].interprimitive.size() &&
+                        //                                       interprim < node.result[car_index2].interprimitive.size() &&
+                        //                                       interprim < 3 * (i + 1); interprim ++ ){
+
+                        //     auto inter_pose_car_a = node.result[car_index].interprimitive.at(interprim);
+                        //     auto inter_pose_car_b = node.result[car_index2].interprimitive.at(interprim);
+                            
+                        //     if((inter_pose_car_a.pos - inter_pose_car_b.pos).norm() < safe_level2_rad){
+
                         conflict_step = i;
                         conflicting_vehicles = {car_index, car_index2};
-                        conflicting_poses = {node.result[car_index].path->at(i), node.result[car_index2].path->at(i)};
+                        conflicting_poses = {node.result[car_index].path->at(path_index_car_a), node.result[car_index2].path->at(path_index_car_b)};
                         
                         rlog("CBS", LOG_INFO, "Found Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]), FCONFLICT);
-                        rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index2].path->at(i).x) + ":" +  std::to_string(node.result[car_index2].path->at(i).y) , FCONFLICT);
-                        rlog("CBS", LOG_INFO, "Position B: " + std::to_string(node.result[car_index].path->at(i).x) + ":" +  std::to_string(node.result[car_index].path->at(i).y) , FCONFLICT);
+                        rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index2].path->at(path_index_car_b).x) + ":" +  std::to_string(node.result[car_index2].path->at(path_index_car_b).y) , FCONFLICT);
+                        rlog("CBS", LOG_INFO, "Position B: " + std::to_string(node.result[car_index].path->at(path_index_car_a).x) + ":" +  std::to_string(node.result[car_index].path->at(path_index_car_a).y) , FCONFLICT);                                               
+                            
+                            // }
+                        // }
                     }
                 }   
             }
@@ -552,7 +652,6 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             // Create new constraint node
             constraint_node constraint;
             constraint.sic = 0;
-            constraint.avoid.insert(constraint.avoid.end(), node.avoid.begin(), node.avoid.end());
 
             dynamics::data::PBIConstraint constr;
             constr.id = vehicle_in_conflict;
@@ -561,8 +660,14 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 
             std::cout << "[INFO CBS] Adding new constraint to situation: " << vehicle_conflict.x << ":" << vehicle_conflict.y << ":" << conflict_step << ":" << vehicle_in_conflict<< std::endl;
 
-
-            constraint.avoid.push_back(constr);
+              if(std::find(node.avoid.begin(), node.avoid.end(), constr) == node.avoid.end()){
+                constraint.avoid.push_back(constr);
+            }else{
+                rlog("CBS", LOG_ERROR, " Readding same conflict.... this should not happen", FCONFLICT);
+            }
+            
+            constraint.avoid.insert(constraint.avoid.end(), node.avoid.begin(), node.avoid.end());
+            
 
             // TODO: maybe restore astar compute from here
             // Just add path again until conflict with all neighbors as open nodes and recompute scores
@@ -592,6 +697,8 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             // Update constraint node with new information
             constraint.sic = sic;
             constraint.result.clear();
+            constraint.node_id = node_id;
+            node_id ++;
 
             for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
                 constraint.result[m_lowLevelResults.at(i).car_id]= m_lowLevelResults.at(i);
@@ -601,6 +708,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             // Add new constraint node if it is feasible
             if(found_paths_for_all_vehicles){
                 openSet.push(constraint);
+                rlog("CBS", LOG_INFO, "Adding new node with ID: " + std::to_string(constraint.node_id), FCONFLICT);
             }else{
                 std::cout << "CBS Found infeasible node" << std::endl;
             }

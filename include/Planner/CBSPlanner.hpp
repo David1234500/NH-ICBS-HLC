@@ -27,6 +27,7 @@ struct LLResult{
     bool found_path = false;
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> path;
     std::vector<dynamics::data::Pose2WithTime> spline;
+    std::vector<dynamics::data::Pose2WithTime> interprimitive;
     uint32_t job_id = 0;
     uint16_t car_id = 0;
 };
@@ -43,6 +44,7 @@ struct ReachabilityResult{
 
 struct constraint_node{
     uint64_t sic = 0;
+    uint32_t node_id = 0;
     std::vector<dynamics::data::PBIConstraint> avoid;
     std::map<int32_t, LLResult> result;
    
@@ -101,7 +103,7 @@ public:
     
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> getPath(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target);
     std::vector<dynamics::data::Pose2WithTime> getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target);
-    
+    std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target);
 
 };
 

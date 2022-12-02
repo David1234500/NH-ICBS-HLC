@@ -79,9 +79,9 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
     float current_angle_span = SimpleDynamicsModel::angle_limit();
     float center_average_speed = ((current_pose.vel + target_pose.vel) / 2.f);
     
-    // if(center_average_speed < 0.f){
-    //     current_angle_span = 0.3f * current_angle_span;
-    // }
+    if(center_average_speed < 0.f){
+        current_angle_span = 0.3f * current_angle_span;
+    }
     
     float current_error = 1000.f;
 

@@ -18,6 +18,7 @@
  extern float api;
 
  extern float safe_radius;
+ extern float safe_level2_rad;
  extern float heuristic_factor_backwards;
 
  extern int zero_velocity_level;

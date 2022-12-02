@@ -14,7 +14,8 @@
  float ypc = (float)map_size_y_cm / (float)map_size_y;
  float api = (2.f * PI) / (float)map_size_angle;
 
- float safe_radius = 15.f;
+ float safe_radius = 20.f;
+ float safe_level2_rad = 10.f;
  float heuristic_factor_backwards = 3.f;
 
  int zero_velocity_level = 1;
@@ -28,7 +29,7 @@
  float state_change_fit_allowed_speed_difference = 0.15f;
 
 
- int worker_counter = 8;
+ int worker_counter = 1;
 
  void recompute_inferred_values(){
     xpc = (float)map_size_x_cm / (float)map_size_x;
