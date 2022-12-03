@@ -266,7 +266,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
 
                 if( std::abs((current.timestep + 1) - obstacle.t) <= 1 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
                     discard_due_to_obstacle = true;
-                    rlog("ASTAR", LOG_INFO, "1. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + "-" + std::to_string(std::abs(current.timestep - obstacle.t)) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
+                    // rlog("ASTAR", LOG_INFO, "1. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + "-" + std::to_string(std::abs(current.timestep - obstacle.t)) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
                     break;
                 }
 
@@ -503,11 +503,7 @@ void CBSPlanner::enqueue_astar(dynamics::data::PoseByIndex& start, dynamics::dat
     
     job.job_id = id;
     job.avoid.clear();
-    for(auto c: constraint.avoid){
-        // if(c.id == id){
-            job.avoid.push_back(c);
-        // }
-    }
+    job.avoid = constraint.avoid; // this should just copy the constraints with correct ids
     job.start_positions = start;
     job.target_positions = target;
     job.car_id = id;

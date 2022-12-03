@@ -1,8 +1,8 @@
 #include <Config.hpp>
 
- int map_size_x = 50;
- int map_size_y = 50;
- int map_size_angle = 8;
+ int map_size_x = 100;
+ int map_size_y = 100;
+ int map_size_angle = 16;
  int map_size_speed = 3;
 
  float timestep_ms = 500.f;
@@ -20,7 +20,7 @@
 
  int zero_velocity_level = 1;
  
- float m_speedsFactor[3] = {-0.1f, 0.f, 0.2f}; 
+ float m_speedsFactor[3] = {-0.3f, 0.f, 0.3f}; 
  bool m_speedFactorIntermediate[3] = {false, true, false}; 
 
 /* Constraints what the allow angle range is for the edge */
