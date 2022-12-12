@@ -45,7 +45,7 @@ dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::P
 
     float near_a = pose.h / api;
 
-    dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)std::floor(near_a),zero_velocity_level};
+    dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)round(near_a),zero_velocity_level};
 
     return result;
 }
@@ -381,10 +381,11 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
     edges.push_back(edge_map[current]);
 
     std::vector<dynamics::data::Pose2WithTime> result;
+    
     uint32_t time_index = 0;
-    float half_step =  (timestep_ms / 2);
     dynamics::data::Pose2D veh_pose = indexToPose(nodes.at( nodes.size() - 1));
-    for(int64_t i = nodes.size() - 1; i > 0; i --){
+
+    for(int64_t i = nodes.size() - 1; i >= 0; i --){
 
         dynamics::data::Pose2WithTime next_with_time;
         next_with_time = indexToPose(nodes.at(i)); 
