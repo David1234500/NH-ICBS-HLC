@@ -22,8 +22,8 @@
  extern float heuristic_factor_backwards;
 
  extern int zero_velocity_level;
- extern float m_speedsFactor[3];
- extern bool m_speedFactorIntermediate[3];
+ extern float m_speedsFactor[5];
+ extern bool m_speedFactorIntermediate[5];
 
 /* Constraextern ints what the allow angle range is for the edge */
  extern float state_change_fit_quality_angle;

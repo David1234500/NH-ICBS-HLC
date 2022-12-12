@@ -2,36 +2,69 @@ import json
 import matplotlib.pyplot as plt
 import math
 import sys
+import numpy as np
 
-def to_pose_list(json_pose_data):
-    pose_data = {}
-    for data_vehicle in json_pose_data:
-        vehicle_id = data_vehicle["vehicle"]
-        pose_data[vehicle_id] = []
-        for pose in data_vehicle["path"]:
-            pose_data[vehicle_id].append(pose)
 
-    return pose_data
-
-f_actual = open("actual_trajectories.json", "r")
+f_actual = open(sys.argv[1], "r")
 x_actual = f_actual.read() 
-actual_pose_data = json.loads(x_actual)
+pose_data = json.loads(x_actual)
   
-f_reference = open("reference_trajectories.json", "r")
-x_reference = f_reference.read() 
-reference_pose_data = json.loads(x_reference)
+time_ref_ms = pose_data["time_ref_ms"]
 
-actual_poses_by_vehicle = to_pose_list(actual_pose_data)
-reference_poses_by_vehicle = to_pose_list(reference_pose_data)
-    
-for v in actual_pose_data:
-    
-    plt.plot(actual_pose_data[v][:]["time_ms"],actual_pose_data[v][:]["pv"], marker="x")
-    plt.plot(reference_poses_by_vehicle[v][:]["time_ms"],reference_poses_by_vehicle[v][:]["pv"], marker="x")
-    
-    plt.xlabel("Time ms")
-    plt.ylabel("Velocity m/s")
+actual_data = []
+for node in pose_data["actual"][0]["path"]:
+    if node["time_ms"] < 1000000:
+        actual_data.append((node["px"],node["py"],node["ph"],node["pv"],node["time_ms"]))
 
-    plt.suptitle("vel_comparison_{}.png".format(v), fontsize=7)
-    plt.savefig("vel_comparison_{}.png".format(v))
-    plt.clf()
+ref_data = []
+for node in pose_data["ref"][0]["path"]:
+    ref_data.append((node["px"],node["py"],node["ph"],node["pv"],node["time_ms"]))
+
+# print(actual_data)
+# print(ref_data)
+
+fig = plt.figure(constrained_layout=True)
+fig.suptitle('Motion Primitives Visualisation')
+
+# create 3x1 subfigs
+subfigs = fig.subplots(nrows=4, ncols=1)
+ref_data_np = np.array(ref_data)
+actual_data_np = np.array(actual_data)
+
+# plot velocity
+times = ref_data_np[:,4]
+speeds = ref_data_np[:,3]
+subfigs[0].plot(times,speeds)
+
+times2 = actual_data_np[:,4] 
+speeds2 = actual_data_np[:,3] 
+subfigs[0].plot(times2,speeds2)
+
+# plot heading
+times = ref_data_np[:,4]
+speeds = ref_data_np[:,2] - 2 * math.pi
+subfigs[1].plot(times,speeds)
+
+times2 = actual_data_np[:,4] 
+speeds2 = actual_data_np[:,2] 
+subfigs[1].plot(times2,speeds2)
+
+# plot position x
+times = ref_data_np[:,4]
+speeds = ref_data_np[:,1] 
+subfigs[2].plot(times,speeds)
+
+times2 = actual_data_np[:,4] 
+speeds2 = actual_data_np[:,1] 
+subfigs[2].plot(times2,speeds2)
+
+# plot position y
+times = ref_data_np[:,4]
+speeds = ref_data_np[:,0] 
+subfigs[3].plot(times,speeds)
+
+times2 = actual_data_np[:,4] 
+speeds2 = actual_data_np[:,0] 
+subfigs[3].plot(times2,speeds2)
+
+plt.show()
