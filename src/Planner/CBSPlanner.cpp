@@ -557,6 +557,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         std::cout << "[INFO CBS] SIC: " << node.sic << std::endl;
         std::cout << "[INFO CBS] Current Node ID: " << node.node_id << std::endl;
         std::cout << "[INFO CBS] Obstacles:";
+
+        writeConstraintNodeToDisk(node,"node " + std::to_string(node.node_id) + ".json");
+
         for(auto obst: node.avoid){
             std::cout << "[" + std::to_string(obst.x) + ":" + std::to_string(obst.y) + ":" + std::to_string(obst.t) + "],";
         }
@@ -750,6 +753,48 @@ void CBSPlanner::writeMultiplePathsToDisk(constraint_node cnode, std::string nam
     //dump file to disc
     std::ofstream o(name);
     o << cbs_paths << std::endl;
+    o.close();
+}
+
+/*  uint64_t sic = 0;
+    uint32_t node_id = 0;
+    std::vector<dynamics::data::PBIConstraint> avoid;
+    std::map<int32_t, LLResult> result;
+*/
+
+void CBSPlanner::writeConstraintNodeToDisk(constraint_node cnode, std::string name){
+    json node;
+    rlog("CBS", LOG_INFO, "Writing CBS Constraint Node to disk...", NONE);
+
+    node["sic"] = cnode.sic;
+    node["node_id"] = cnode.node_id;
+
+    for(auto constr: cnode.avoid){
+        json jconstr;
+        jconstr["x"] = constr.x;
+        jconstr["y"] = constr.y;
+        jconstr["id"] = constr.id;
+        jconstr["t"] = constr.t;
+        node["avoid"].push_back(jconstr);
+    }
+
+    for(auto vres: cnode.result){
+        json path_vehicle;
+        for(auto current: *vres.second.path){
+            json pnode;
+            pnode["x"] = current.x;
+            pnode["y"] = current.y;
+            pnode["s"] = current.s;
+            pnode["a"] = current.a;
+            path_vehicle["path"].push_back(pnode);
+        }
+        path_vehicle["id"] = vres.first;
+        node["multipath"].push_back(path_vehicle);
+    }
+
+    //dump file to disc
+    std::ofstream o(name);
+    o << node << std::endl;
     o.close();
 }
 
