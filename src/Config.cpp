@@ -1,8 +1,8 @@
 #include <Config.hpp>
 
- int map_size_x = 130;
- int map_size_y = 130;
- int map_size_angle = 16;
+ int map_size_x = 100;
+ int map_size_y = 100;
+ int map_size_angle = 12;
  int map_size_speed = 3;
 
  float timestep_ms = 500.f;
@@ -26,7 +26,7 @@
 /* Constraints what the allow angle range is for the edge */
  float state_change_fit_quality_angle = api / 3;
  float state_change_fit_quality_position =  xpc / 6;
- float state_change_fit_allowed_speed_difference = 0.075f;
+ float state_change_fit_allowed_speed_difference = 0.1f;
 
 
  int worker_counter = 27;
