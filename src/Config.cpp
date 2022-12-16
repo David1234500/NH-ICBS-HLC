@@ -3,7 +3,7 @@
  int map_size_x = 130;
  int map_size_y = 130;
  int map_size_angle = 16;
- int map_size_speed = 5;
+ int map_size_speed = 3;
 
  float timestep_ms = 500.f;
 
@@ -20,8 +20,8 @@
 
  int zero_velocity_level = 3;
  
- float m_speedsFactor[5] = {-0.3f, -0.15f, 0.f, 0.15f, 0.3f}; 
- bool m_speedFactorIntermediate[5] = {false, false, false, false, false}; 
+ float m_speedsFactor[3] = {-0.3f, 0.f, 0.3f}; 
+ bool m_speedFactorIntermediate[3] = {false, false, false}; 
 
 /* Constraints what the allow angle range is for the edge */
  float state_change_fit_quality_angle = api / 3;
@@ -30,7 +30,7 @@
 
 
  int worker_counter = 27;
-
+ 
  void recompute_inferred_values(){
     xpc = (float)map_size_x_cm / (float)map_size_x;
     ypc = (float)map_size_y_cm / (float)map_size_y;
