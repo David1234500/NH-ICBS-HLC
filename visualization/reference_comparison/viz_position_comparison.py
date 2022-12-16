@@ -24,7 +24,7 @@ for node in pose_data["ref"][0]["path"]:
 # print(ref_data)
 
 fig = plt.figure(constrained_layout=True)
-fig.suptitle('Motion Primitives Visualisation')
+fig.suptitle('Comparison between Reference and Measured Values')
 
 # create 3x1 subfigs
 subfigs = fig.subplots(nrows=4, ncols=1)
@@ -35,6 +35,9 @@ actual_data_np = np.array(actual_data)
 times = ref_data_np[:,4]
 speeds = ref_data_np[:,3]
 subfigs[0].plot(times,speeds)
+subfigs[0].set_title("Velocity over Time Comparison")
+subfigs[0].set_xlabel("Time (ms)")
+subfigs[0].set_ylabel("Velocity (cm/s)")
 
 times2 = actual_data_np[:,4] 
 speeds2 = actual_data_np[:,3] 
@@ -44,6 +47,9 @@ subfigs[0].plot(times2,speeds2)
 times = ref_data_np[:,4]
 speeds = ref_data_np[:,2] - 2 * math.pi
 subfigs[1].plot(times,speeds)
+subfigs[1].set_title("Heading over Time Comparison")
+subfigs[1].set_xlabel("Time (ms)")
+subfigs[1].set_ylabel("Heading (Radians)")
 
 times2 = actual_data_np[:,4] 
 speeds2 = actual_data_np[:,2] 
@@ -53,6 +59,9 @@ subfigs[1].plot(times2,speeds2)
 times = ref_data_np[:,4]
 speeds = ref_data_np[:,1] 
 subfigs[2].plot(times,speeds)
+subfigs[2].set_title("X Position over Time Comparison")
+subfigs[2].set_xlabel("Time (ms)")
+subfigs[2].set_ylabel("X Position (cm)")
 
 times2 = actual_data_np[:,4] 
 speeds2 = actual_data_np[:,1] 
@@ -62,6 +71,9 @@ subfigs[2].plot(times2,speeds2)
 times = ref_data_np[:,4]
 speeds = ref_data_np[:,0] 
 subfigs[3].plot(times,speeds)
+subfigs[3].set_title("Y Position over Time Comparison")
+subfigs[3].set_xlabel("Time (ms)")
+subfigs[3].set_ylabel("Y Position (cm)")
 
 times2 = actual_data_np[:,4] 
 speeds2 = actual_data_np[:,0] 

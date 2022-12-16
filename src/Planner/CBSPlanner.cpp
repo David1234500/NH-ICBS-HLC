@@ -437,9 +437,16 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getInterPrimitivPositions
             result.push_back(next_pose2_with_time);
         }
 
+
         time_index += 1;
     }
     
+    dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(0));
+    dynamics::data::Pose2WithTime next_with_time;
+    next_with_time = veh_pose;
+    next_with_time.time_ms = time_index * 2 * timestep_ms;
+    result.push_back(next_with_time);
+
     return result;
 }
 
