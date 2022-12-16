@@ -9,19 +9,15 @@ f = open(sys.argv[1], "r")
 x = f.read() 
 y = json.loads(x)
 
+for pathe in y["multipath"]:
+    
+        ex = [0]
+        ey = [0]
+        for edge in pathe["path"]:
+            ex.append(edge["x"])
+            ey.append(edge["y"])
 
-
-for edge in y["multipath"]["path"]:
-    ex = [0]
-    ey = [0]
-    for curve_point in edge["curve"]:
-        ex.append(curve_point["x"])
-        ey.append(curve_point["y"])
-
-    ex.append(edge["target"]["x"])
-    ey.append(edge["target"]["y"])
-
-    plt.plot(ex,ey)
+        plt.plot(ex,ey)
 
 ax = plt.gca()
 for obst in y["avoid"]:

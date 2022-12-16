@@ -14,11 +14,11 @@
  float ypc = (float)map_size_y_cm / (float)map_size_y;
  float api = (2.f * PI) / (float)map_size_angle;
 
- float safe_radius = 50.f;
+ float safe_radius = 100.f;
  float safe_level2_rad = 10.f;
  float heuristic_factor_backwards = 3.f;
 
- int zero_velocity_level = 3;
+ int zero_velocity_level = 1;
  
  float m_speedsFactor[3] = {-0.3f, 0.f, 0.3f}; 
  bool m_speedFactorIntermediate[3] = {false, false, false}; 

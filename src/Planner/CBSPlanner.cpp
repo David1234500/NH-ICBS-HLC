@@ -192,6 +192,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
     
     std::priority_queue<dynamics::data::LLNode> openQueue;
     std::unordered_set<dynamics::data::PoseByIndex> openSet;
+
     std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
     std::unordered_map<dynamics::data::PoseByIndex, TraversableEdge> usedEdge;
 
@@ -203,7 +204,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
     auto target_pose = indexToPose(target);
 
     std::unordered_map<dynamics::data::PoseByIndex, float> fScore;
-    fScore[start] = (target_pose.pos - current_pose.pos).norm(); //+ 1 * (start.a - target.a);
+    fScore[start] = (target_pose.pos - current_pose.pos).norm();
     
     std::unordered_map<dynamics::data::PoseByIndex, float> gScore;
     gScore[start] = 0.f;
@@ -222,7 +223,6 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             rlog("ASTAR", LOG_INFO, "Found path for " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
             
             LLResult res;
-            
             res.path = getPath(cameFrom, current.pose);
             res.spline = getSplines(cameFrom, usedEdge, current.pose);
             res.interprimitive = getInterPrimitivPositions(cameFrom, usedEdge, current.pose);
@@ -234,7 +234,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
 
         bool discard = false;
         for(auto obstacle : obstacles){
-            if( std::abs(current.timestep - obstacle.t) <= 1 && obstacle ==  current.pose){
+            if( std::abs(current.timestep - obstacle.t) <= 1  && current.pose.x == obstacle.x && current.pose.y == obstacle.y){
                 rlog("ASTAR", LOG_INFO, "2. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(current.pose.x) + ":" + std::to_string(current.pose.y), ACONFLICT);
                 discard = true;
                 break;
@@ -259,14 +259,11 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP or KD Tree to avoid this computation every time
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
-               
-                // rlog("ASTAR", LOG_INFO, "Obstacle, time: " + std::to_string(current.timestep) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
-               
                 auto obstPose = indexToPose(obstacle);
 
-                if( std::abs((current.timestep + 1) - obstacle.t) <= 1 && (obstPose.pos - neigh_pose.pos).norm() < safe_radius){
+                if( std::abs((current.timestep + 1) - obstacle.t) <= 1 && gl_neighbor.x == obstacle.x && gl_neighbor.y == obstacle.y){
                     discard_due_to_obstacle = true;
-                    // rlog("ASTAR", LOG_INFO, "1. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + "-" + std::to_string(std::abs(current.timestep - obstacle.t)) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
+                    rlog("ASTAR", LOG_INFO, "1. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + "-" + std::to_string(std::abs(current.timestep - obstacle.t)) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
                     break;
                 }
 
@@ -611,7 +608,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 
                                 conflict_step = i;
                                 conflicting_vehicles = {car_index, car_index2};
-                                conflicting_poses = {node.result[car_index].path->at(path_index_car_a), node.result[car_index2].path->at(path_index_car_b)};
+                                conflicting_poses = {node.result[car_index].path->at(path_index_car_a + 1), node.result[car_index2].path->at(path_index_car_b + 1)};
                                 
                                 rlog("CBS", LOG_INFO, "Found L2 Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]), FCONFLICT);
                                 rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index2].path->at(path_index_car_b).x) + ":" + std::to_string(node.result[car_index2].path->at(path_index_car_b).y) , FCONFLICT);
