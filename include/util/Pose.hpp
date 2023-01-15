@@ -144,6 +144,8 @@ struct Pose2WithTime{
 
     float time_ms = 0.f;
 
+    uint32_t hop_count = 0;
+
     inline void operator=(Pose2D e){
         pos = e.pos;
         h = e.h;

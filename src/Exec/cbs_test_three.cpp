@@ -11,6 +11,20 @@ using std::chrono::system_clock;
 
 int main() {
 
+// START 35:22:9:1
+// TARGET 6:6:6:1
+// [G2F]Got vehicle: 2 with position 3.534605:1.440412 and heading -1.124394
+// Log at time 1671197896879665028, level 1: [G2F]Got vehicle: 2 with position 3.534605:1.440412 and heading -1.124394
+// [G2F]Got vehicle: 2 with position 3.534605:1.440412 and heading -1.124394
+// Log at time 1671197896882812674, level 1: [G2F]Got vehicle: 2 with position 3.534605:1.440412 and heading -1.124394
+// START 71:29:10:1
+// TARGET 16:6:6:1
+// [G2F]Got vehicle: 3 with position 2.646776:0.953318 and heading -2.911921
+// Log at time 1671197896884406504, level 1: [G2F]Got vehicle: 3 with position 2.646776:0.953318 and heading -2.911921
+// [G2F]Got vehicle: 3 with position 2.646776:0.953318 and heading -2.911921
+// Log at time 1671197896886549368, level 1: [G2F]Got vehicle: 3 with position 2.646776:0.953318 and heading -2.911921
+// START 53:19:6:1
+// TARGET 26:6:6:1
 
     CBSPlanner planner;
     std::cout << "Loading graph from disk!" << std::endl;
@@ -20,18 +34,18 @@ int main() {
     std::vector<dynamics::data::PoseByIndex> targets;
     std::vector<dynamics::data::PoseByIndex> starts;
 
-    dynamics::data::PoseByIndex end = {25,45,7,zero_velocity_level};
-    dynamics::data::PoseByIndex start = {25,5,5,zero_velocity_level};
+    dynamics::data::PoseByIndex end = { 6,6,6,1};
+    dynamics::data::PoseByIndex start = {35,22,9,1};
     targets.push_back(end);
     starts.push_back(start);
 
-    dynamics::data::PoseByIndex end2 = {25,5,7,zero_velocity_level};
-    dynamics::data::PoseByIndex start2 = {25,40,7,zero_velocity_level};
+    dynamics::data::PoseByIndex end2 = {16,6,6,1};
+    dynamics::data::PoseByIndex start2 = {71,29,10,1};
     targets.push_back(end2);
     starts.push_back(start2);
 
-    dynamics::data::PoseByIndex end3 = {10,2,6,zero_velocity_level};
-    dynamics::data::PoseByIndex start3 = {40,10,7,zero_velocity_level};
+    dynamics::data::PoseByIndex end3 = {26,6,6,1};
+    dynamics::data::PoseByIndex start3 = {53,19,6,1};
     targets.push_back(end3);
     starts.push_back(start3);
 
@@ -45,10 +59,6 @@ int main() {
     std::cout << "computation took:" << tstop - tstart << std::endl;
     std::cout << "Finished a cbs computation" << std::endl;
     planner.writeMultiplePathsToDisk(result, "cbs_result.json");
-
-    planner.writeCurveToDisk(result.result[0].spline, "cbs_track_car_0.json");
-    planner.writeCurveToDisk(result.result[1].spline, "cbs_track_car_1.json");
-    planner.writeCurveToDisk(result.result[2].spline, "cbs_track_car_2.json");
 
 
 }

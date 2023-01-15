@@ -70,7 +70,7 @@ public:
 
     void writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target,  std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom);
 
-    bool validatePosition(dynamics::data::PoseByIndex base);
+    bool validatePosition(dynamics::data::PoseByIndex base, dynamics::data::Pose2DWithError edge);
     dynamics::data::PoseByIndex toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative);
     static dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex);
     dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global);
@@ -100,6 +100,7 @@ public:
     void writePathToDisk( std::vector<dynamics::data::PoseByIndex> path, std::string name);
     void writeCurveToDisk(std::vector<dynamics::data::Pose2WithTime> path, std::string name);
     void writeMultiplePathsToDisk(constraint_node cnode, std::string name);
+    void writeConstraintNodeToDisk(constraint_node cnode, std::string name);
     
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> getPath(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target);
     std::vector<dynamics::data::Pose2WithTime> getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target);
