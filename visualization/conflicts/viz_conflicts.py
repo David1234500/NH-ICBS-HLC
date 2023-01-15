@@ -23,6 +23,7 @@ ax = plt.gca()
 for obst in y["avoid"]:
     circ = plt.Circle(( obst["x"] , obst["y"] ), 2 )
     ax.add_artist(circ)
+    
 
 plt.show()
 

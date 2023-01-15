@@ -43,7 +43,7 @@ dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::P
     
     pose.h = fmod(pose.h + 2*PI , 2*PI);
 
-    float near_a = pose.h / api;
+    float near_a = std::round(pose.h / api);
 
     dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)round(near_a),zero_velocity_level};
 
@@ -55,13 +55,16 @@ dynamics::data::PoseByIndex CBSPlanner::toLocalIndex(dynamics::data::PoseByIndex
     return (global - base) +  m_proxGraph.m_proxyMapCarOffset;
 }
 
-bool CBSPlanner::validatePosition(dynamics::data::PoseByIndex base){
+bool CBSPlanner::validatePosition(dynamics::data::PoseByIndex base, dynamics::data::Pose2DWithError edge){
     if(base.x < 0 || base.x > map_size_x){
         return false;
     }
-     if(base.y < 0 || base.y > map_size_y){
+    if(base.y < 0 || base.y > map_size_y){
         return false;
     }
+    
+    //TODO CHECK IF THIS IS A EDGE CONNECTION and perform additional 
+
     return true;
 }
 
@@ -252,7 +255,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
             auto neigh_pose = indexToPose(gl_neighbor);
 
             // Invalid position, so we can skip this
-            if(!validatePosition(gl_neighbor)){
+            if(!validatePosition(gl_neighbor, rel_neighbor.link)){
                 continue;
             }
             
@@ -421,6 +424,7 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getInterPrimitivPositions
         for(float ts = 0; ts < timestep_ms; ts += 50.f){    
             next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, ts);
             dynamics::data::Pose2WithTime next_with_time;
+            next_with_time.hop_count = i;
             next_with_time = next_pose;
             next_with_time.time_ms = time_index * 2 * timestep_ms + ts;
             result.push_back(next_with_time);
@@ -430,6 +434,7 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getInterPrimitivPositions
             auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, ts);
             dynamics::data::Pose2WithTime next_pose2_with_time;
             next_pose2_with_time = next_pose2;
+            next_pose2_with_time.hop_count = i;
             next_pose2_with_time.time_ms = time_index * 2 * timestep_ms + timestep_ms + ts;
             result.push_back(next_pose2_with_time);
         }
@@ -571,53 +576,78 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         for(int32_t car_index = 0; car_index < start_positions.size(); car_index ++){
             for (int32_t car_index2 = car_index + 1; car_index2 < start_positions.size(); car_index2 ++){
                 
-                for(int32_t i = 1; i < std::max(node.result[car_index].path->size(), node.result[car_index2].path->size()); i ++){
-                
-                    int32_t path_index_car_a = node.result[car_index].path->size() - std::min(i, (int32_t)node.result[car_index].path->size());
-                    int32_t path_index_car_b = node.result[car_index2].path->size() - std::min(i, (int32_t)node.result[car_index2].path->size());
-
-                    auto pose_car_a = indexToPose(node.result[car_index].path->at(path_index_car_a));
-                    auto pose_car_b = indexToPose(node.result[car_index2].path->at(path_index_car_b));
+                uint32_t max_interprim_length = std::max(node.result[car_index].interprimitive.size(), node.result[car_index2].interprimitive.size());
+                for(uint32_t inter_prim_index = 0; inter_prim_index < max_interprim_length; inter_prim_index ++){
                     
-                    //Level 1: Detection of close intersection
-                    if((pose_car_a.pos - pose_car_b.pos).norm() < safe_radius){
-                        
-                         rlog("CBS", LOG_INFO, "Found L1 Conflict... A " + std::to_string(path_index_car_a) + ":" + std::to_string(node.result[car_index].path->size()), FCONFLICT);
-                         rlog("CBS", LOG_INFO, "Pose A " + std::to_string(pose_car_a.pos[0]) + ":" + std::to_string(pose_car_a.pos[1]), FCONFLICT);
-                         rlog("CBS", LOG_INFO, "Found L1 Conflict... B " + std::to_string(path_index_car_b) + ":" + std::to_string(node.result[car_index2].path->size()), FCONFLICT);
-                         rlog("CBS", LOG_INFO, "Pose B " + std::to_string(pose_car_b.pos[0]) + ":" + std::to_string(pose_car_b.pos[1]), FCONFLICT);
+                    uint32_t int_prim_index_clamped_car1 = std::min(inter_prim_index, (uint32_t) node.result[car_index].interprimitive.size() - 1);
+                    uint32_t int_prim_index_clamped_car2 = std::min(inter_prim_index, (uint32_t) node.result[car_index2].interprimitive.size() - 1);
+                    
+                    auto inter_pose_car_1 = node.result[car_index].interprimitive.at(int_prim_index_clamped_car1);
+                    auto inter_pose_car_2 = node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2); 
 
-                        //Level 2: Switch to denser representation
-                        for(int32_t interprim = 20 * (i - 1); interprim < std::max( node.result[car_index].interprimitive.size(), node.result[car_index2].interprimitive.size()) &&
-                                                              interprim < 20 * (i + 1); interprim ++ ){
+                    if((inter_pose_car_1.pos - inter_pose_car_2.pos).norm() < safe_level2_rad){
+
+                        conflict_step = inter_pose_car_1.hop_count;
+                        conflicting_vehicles = {car_index, car_index2};
+                        conflicting_poses = { node.result[car_index].path->at(inter_pose_car_1.hop_count + 1), node.result[car_index].path->at(inter_pose_car_2.hop_count + 1) };
+                        
+                        rlog("CBS", LOG_INFO, "Found L2 Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]), FCONFLICT);
+                        rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index].interprimitive.at(int_prim_index_clamped_car1).pos[0]) + ":" + std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car1).pos[1]) , FCONFLICT);
+                        rlog("CBS", LOG_INFO, "Position B: " + std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).pos[0]) + ":" +  std::to_string(node.result[car_index].interprimitive.at(int_prim_index_clamped_car2).pos[1]) , FCONFLICT);                                               
+                        break;
+
+                    }
+                }
+
+                // for(int32_t i = 1; i < std::max(node.result[car_index].path->size(), node.result[car_index2].path->size()); i ++){
+                    
+
+
+                //     int32_t path_index_car_a = node.result[car_index].path->size() - std::min(i, (int32_t)node.result[car_index].path->size());
+                //     int32_t path_index_car_b = node.result[car_index2].path->size() - std::min(i, (int32_t)node.result[car_index2].path->size());
+
+                //     auto pose_car_a = indexToPose(node.result[car_index].path->at(path_index_car_a));
+                //     auto pose_car_b = indexToPose(node.result[car_index2].path->at(path_index_car_b));
+                    
+                //     //Level 1: Detection of close intersection
+                //     if((pose_car_a.pos - pose_car_b.pos).norm() < safe_radius){
+                        
+                //          rlog("CBS", LOG_INFO, "Found L1 Conflict... A " + std::to_string(path_index_car_a) + ":" + std::to_string(node.result[car_index].path->size()), FCONFLICT);
+                //          rlog("CBS", LOG_INFO, "Pose A " + std::to_string(pose_car_a.pos[0]) + ":" + std::to_string(pose_car_a.pos[1]), FCONFLICT);
+                //          rlog("CBS", LOG_INFO, "Found L1 Conflict... B " + std::to_string(path_index_car_b) + ":" + std::to_string(node.result[car_index2].path->size()), FCONFLICT);
+                //          rlog("CBS", LOG_INFO, "Pose B " + std::to_string(pose_car_b.pos[0]) + ":" + std::to_string(pose_car_b.pos[1]), FCONFLICT);
+
+                //         //Level 2: Switch to denser representation
+                //         for(int32_t interprim = 20 * (i - 1); interprim < std::max( node.result[car_index].interprimitive.size(), node.result[car_index2].interprimitive.size()) &&
+                //                                               interprim < 20 * (i + 1); interprim ++ ){
 
             
-                            int32_t inter_path_index_car_a = node.result[car_index].interprimitive.size()  - std::max(1, std::min(interprim, (int32_t)node.result[car_index].interprimitive.size()));
-                            int32_t inter_path_index_car_b = node.result[car_index2].interprimitive.size() - std::max(1, std::min(interprim, (int32_t)node.result[car_index2].interprimitive.size()));
+                //             int32_t inter_path_index_car_a = node.result[car_index].interprimitive.size()  - std::max(1, std::min(interprim, (int32_t)node.result[car_index].interprimitive.size()));
+                //             int32_t inter_path_index_car_b = node.result[car_index2].interprimitive.size() - std::max(1, std::min(interprim, (int32_t)node.result[car_index2].interprimitive.size()));
 
-                            rlog("CBS", LOG_INFO, "Testing L2 Conflict... A " + std::to_string(inter_path_index_car_a) + ":" + std::to_string(node.result[car_index].interprimitive.size()), FCONFLICT);
-                            rlog("CBS", LOG_INFO, "Testing L2 Conflict... B " + std::to_string(inter_path_index_car_b) + ":" + std::to_string(node.result[car_index2].interprimitive.size()), FCONFLICT);
+                //             rlog("CBS", LOG_INFO, "Testing L2 Conflict... A " + std::to_string(inter_path_index_car_a) + ":" + std::to_string(node.result[car_index].interprimitive.size()), FCONFLICT);
+                //             rlog("CBS", LOG_INFO, "Testing L2 Conflict... B " + std::to_string(inter_path_index_car_b) + ":" + std::to_string(node.result[car_index2].interprimitive.size()), FCONFLICT);
 
-                            auto inter_pose_car_a = node.result[car_index].interprimitive.at(inter_path_index_car_a);
-                            auto inter_pose_car_b = node.result[car_index2].interprimitive.at(inter_path_index_car_b); 
+                //             auto inter_pose_car_a = node.result[car_index].interprimitive.at(inter_path_index_car_a);
+                //             auto inter_pose_car_b = node.result[car_index2].interprimitive.at(inter_path_index_car_b); 
 
-                            rlog("CBS", LOG_INFO, "Pose L2 A " + std::to_string(inter_pose_car_a.pos[0]) + ":" + std::to_string(inter_pose_car_a.pos[1]), FCONFLICT);
-                            rlog("CBS", LOG_INFO, "Pose L2 B " + std::to_string(inter_pose_car_b.pos[0]) + ":" + std::to_string(inter_pose_car_b.pos[1]), FCONFLICT);
+                //             rlog("CBS", LOG_INFO, "Pose L2 A " + std::to_string(inter_pose_car_a.pos[0]) + ":" + std::to_string(inter_pose_car_a.pos[1]), FCONFLICT);
+                //             rlog("CBS", LOG_INFO, "Pose L2 B " + std::to_string(inter_pose_car_b.pos[0]) + ":" + std::to_string(inter_pose_car_b.pos[1]), FCONFLICT);
 
-                            if((inter_pose_car_a.pos - inter_pose_car_b.pos).norm() < safe_level2_rad){
+                //             if((inter_pose_car_a.pos - inter_pose_car_b.pos).norm() < safe_level2_rad){
 
-                                conflict_step = i;
-                                conflicting_vehicles = {car_index, car_index2};
-                                conflicting_poses = {node.result[car_index].path->at(path_index_car_a + 1), node.result[car_index2].path->at(path_index_car_b + 1)};
+                //                 conflict_step = i;
+                //                 conflicting_vehicles = {car_index, car_index2};
+                //                 conflicting_poses = {node.result[car_index].path->at(path_index_car_a + 1), node.result[car_index2].path->at(path_index_car_b + 1)};
                                 
-                                rlog("CBS", LOG_INFO, "Found L2 Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]), FCONFLICT);
-                                rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index2].path->at(path_index_car_b).x) + ":" + std::to_string(node.result[car_index2].path->at(path_index_car_b).y) , FCONFLICT);
-                                rlog("CBS", LOG_INFO, "Position B: " + std::to_string(node.result[car_index].path->at(path_index_car_a).x) + ":" +  std::to_string(node.result[car_index].path->at(path_index_car_a).y) , FCONFLICT);                                               
+                //                 rlog("CBS", LOG_INFO, "Found L2 Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]), FCONFLICT);
+                //                 rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index2].path->at(path_index_car_b).x) + ":" + std::to_string(node.result[car_index2].path->at(path_index_car_b).y) , FCONFLICT);
+                //                 rlog("CBS", LOG_INFO, "Position B: " + std::to_string(node.result[car_index].path->at(path_index_car_a).x) + ":" +  std::to_string(node.result[car_index].path->at(path_index_car_a).y) , FCONFLICT);                                               
                             
-                            }
-                        }
-                    }
-                }   
+                //             }
+                //         }
+                //     }
+                // }   
             }
         }
 
