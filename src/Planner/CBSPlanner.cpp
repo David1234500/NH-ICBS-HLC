@@ -561,7 +561,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         std::cout << "[INFO CBS] Current Node ID: " << node.node_id << std::endl;
         std::cout << "[INFO CBS] Obstacles:";
 
-        writeConstraintNodeToDisk(node,"node " + std::to_string(node.node_id) + ".json");
+        writeConstraintNodeToDisk(node,"node" + std::to_string(node.node_id) + ".json");
 
         for(auto obst: node.avoid){
             std::cout << "[" + std::to_string(obst.x) + ":" + std::to_string(obst.y) + ":" + std::to_string(obst.t) + "],";
@@ -636,9 +636,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 
                 //             if((inter_pose_car_a.pos - inter_pose_car_b.pos).norm() < safe_level2_rad){
 
-                //                 conflict_step = i;
-                //                 conflicting_vehicles = {car_index, car_index2};
-                //                 conflicting_poses = {node.result[car_index].path->at(path_index_car_a + 1), node.result[car_index2].path->at(path_index_car_b + 1)};
+                                // conflict_step = i;
+                                // conflicting_vehicles = {car_index, car_index2};
+                                // conflicting_poses = {node.result[car_index].path->at(path_index_car_a ), node.result[car_index2].path->at(path_index_car_b)};
                                 
                 //                 rlog("CBS", LOG_INFO, "Found L2 Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]), FCONFLICT);
                 //                 rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index2].path->at(path_index_car_b).x) + ":" + std::to_string(node.result[car_index2].path->at(path_index_car_b).y) , FCONFLICT);
@@ -799,8 +799,8 @@ void CBSPlanner::writeConstraintNodeToDisk(constraint_node cnode, std::string na
 
     for(auto constr: cnode.avoid){
         json jconstr;
-        jconstr["x"] = constr.x;
-        jconstr["y"] = constr.y;
+        jconstr["x"] = indexToPose(constr).pos[0];
+        jconstr["y"] = indexToPose(constr).pos[1];
         jconstr["id"] = constr.id;
         jconstr["t"] = constr.t;
         node["avoid"].push_back(jconstr);
@@ -810,12 +810,22 @@ void CBSPlanner::writeConstraintNodeToDisk(constraint_node cnode, std::string na
         json path_vehicle;
         for(auto current: *vres.second.path){
             json pnode;
-            pnode["x"] = current.x;
-            pnode["y"] = current.y;
-            pnode["s"] = current.s;
-            pnode["a"] = current.a;
+            pnode["x"] = indexToPose(current).pos[0];
+            pnode["y"] = indexToPose(current).pos[1];
+            pnode["s"] = indexToPose(current).vel;
+            pnode["a"] = indexToPose(current).h;
             path_vehicle["path"].push_back(pnode);
         }
+
+        for(auto current: vres.second.interprimitive){
+            json pnode;
+            pnode["x"] = current.pos[0];
+            pnode["y"] = current.pos[1];
+            pnode["s"] = current.vel;
+            pnode["a"] = current.h;
+            path_vehicle["interprimitive"].push_back(pnode);
+        }
+
         path_vehicle["id"] = vres.first;
         node["multipath"].push_back(path_vehicle);
     }
