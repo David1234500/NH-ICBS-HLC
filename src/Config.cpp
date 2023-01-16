@@ -15,7 +15,7 @@
  float api = (2.f * PI) / (float)map_size_angle;
 
  float safe_radius = 70.f;
- float safe_level2_rad = 10.f;
+ float safe_level2_rad = 15.f;
  float heuristic_factor_backwards = 3.f;
 
  int zero_velocity_level = 1;
