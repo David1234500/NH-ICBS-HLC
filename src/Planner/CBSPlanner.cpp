@@ -40,13 +40,9 @@ dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PBIConstraint glo
 dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::Pose2D pose){
     float near_x = pose.pos[0] / xpc;
     float near_y = pose.pos[1] / ypc;
-    
     pose.h = fmod(pose.h + 2*PI , 2*PI);
-
-    float near_a = pose.h - 0.02 / api;
-
-    dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)round(near_a),zero_velocity_level};
-
+    float near_a = pose.h / api;
+    dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)std::floor(near_a),zero_velocity_level};
     return result;
 }
 
@@ -425,14 +421,9 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getInterPrimitivPositions
         for(float ts = 0; ts < timestep_ms; ts += 50.f){    
             next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, ts);
             dynamics::data::Pose2WithTime next_with_time;
-<<<<<<< HEAD
- 
-            next_with_time.hop_count = i;
-=======
             next_with_time.baseNode = nodes.at(i - 1);
             
             next_with_time.time_index = i;
->>>>>>> 1b566fd2c4c661ab63b6dc2684f5e4d3093c6fe9
             next_with_time = next_pose;
 
             next_with_time.time_ms = time_index * 2 * timestep_ms + ts;
@@ -444,15 +435,10 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getInterPrimitivPositions
             dynamics::data::Pose2WithTime next_pose2_with_time;
             
             next_pose2_with_time = next_pose2;
-<<<<<<< HEAD
-            next_pose2_with_time.hop_count = i;
-
-=======
             
             next_pose2_with_time.baseNode = nodes.at(i - 1);
             next_pose2_with_time.time_index = i;
             
->>>>>>> 1b566fd2c4c661ab63b6dc2684f5e4d3093c6fe9
             next_pose2_with_time.time_ms = time_index * 2 * timestep_ms + timestep_ms + ts;
             result.push_back(next_pose2_with_time);
         }
