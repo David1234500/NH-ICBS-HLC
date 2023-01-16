@@ -33,13 +33,9 @@ for pathe in y["multipath"]:
 
 if "avoid" in y:
     for obst in y["avoid"]:
-        circ = plt.Circle(( obst["x"] , obst["y"] ), 2 )
+        circ = plt.Circle(( obst["x"] , obst["y"] ), 10 )
         ax.add_artist(circ)
 
-ax = plt.gca()
-for obst in y["avoid"]:
-    circ = plt.Circle(( obst["x"] , obst["y"] ), 2 )
-    ax.add_artist(circ)
     
 
 plt.show()

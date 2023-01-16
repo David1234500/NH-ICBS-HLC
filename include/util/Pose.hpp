@@ -144,7 +144,8 @@ struct Pose2WithTime{
 
     float time_ms = 0.f;
 
-    uint32_t hop_count = 0;
+    PoseByIndex baseNode;
+    uint32_t time_index = 0;
 
     inline void operator=(Pose2D e){
         pos = e.pos;
@@ -203,16 +204,4 @@ namespace std {
     };
 }
 
-namespace std {
-    template<> struct hash<dynamics::data::PBIConstraint>
-    {
-        std::size_t operator()(const dynamics::data::PBIConstraint& p) const noexcept
-        {
-            // 4294967295
-            // 10000000 * 100
-            // = 10000000
-            return p.t + 100 + p.id + 10000 * p.y + 1000000 * p.x ;
-        }
-    };
-}
 #endif //UTIL_POSE_HPP
