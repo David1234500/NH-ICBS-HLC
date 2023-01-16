@@ -276,6 +276,11 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
 
                 auto current_pose = indexToPose(current.pose); 
                 float dist = (neigh_pose.pos - current_pose.pos).norm();
+                
+                if(current.pose.s != rel_neighbor.target.s){
+                    dist *= 1.4f;
+                }
+
                 float tentative_score = gScore[current.pose] + dist; 
                 if(gScore.count(gl_neighbor) == 0 || tentative_score < gScore[gl_neighbor]){
 
@@ -292,13 +297,8 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
                         openSet.insert(gl_neighbor);
                     }
                 }
-
-
             }
-
         }
-
-        
     }
     
     rlog("ASTAR", LOG_WARNING, "Found no viable path with #open: " + std::to_string(explored_nodes));
@@ -424,8 +424,10 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getInterPrimitivPositions
         for(float ts = 0; ts < timestep_ms; ts += 50.f){    
             next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, ts);
             dynamics::data::Pose2WithTime next_with_time;
+ 
             next_with_time.hop_count = i;
             next_with_time = next_pose;
+
             next_with_time.time_ms = time_index * 2 * timestep_ms + ts;
             result.push_back(next_with_time);
         }
@@ -433,8 +435,10 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getInterPrimitivPositions
         for(float ts = 0; ts < timestep_ms; ts += 50.f){
             auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, ts);
             dynamics::data::Pose2WithTime next_pose2_with_time;
+            
             next_pose2_with_time = next_pose2;
             next_pose2_with_time.hop_count = i;
+
             next_pose2_with_time.time_ms = time_index * 2 * timestep_ms + timestep_ms + ts;
             result.push_back(next_pose2_with_time);
         }
