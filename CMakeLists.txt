@@ -11,11 +11,13 @@ include_directories(thirdparty/eigen)
 include_directories(thirdparty/json/include)
 add_subdirectory(thirdparty/json)
 
+include_directories("/usr/local/include")
+
 ## Compile main planner library
 include_directories("include")
 file(GLOB SRC "src/Planner/*.cpp" "src/DynamicsModel/*.cpp" "src/util/*.cpp" "src/*")
 add_library(planner_lib SHARED ${SRC})
-target_link_libraries(planner_lib pthread)
+target_link_libraries(planner_lib pthread nlopt m)
 
 file(GLOB EXEC_SRC "src/Exec/*.cpp")
 foreach(src_ ${EXEC_SRC})
