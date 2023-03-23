@@ -193,7 +193,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
     std::unordered_set<dynamics::data::PoseByIndex> openSet;
 
     std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
-    std::unordered_map<dynamics::data::PoseByIndex, TraversableEdge> usedEdge;
+    std::unordered_map<dynamics::data::PoseByIndex, MotionPrimitive> usedEdge;
 
     for(auto obstacle: obstacles){
         rlog("ASTAR", LOG_INFO, "A*S Obstacle: " + std::to_string(obstacle.x) + ":" + std::to_string(obstacle.y) + ":" + std::to_string(obstacle.t));
@@ -235,7 +235,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
         for(auto obstacle : obstacles){
             //std::abs(current.timestep - obstacle.t) <= 1  &&
             if(  current.pose.x == obstacle.x && current.pose.y == obstacle.y){
-                rlog("ASTAR", LOG_INFO, "2. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(current.pose.x) + ":" + std::to_string(current.pose.y), ACONFLICT);
+                rlog("ASTAR", LOG_INFO, "2. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(current.pose.x) + ":" + std::to_string(current.pose.y));
                 discard = true;
                 break;
             }
@@ -263,7 +263,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
                 //std::abs((current.timestep + 1) - obstacle.t) <= 1 &&
                 if(  gl_neighbor.x == obstacle.x && gl_neighbor.y == obstacle.y){
                     discard_due_to_obstacle = true;
-                    rlog("ASTAR", LOG_INFO, "1. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + "-" + std::to_string(std::abs(current.timestep - obstacle.t)) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y), ACONFLICT);
+                    rlog("ASTAR", LOG_INFO, "1. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + "-" + std::to_string(std::abs(current.timestep - obstacle.t)) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y));
                     break;
                 }
 
@@ -318,7 +318,7 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> CBSPlanner::getPath(st
 
         result->push_back(current);
         current = predecessor[current];
-        rlog("GetPath", LOG_INFO, "P: " + std::to_string(current.x) + ":" + std::to_string(current.y) + ":" + std::to_string(current.a) + ":" + std::to_string(current.s) + " index: " + std::to_string(index), GETPATH);
+        rlog("GetPath", LOG_INFO, "P: " + std::to_string(current.x) + ":" + std::to_string(current.y) + ":" + std::to_string(current.a) + ":" + std::to_string(current.s) + " index: " + std::to_string(index));
 
         index ++;
     } while(predecessor.find(current) != predecessor.end());
@@ -363,10 +363,10 @@ void CBSPlanner::writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dyna
 
 }
 
-std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target){
+std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,MotionPrimitive>& edge_map, dynamics::data::PoseByIndex target){
     auto current = target;
     std::vector<dynamics::data::PoseByIndex> nodes;
-    std::vector<TraversableEdge> edges;
+    std::vector<MotionPrimitive> edges;
 
     do{
         nodes.push_back(current);
@@ -395,10 +395,10 @@ std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getSplines(std::unordered
     return result;
 }
 
-std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getInterPrimitivPositions(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,TraversableEdge>& edge_map, dynamics::data::PoseByIndex target){
+std::vector<dynamics::data::Pose2WithTime> CBSPlanner::getInterPrimitivPositions(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,MotionPrimitive>& edge_map, dynamics::data::PoseByIndex target){
     auto current = target;
     std::vector<dynamics::data::PoseByIndex> nodes;
-    std::vector<TraversableEdge> edges;
+    std::vector<MotionPrimitive> edges;
 
     do{
         nodes.push_back(current);
@@ -600,10 +600,10 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
                         conflicting_vehicles = {car_index, car_index2};
                         conflicting_poses = { node.result[car_index].interprimitive.at(int_prim_index_clamped_car1).baseNode, node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).baseNode };
                         
-                        rlog("CBS", LOG_INFO, "Found L2 Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]), FCONFLICT);
-                        rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index].interprimitive.at(int_prim_index_clamped_car1).pos[0]) + ":" + std::to_string(node.result[car_index].interprimitive.at(int_prim_index_clamped_car1).pos[1]) , FCONFLICT);
-                        rlog("CBS", LOG_INFO, "Position B: " + std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).pos[0]) + ":" +  std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).pos[1]) , FCONFLICT);       
-                        rlog("CBS", LOG_INFO, "Base Node: " + std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).baseNode.x) + ":" +  std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).baseNode.y) , FCONFLICT);                                                                                       
+                        rlog("CBS", LOG_INFO, "Found L2 Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]));
+                        rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index].interprimitive.at(int_prim_index_clamped_car1).pos[0]) + ":" + std::to_string(node.result[car_index].interprimitive.at(int_prim_index_clamped_car1).pos[1]) );
+                        rlog("CBS", LOG_INFO, "Position B: " + std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).pos[0]) + ":" +  std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).pos[1]) );       
+                        rlog("CBS", LOG_INFO, "Base Node: " + std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).baseNode.x) + ":" +  std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).baseNode.y) );                                                                                       
                         break;
 
                     }
@@ -622,10 +622,10 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
                 //     //Level 1: Detection of close intersection
                 //     if((pose_car_a.pos - pose_car_b.pos).norm() < safe_radius){
                         
-                //          rlog("CBS", LOG_INFO, "Found L1 Conflict... A " + std::to_string(path_index_car_a) + ":" + std::to_string(node.result[car_index].path->size()), FCONFLICT);
-                //          rlog("CBS", LOG_INFO, "Pose A " + std::to_string(pose_car_a.pos[0]) + ":" + std::to_string(pose_car_a.pos[1]), FCONFLICT);
-                //          rlog("CBS", LOG_INFO, "Found L1 Conflict... B " + std::to_string(path_index_car_b) + ":" + std::to_string(node.result[car_index2].path->size()), FCONFLICT);
-                //          rlog("CBS", LOG_INFO, "Pose B " + std::to_string(pose_car_b.pos[0]) + ":" + std::to_string(pose_car_b.pos[1]), FCONFLICT);
+                //          rlog("CBS", LOG_INFO, "Found L1 Conflict... A " + std::to_string(path_index_car_a) + ":" + std::to_string(node.result[car_index].path->size()));
+                //          rlog("CBS", LOG_INFO, "Pose A " + std::to_string(pose_car_a.pos[0]) + ":" + std::to_string(pose_car_a.pos[1]));
+                //          rlog("CBS", LOG_INFO, "Found L1 Conflict... B " + std::to_string(path_index_car_b) + ":" + std::to_string(node.result[car_index2].path->size()));
+                //          rlog("CBS", LOG_INFO, "Pose B " + std::to_string(pose_car_b.pos[0]) + ":" + std::to_string(pose_car_b.pos[1]));
 
                 //         //Level 2: Switch to denser representation
                 //         for(int32_t interprim = 20 * (i - 1); interprim < std::max( node.result[car_index].interprimitive.size(), node.result[car_index2].interprimitive.size()) &&
@@ -635,14 +635,14 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
                 //             int32_t inter_path_index_car_a = node.result[car_index].interprimitive.size()  - std::max(1, std::min(interprim, (int32_t)node.result[car_index].interprimitive.size()));
                 //             int32_t inter_path_index_car_b = node.result[car_index2].interprimitive.size() - std::max(1, std::min(interprim, (int32_t)node.result[car_index2].interprimitive.size()));
 
-                //             rlog("CBS", LOG_INFO, "Testing L2 Conflict... A " + std::to_string(inter_path_index_car_a) + ":" + std::to_string(node.result[car_index].interprimitive.size()), FCONFLICT);
-                //             rlog("CBS", LOG_INFO, "Testing L2 Conflict... B " + std::to_string(inter_path_index_car_b) + ":" + std::to_string(node.result[car_index2].interprimitive.size()), FCONFLICT);
+                //             rlog("CBS", LOG_INFO, "Testing L2 Conflict... A " + std::to_string(inter_path_index_car_a) + ":" + std::to_string(node.result[car_index].interprimitive.size()));
+                //             rlog("CBS", LOG_INFO, "Testing L2 Conflict... B " + std::to_string(inter_path_index_car_b) + ":" + std::to_string(node.result[car_index2].interprimitive.size()));
 
                 //             auto inter_pose_car_a = node.result[car_index].interprimitive.at(inter_path_index_car_a);
                 //             auto inter_pose_car_b = node.result[car_index2].interprimitive.at(inter_path_index_car_b); 
 
-                //             rlog("CBS", LOG_INFO, "Pose L2 A " + std::to_string(inter_pose_car_a.pos[0]) + ":" + std::to_string(inter_pose_car_a.pos[1]), FCONFLICT);
-                //             rlog("CBS", LOG_INFO, "Pose L2 B " + std::to_string(inter_pose_car_b.pos[0]) + ":" + std::to_string(inter_pose_car_b.pos[1]), FCONFLICT);
+                //             rlog("CBS", LOG_INFO, "Pose L2 A " + std::to_string(inter_pose_car_a.pos[0]) + ":" + std::to_string(inter_pose_car_a.pos[1]));
+                //             rlog("CBS", LOG_INFO, "Pose L2 B " + std::to_string(inter_pose_car_b.pos[0]) + ":" + std::to_string(inter_pose_car_b.pos[1]));
 
                 //             if((inter_pose_car_a.pos - inter_pose_car_b.pos).norm() < safe_level2_rad){
 
@@ -650,9 +650,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
                                 // conflicting_vehicles = {car_index, car_index2};
                                 // conflicting_poses = {node.result[car_index].path->at(path_index_car_a ), node.result[car_index2].path->at(path_index_car_b)};
                                 
-                //                 rlog("CBS", LOG_INFO, "Found L2 Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]), FCONFLICT);
-                //                 rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index2].path->at(path_index_car_b).x) + ":" + std::to_string(node.result[car_index2].path->at(path_index_car_b).y) , FCONFLICT);
-                //                 rlog("CBS", LOG_INFO, "Position B: " + std::to_string(node.result[car_index].path->at(path_index_car_a).x) + ":" +  std::to_string(node.result[car_index].path->at(path_index_car_a).y) , FCONFLICT);                                               
+                //                 rlog("CBS", LOG_INFO, "Found L2 Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]));
+                //                 rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index2].path->at(path_index_car_b).x) + ":" + std::to_string(node.result[car_index2].path->at(path_index_car_b).y) );
+                //                 rlog("CBS", LOG_INFO, "Position B: " + std::to_string(node.result[car_index].path->at(path_index_car_a).x) + ":" +  std::to_string(node.result[car_index].path->at(path_index_car_a).y) );                                               
                             
                 //             }
                 //         }
@@ -688,7 +688,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
               if(std::find(node.avoid.begin(), node.avoid.end(), constr) == node.avoid.end()){
                 constraint.avoid.push_back(constr);
             }else{
-                rlog("CBS", LOG_ERROR, " Readding same conflict.... this should not happen", FCONFLICT);
+                rlog("CBS", LOG_ERROR, " Readding same conflict.... this should not happen");
             }
             
             constraint.avoid.insert(constraint.avoid.end(), node.avoid.begin(), node.avoid.end());
@@ -733,7 +733,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             // Add new constraint node if it is feasible
             if(found_paths_for_all_vehicles){
                 openSet.push(constraint);
-                rlog("CBS", LOG_INFO, "Adding new node with ID: " + std::to_string(constraint.node_id), FCONFLICT);
+                rlog("CBS", LOG_INFO, "Adding new node with ID: " + std::to_string(constraint.node_id));
             }else{
                 std::cout << "CBS Found infeasible node" << std::endl;
             }
@@ -802,7 +802,7 @@ void CBSPlanner::writeMultiplePathsToDisk(constraint_node cnode, std::string nam
 
 void CBSPlanner::writeConstraintNodeToDisk(constraint_node cnode, std::string name){
     json node;
-    rlog("CBS", LOG_INFO, "Writing CBS Constraint Node to disk...", NONE);
+    rlog("CBS", LOG_INFO, "Writing CBS Constraint Node to disk...");
 
     node["sic"] = cnode.sic;
     node["node_id"] = cnode.node_id;

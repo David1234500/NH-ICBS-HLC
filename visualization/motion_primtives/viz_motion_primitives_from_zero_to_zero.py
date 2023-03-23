@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 
-f = open("proxy_state_graph.json", "r")
+f = open("mp_state_graph.json", "r")
 x = f.read() 
 y = json.loads(x)
   

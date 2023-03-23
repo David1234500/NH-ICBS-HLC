@@ -28,7 +28,7 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
             m_proxyTaskQueue.erase(m_proxyTaskQueue.begin());
             
             if(((threadTask.txi + threadTask.tyi) % 10) == 0){
-                rlog("workerProxyEdges", LOG_INFO," Working now on task: " + std::to_string(threadTask.txi) +":"+ std::to_string(threadTask.tyi) + ":"+ std::to_string(threadTask.cai) +":"+ std::to_string(threadTask.csi), MOTIONPRIM);
+                rlog("workerProxyEdges", LOG_INFO," Working now on task: " + std::to_string(threadTask.txi) +":"+ std::to_string(threadTask.tyi) + ":"+ std::to_string(threadTask.cai) +":"+ std::to_string(threadTask.csi));
             }
             
             hasTask = true;
@@ -48,7 +48,7 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
                     dynamics::data::Pose2D target_pose = {{-(m_proxyMapCarOffset * xpc) + (xpc*threadTask.txi), -(m_proxyMapCarOffset * ypc) + (ypc*threadTask.tyi)},  api * static_cast<float>(a), m_speedsFactor[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
 
                     double speed_delta = state_change_fit_allowed_speed_difference;
-                    auto epose = dynamics::SimpleDynamicsModel::computeBestFit(veh_pose, target_pose_by_index, target_pose, threadTask.tstep, speed_delta);
+                    auto epose = dynamics::SimpleDynamicsModel::forceBestFit(veh_pose, target_pose_by_index, target_pose, threadTask.tstep, speed_delta);
                     
                     //Discard if error greater than half of the angular resolution 
                     if(epose.a_error > state_change_fit_quality_angle){
@@ -59,10 +59,10 @@ void ProxyGraph::workerThreadProxyEdges(uint32_t index){
                     }
 
                     // Found a link to the neighbor, add an edge for this one
-                    TraversableEdge nt_edge = {epose, target_pose_by_index};
+                    MotionPrimitive nt_edge = {epose, target_pose_by_index};
                     
                     rlog("workerProxyEdges", LOG_INFO,"Added edge to " + std::to_string(epose.pos[0]) +":"+ std::to_string(epose.pos[1]) 
-                    + " -> s" + std::to_string(epose.s_a) +"_"+ std::to_string(epose.s_v) + "e" + std::to_string(epose.p_error) +  "p" + std::to_string(a) +"_"+ std::to_string(threadTask.tsi), MOTIONPRIM);
+                    + " -> s" + std::to_string(epose.s_a) +"_"+ std::to_string(epose.s_v) + "e" + std::to_string(epose.p_error) +  "p" + std::to_string(a) +"_"+ std::to_string(threadTask.tsi));
                     
                     // add new edge to the edgelist
                     m_proxyTaskMutex.lock();
@@ -100,7 +100,7 @@ void ProxyGraph::computeProxyEdges(){
             for(int32_t ts = std::max(0, sv - 1); ts < std::min(map_size_speed, sv + 2); ts ++){
 
                 //Compute pose of current node/vehicle
-                rlog("workerProxyEdges", LOG_INFO," Creating task for configuration: SV" + std::to_string(sv) +" SH"+ std::to_string(sh) + " TS"+ std::to_string(ts), MOTIONPRIM);
+                rlog("workerProxyEdges", LOG_INFO," Creating task for configuration: SV" + std::to_string(sv) +" SH"+ std::to_string(sh) + " TS"+ std::to_string(ts));
                 dynamics::data::Pose2D veh_pose = {{0.f,0.f},  api * static_cast<float>(sh),m_speedsFactor[sv] * dynamics::SimpleDynamicsModel::velocity_limit()};
 
                 //Check for each candidate node if we can find a connection between these two, but use all system threads
@@ -231,7 +231,7 @@ void ProxyGraph::writeGraphToDisk(std::string name ){
 }
 
 void ProxyGraph::loadGraphFromDisk(){
-    loadGraphFromDisk("proxy_state_graph.json");
+    loadGraphFromDisk("mp_state_graph.json");
 }
 
 void ProxyGraph::loadGraphFromDisk(std::string path){
@@ -246,7 +246,7 @@ void ProxyGraph::loadGraphFromDisk(std::string path){
     uint32_t index = 0;
 
     for(auto edge: jf["edges"]){
-        TraversableEdge tedge;
+        MotionPrimitive tedge;
 
         tedge.link.s_a = edge["settings"]["a1"];
         tedge.link.s_a_2 = edge["settings"]["a2"];

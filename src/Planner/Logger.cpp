@@ -4,10 +4,9 @@
 #include <set>
 
 std::mutex log_mutex;
-std::set<EXECPATH> enabled_execpaths = {NONE, GETPATH, ACONFLICT, MOTIONPRIM, FCONFLICT};
 
-void rlog(std::string func, LLEVEL log_level, std::string text, EXECPATH path) {
-  if(enabled_execpaths.count(path) == 0){
+void rlog(std::string func, LLEVEL log_level, std::string text, bool disable) {
+  if(disable){
     return;
   }
 

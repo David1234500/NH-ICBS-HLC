@@ -7,7 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 fig = plt.figure(figsize=(8,8))
 ax = fig.add_subplot(111, projection='3d')
 
-f = open("proxy_state_graph.json", "r")
+f = open("mp_state_graph.json", "r")
 x = f.read() 
 y = json.loads(x)
   

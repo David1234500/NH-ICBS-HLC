@@ -7,10 +7,10 @@ using namespace dynamics;
 using namespace dynamics::data;
 
 
-Pose2D SimpleDynamicsModel::computeNextPose(Pose2D& current_pose, float& steering_angle, float& velocity, float& time){
+Pose2D SimpleDynamicsModel::computeNextPose(Pose2D& current_pose, float steering_angle, float velocity, float time){
 
 // Compute driven distance 
-float time_sec = time / 1000; //millisec
+float time_sec = time / 1000.f; //millisec
 float dist = velocity * time_sec;
 
 steering_angle = fmod(steering_angle + 2*PI , 2*PI);
@@ -50,28 +50,23 @@ auto new_head = current_pose.h + circ_comp;
 return Pose2D{new_pos, new_head, velocity};
 }
 
-// dynamics::data::Pose2D SimpleDynamicsModel::computeNextPoseWithVelocityInterpolation(dynamics::data::Pose2D& start_pose, double& angle_step_a, double& angle_step_b,
-//                                                                                      double& start_vel, double& target_vel, uint32_t& simulation_velocity_interpolation_count,
-//                                                                                      double& ts_ms){
+
+std::vector<dynamics::data::Vector2Df> SimpleDynamicsModel::vector_limits(float h, float vm){
+    std::vector<dynamics::data::Vector2Df> result;
+    dynamics::data::Pose2D ps = {{0.f,0.f}, h, velocity_limit()};
     
-//     double itp_velocity_step_cms = std::abs(start_vel - target_vel) / static_cast<double>(simulation_velocity_interpolation_count);
-//     double itp_velocity_base_cms = std::min(start_vel, target_vel);
-//     double itp_time_base_ms = ts_ms / static_cast<double>(simulation_velocity_interpolation_count);
-//     dynamics::data::Pose2D pose = start_pose;
+    auto p1p = computeNextPose(ps,  angle_limit() + 0.1f,vm*velocity_limit(), timestep_ms);
+    auto p2p = computeNextPose(p1p, angle_limit() + 0.1f,vm*velocity_limit(), timestep_ms);
+    result.push_back(p2p.pos);
 
-//     double itp_vel_step = 0.f;
-//     for(uint32_t svic = 0; svic <= simulation_velocity_interpolation_count/2; svic ++){
-//         itp_vel_step = itp_velocity_base_cms + (itp_velocity_step_cms * svic);
-//         pose = SimpleDynamicsModel::computeNextPose(pose, angle_step_a, itp_vel_step, itp_time_base_ms);
-//     }
-//     for(uint32_t svic = 0; svic <= simulation_velocity_interpolation_count/2; svic ++){
-//         double velocity = itp_vel_step + (itp_velocity_step_cms * svic);
-//         pose = SimpleDynamicsModel::computeNextPose(pose, angle_step_b, velocity, itp_time_base_ms);
-//     }
-//     return pose;
-// }
+    auto p1n = computeNextPose(ps,  -angle_limit() + 0.1f,vm*velocity_limit(), timestep_ms);
+    auto p2n = computeNextPose(p1n, -angle_limit() + 0.1f,vm*velocity_limit(), timestep_ms);
+    result.push_back(p2n.pos);
 
-dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D current_pose, PoseByIndex tpi, Pose2D target_pose, float timestep, float allowed_speed_deviation){
+    return result;
+}
+
+dynamics::data::Pose2DWithError SimpleDynamicsModel::forceBestFit(Pose2D current_pose, PoseByIndex tpi, Pose2D target_pose, float timestep, float allowed_speed_deviation){
    
     dynamics::data::Pose2DWithError current_best_pose;
     current_best_pose.bi_pose = tpi;
@@ -144,14 +139,10 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::computeBestFit(Pose2D curre
     return current_best_pose;
 }
 
-
-
- 
-
 float SimpleDynamicsModel::velocity_limit(){ 
     return 200.0; // cm/s
 }
 
 float SimpleDynamicsModel::angle_limit(){
-    return PI / 9; 
+    return PI / 7; 
 }

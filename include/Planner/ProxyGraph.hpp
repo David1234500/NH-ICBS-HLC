@@ -10,7 +10,7 @@
 #include <mutex>
 
 
-struct TraversableEdge{
+struct MotionPrimitive{
     dynamics::data::Pose2DWithError link;
     dynamics::data::PoseByIndex target;
 };
@@ -45,7 +45,7 @@ void computeProxyEdges();
 
 uint32_t m_proxyMapReachableSpan = 0;
 uint32_t m_proxyMapCarOffset = 0;
-std::map<uint32_t, std::map<uint32_t, std::vector<TraversableEdge>>> m_proxyEdgeList;
+std::map<uint32_t, std::map<uint32_t, std::vector<MotionPrimitive>>> m_proxyEdgeList;
 
 std::mutex m_proxyTaskMutex;
 std::vector<ProxyTask> m_proxyTaskQueue;
@@ -53,7 +53,7 @@ bool m_terminateProxyThreads = false;
 void workerThreadProxyEdges(uint32_t index);
 
 // debug functions
-void writeGraphToDisk(std::string name = "proxy_state_graph.json");
+void writeGraphToDisk(std::string name = "mp_state_graph.json");
 void loadGraphFromDisk();
 void loadGraphFromDisk(std::string path);
 void printPositions();

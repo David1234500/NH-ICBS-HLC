@@ -11,8 +11,8 @@ y = json.loads(x)
 ex = []
 ey = []
 
-plt.xlim([0,400])
-plt.ylim([0,400])
+plt.xlim([-400,400])
+plt.ylim([-400,400])
 
 for node in y["path"]:
     ex.append(node["x"])

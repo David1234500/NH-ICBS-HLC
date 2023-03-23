@@ -1,14 +1,14 @@
 #include <Config.hpp>
 
- int map_size_x = 80;
- int map_size_y = 80;
- int map_size_angle = 12;
+ int map_size_x = 40;
+ int map_size_y = 40;
+ int map_size_angle = 8;
  int map_size_speed = 3;
 
  float timestep_ms = 500.f;
 
  int map_size_x_cm = 400;
- int map_size_y_cm = 450;
+ int map_size_y_cm = 400;
 
  float xpc = (float)map_size_x_cm / (float)map_size_x;
  float ypc = (float)map_size_y_cm / (float)map_size_y;
@@ -26,10 +26,10 @@
 /* Constraints what the allow angle range is for the edge */
  float state_change_fit_quality_angle = api / 5;
  float state_change_fit_quality_position =  xpc / 8;
- float state_change_fit_allowed_speed_difference = 0.075f;
+ float state_change_fit_allowed_speed_difference = 0.01f;
 
 
- int worker_counter = 27;
+ int worker_counter = 30;
  
  void recompute_inferred_values(){
     xpc = (float)map_size_x_cm / (float)map_size_x;

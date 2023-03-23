@@ -183,6 +183,12 @@ struct Pose2DWithError{
        bi_pose.a = e.a;
        bi_pose.s = e.s;
     }
+
+    inline void operator=(const Pose2D& e){
+       pos = e.pos;
+       h = e.h;
+       vel = e.vel;
+    }
 };
 
 }
