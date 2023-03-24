@@ -1,8 +1,10 @@
+#include <DynamicsModel/SingleTrackModel.hpp>
+
 #include <iostream>
 #include <nlopt.hpp>
 #include <chrono>
-#include <DynamicsModel/SingleTrackModel.hpp>
-
+#include <memory>
+#include <vector>
 
 /*
 Modified Optimization Problem: Chooses the target heading at the target node

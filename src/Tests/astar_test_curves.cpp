@@ -1,5 +1,5 @@
 
-#include <Planner/ProxyGraph.hpp>
+#include <MPCompute/MPCompute.hpp>
 #include <Planner/CBSPlanner.hpp>
 #include <iostream>
 #include <chrono>
@@ -14,7 +14,7 @@ int main() {
 
     CBSPlanner planner;
     std::cout << "Loading graph from disk!" << std::endl;
-    planner.m_proxGraph.loadGraphFromDisk();
+    planner.mp_comp.loadGraphFromDisk();
     std::cout << "Finished loading graph from disk!" << std::endl;
 
     

@@ -1,4 +1,4 @@
-#include <Planner/ProxyGraph.hpp>
+#include <MPCompute/MPCompute.hpp>
 #include <Planner/CBSPlanner.hpp>
 #include <Planner/Logger.hpp>
 #include <iostream>
@@ -50,8 +50,8 @@ for(float test_timestep = 300.f; test_timestep <= 600.f; test_timestep += 100.f)
         std::string name = "mp_eval_" + std::to_string(test_timestep) + "_" + std::to_string(node_count)  + "_" + std::to_string(quality);
         rlog("mp_space", LOG_INFO, "PARAMETER TEST: " + std::to_string(test_timestep) + ":" + std::to_string(node_count));
         
-        planner->m_proxGraph.computeProxyEdges();
-        planner->m_proxGraph.writeGraphToDisk(name + ".json");
+        // planner->mp_comp.computeMPEdges();
+        planner->mp_comp.writeGraphToDisk(name + ".json");
 
         test["result"]["graph"] = name + ".json";
         auto reach = planner->checkForReachability();

@@ -3,14 +3,14 @@
 
 #include <nlohmann/json.hpp>
 #include <fstream>
-#include <iostream>
+
 
 #include <queue>
 
 using json = nlohmann::json;
 
 dynamics::data::PoseByIndex CBSPlanner::toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative){
-    return  (relative + base) - m_proxGraph.m_proxyMapCarOffset;
+    return  (relative + base) - mp_comp.m_mpMapCarOffset;
 }
 
 dynamics::data::Pose2D CBSPlanner::indexToPose(dynamics::data::PoseByIndex global){
@@ -48,7 +48,7 @@ dynamics::data::PoseByIndex CBSPlanner::findNearestPoseByIndex(dynamics::data::P
 
 
 dynamics::data::PoseByIndex CBSPlanner::toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global){
-    return (global - base) +  m_proxGraph.m_proxyMapCarOffset;
+    return (global - base) +  mp_comp.m_mpMapCarOffset;
 }
 
 bool CBSPlanner::validatePosition(dynamics::data::PoseByIndex base, dynamics::data::Pose2DWithError edge){
@@ -79,7 +79,7 @@ ReachabilityResult CBSPlanner::checkForReachability(){
 
     for(uint32_t i =0; i < map_size_angle; i ++){
         for(uint32_t j = 0; j < map_size_speed; j ++){
-            result.edge_count += m_proxGraph.m_proxyEdgeList[i][j].size();
+            result.edge_count += mp_comp.m_mpmap[i][j].size();
         }
     }
 
@@ -87,7 +87,7 @@ ReachabilityResult CBSPlanner::checkForReachability(){
     rlog("ReachCheck", LOG_INFO, "Checking for unleavable start configurations...");
     for(int32_t i = 0; i < map_size_angle; i ++){
         for(int32_t j = 0; j < map_size_speed; j ++){
-            if(m_proxGraph.m_proxyEdgeList[i][j].empty()){
+            if(mp_comp.m_mpmap[i][j].empty()){
                     rlog("ReachCheck", LOG_WARNING, "Found unleavable source configuration " + std::to_string(i) + ":" + std::to_string(j));
                     result.reachable = false;
                     auto unleavable_configuration = std::make_pair(i,j);
@@ -107,7 +107,7 @@ ReachabilityResult CBSPlanner::checkForReachability(){
 
             for(int32_t sh = 0; sh < map_size_angle && !found_link; sh ++ ){
                 for(int32_t sv = 0; sv < map_size_speed && !found_link; sv ++){
-                    for(auto prim: m_proxGraph.m_proxyEdgeList[sh][sv]){
+                    for(auto prim: mp_comp.m_mpmap[sh][sv]){
                         
                         if(prim.target.a == ta && prim.target.s == ts){
                             found_link = true;
@@ -246,7 +246,7 @@ LLResult CBSPlanner::astar(dynamics::data::PoseByIndex start, dynamics::data::Po
 
 
         openQueue.pop();
-        for(auto rel_neighbor: m_proxGraph.m_proxyEdgeList[current.pose.a][current.pose.s]){
+        for(auto rel_neighbor: mp_comp.m_mpmap[current.pose.a][current.pose.s]){
 
             dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(current.pose, rel_neighbor.target);
             auto neigh_pose = indexToPose(gl_neighbor);

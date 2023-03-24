@@ -1,4 +1,4 @@
-#include <Planner/ProxyGraph.hpp>
+#include <MPCompute/MPCompute.hpp>
 #include <Planner/CBSPlanner.hpp>
 #include <DynamicsModel/SingleTrackModel.hpp>
 #include <iostream>

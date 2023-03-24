@@ -4,7 +4,7 @@
 #include <util/Pose.hpp>
 
 #include <DynamicsModel/SingleTrackModel.hpp>
-#include <Planner/ProxyGraph.hpp>
+#include <MPCompute/MPBruteforce.hpp>
 #include <unordered_set>
 #include <unordered_map>
 #include <Config.hpp>
@@ -95,7 +95,7 @@ public:
     ReachabilityResult checkForReachability();
     LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles);
 
-    ProxyGraph m_proxGraph;
+    MPBruteforce mp_comp;
 
     void writePathToDisk( std::vector<dynamics::data::PoseByIndex> path, std::string name);
     void writeCurveToDisk(std::vector<dynamics::data::Pose2WithTime> path, std::string name);
