@@ -21,11 +21,11 @@ int main() {
     std::vector<dynamics::data::PoseByIndex> starts;
 
     dynamics::data::PoseByIndex end = {6,6,6,1};
-    dynamics::data::PoseByIndex start = {85,71,4,1};
+    dynamics::data::PoseByIndex start = {30,35,4,1};
     targets.push_back(end);
     starts.push_back(start);
 
-    dynamics::data::PoseByIndex end2 = {70,80,4,1};
+    dynamics::data::PoseByIndex end2 = {30,20,4,1};
     dynamics::data::PoseByIndex start2 = {16,6,6,1};
     targets.push_back(end2);
     starts.push_back(start2);

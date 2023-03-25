@@ -24,13 +24,24 @@ void writePosesToDisc(std::vector<dynamics::data::Pose2D> path, std::string name
 }
 
 int main(){
+    static uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+    static float xpc = Config::getInstance().get<float>({"disc","xstep"});
+    static float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    static float api = Config::getInstance().get<float>({"disc","hstep"});
+    static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    static int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+    static std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
+
+
     MPNLOptSingle opt;
     
     MPNLOptSingle::mpnl_args_t args; 
     args.sp = {{0.f,0.f},0.f,50.f};
     args.tp = {{40.f,40.f},1.0f * PI,50.f};
 
-    opt.prepare(args, false, false, nlopt::GN_CRS2_LM); // GN_DIRECT,  GN_ESCH and GN_ISRES, GN_CRS2_LM (best)
+    opt.prepare(&args, false, false, nlopt::GN_CRS2_LM); // GN_DIRECT,  GN_ESCH and GN_ISRES, GN_CRS2_LM (best)
 
     auto res = opt.optimize();
 

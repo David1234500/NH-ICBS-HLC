@@ -14,7 +14,7 @@ fig.suptitle('Motion Primitives Visualisation')
 grid = {}
 
 # create 3x1 subfigs
-subfigs = fig.subfigures(nrows=y["info"]["size_s"], ncols=1)
+subfigs = fig.subfigures(nrows=y["info"]["size_s"] * 2, ncols=1)
 for row, subfig in enumerate(subfigs):
     subfig.suptitle(f'Source Velocity Level: {row}')
     grid[row] = {}
@@ -37,12 +37,12 @@ for edge in y["edges"]:
     ex.append(edge["target"]["x"])
     ey.append(edge["target"]["y"])
 
-    grid[edge["source"]["s"]][edge["source"]["a"]].set_aspect('equal')
-    grid[edge["source"]["s"]][edge["source"]["a"]].plot(ex,ey)
-    grid[edge["source"]["s"]][edge["source"]["a"]].set_xlim([-100,100])
-    grid[edge["source"]["s"]][edge["source"]["a"]].set_xlabel("cm")
-    grid[edge["source"]["s"]][edge["source"]["a"]].set_ylabel("cm")
-    grid[edge["source"]["s"]][edge["source"]["a"]].set_ylim([-100,100])
+    grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].set_aspect('equal')
+    grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].plot(ex,ey)
+    grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].set_xlim([-100,100])
+    grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].set_xlabel("cm")
+    grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].set_ylabel("cm")
+    grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].set_ylim([-100,100])
 
 
 plt.show()

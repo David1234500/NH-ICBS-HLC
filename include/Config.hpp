@@ -1,42 +1,50 @@
-#ifndef CONFIG_HEADER_HPP
-#define CONFIG_HEADER_HPP
+#ifndef CONFIG_HPP
+#define CONFIG_HPP
+#include <iostream>
+#include <fstream>
+#include <nlohmann/json.hpp>
 
-#define PI 3.14159265f
+using json = nlohmann::json;
 
- extern int map_size_x ;
- extern int map_size_y ;
- extern int map_size_angle ;
- extern int map_size_speed ;
+class Config {
+public:
+    static Config& getInstance(const std::string& filename = "../config.json") {
+        static Config instance(filename);
+        return instance;
+    }
 
- extern float timestep_ms ;
+    Config(Config const&) = delete;
+    void operator=(Config const&) = delete;
 
- extern int map_size_x_cm ;
- extern int map_size_y_cm ;
+    template <typename T>
+    T get(const std::initializer_list<std::string>& keys) const {
+        try {
+            json temp = config_data;
+            for (const std::string& key : keys) {
+                temp = temp.at(key);
+            }
+            return temp.get<T>();
+        } catch (const json::out_of_range& e) {
+            throw std::runtime_error("Config key not found");
+        }
+    }
 
- extern float xpc;
- extern float ypc;
- extern float api;
+    json getConfigData() const {
+        return config_data;
+    }
 
- extern float safe_radius;
- extern float safe_level2_rad;
- extern float heuristic_factor_backwards;
+private:
+    Config(const std::string& filename) {
+        if (!filename.empty()) {
+            std::ifstream file(filename);
+            if (!file.is_open()) {
+                throw std::runtime_error("Unable to open config file: " + filename);
+            }
+            file >> config_data;
+        }
+    }
 
- extern int zero_velocity_level;
- extern float m_speedsFactor[3];
- extern bool m_speedFactorIntermediate[3];
+    json config_data;
+};
 
-/* Constraextern ints what the allow angle range is for the edge */
- extern float state_change_fit_quality_angle;
- extern float state_change_fit_quality_position;
- extern float state_change_fit_allowed_speed_difference;
-
- extern float state_change_fit_threshold_angle_index_difference;
- extern float state_change_fit_threshold_angle_difference;
-
- extern int worker_counter;
-
- void recompute_inferred_values();
-
-#endif //test@test.com::MyPassword
-// /backend/node_modules/config/lib/config.js:182
-//https://rwth.zoom.us/j/94334747430?pwd=S2F3czl1N1VuN28zUTZKUUxtTG8rZz09
+#endif

@@ -6,6 +6,8 @@
 #include <functional>
 #include <cassert>
 
+
+
 struct Position {
     int x, y;
 

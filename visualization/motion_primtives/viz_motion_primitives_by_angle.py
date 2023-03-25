@@ -13,13 +13,13 @@ fig.suptitle('Motion Primitives Visualisation')
 grid = {}
 
 # create 3x1 subfigs
-subfigs = fig.subfigures(nrows=y["info"]["size_a"], ncols=1)
+subfigs = fig.subfigures(nrows=y["info"]["size_a"]+1, ncols=1)
 for row, subfig in enumerate(subfigs):
     # subfig.suptitle(f'Source Heading: {row}')
     grid[row] = {}
 
     # create 1x3 subplots per subfig
-    axs = subfig.subplots(nrows=1, ncols=y["info"]["size_a"])
+    axs = subfig.subplots(nrows=1, ncols=y["info"]["size_a"]+1)
     for col, ax in enumerate(axs):
         ax.plot()
         # ax.set_title(f'Target Heading: {col}')
@@ -28,7 +28,7 @@ for row, subfig in enumerate(subfigs):
         ax.set_xlim([-100,100])
         ax.set_ylim([-100,100])
 
-
+print(y["info"]["size_a"])
 
 for edge in y["edges"]:
     ex = [0]
@@ -40,7 +40,7 @@ for edge in y["edges"]:
     ex.append(edge["target"]["x"])
     ey.append(edge["target"]["y"])
 
-    if edge["targeti"]["s"] != 2:
+    if edge["targeti"]["s"] != 1:
         continue
     
     grid[edge["source"]["a"]][edge["targeti"]["a"]].plot(ex,ey)

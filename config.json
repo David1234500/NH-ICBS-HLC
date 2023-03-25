@@ -1,0 +1,61 @@
+{
+    "map": {
+        "x_steps": 60,
+        "y_steps": 60,
+        "angle_steps": 8,
+        "speed_steps": 3,
+        "x_cm": 400,
+        "y_cm": 400
+    },
+    "timestep_ms": 300.0,
+    "disc": {
+        "xstep": 6.66666667,
+        "ystep": 6.66666667,
+        "hstep": 0.785398163
+    },
+    "collision_detect":{
+        "safe_radius": 70.0,
+        "safe_level2_rad": 15.0
+    },
+    "velocity":{
+        "zero_velocity_level": 1,
+        "vlevels": [-0.4, 0.0, 0.4]
+    },
+    "MPComputeBruteForce": {
+        "fit_quality_angle": 0.157079633,
+        "fit_quality_position": 0.833333333,
+        "fit_allowed_speed_difference": 0.01
+    },
+    "compute": {
+        "worker_count": 30
+    },
+    "mpnl_weights": {
+        "mu_pd": 1.0,
+        "mu_hd": 10.0,
+        "mu_vd": 0.5,
+        "mu_vccd": 0.01
+    },
+    "mpnl_args":{
+      "ts_ms": 500.0,
+      "ub": [0.39269908169872414, 0.39269908169872414, 100.0, 100.0],
+      "lb": [-0.39269908169872414, -0.39269908169872414, -100.0, -100.0],
+      "maxt": 1.0,
+      "st_val": 6.0,
+      "a_v": 10.0,
+      "a_p": 2.0,
+      "a_h": 0.15707963267948966
+    },
+    "mpnl_param_weights": {
+        "mu_l": 3.0,
+        "mu_lth": 2.0,
+        "mu_vd": 1.0
+    },
+    "mpnl_param_args": {
+        "ts_ms": 300.0,
+        "obj_lam_target": 10.0,
+        "ub": [40.0, 200.0, 5.0, 0.39269908169872414, 0.39269908169872414, 0.39269908169872414, 0.39269908169872414, -0.19634954084936207],
+        "lb": [0.0, 50.0, 0.0, -0.39269908169872414, -0.39269908169872414, -0.39269908169872414,-0.39269908169872414, -0.19634954084936207],
+        "maxt": 10.0,
+        "st_val": 6.0
+    }
+}

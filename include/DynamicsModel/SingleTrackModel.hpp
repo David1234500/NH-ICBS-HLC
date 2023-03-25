@@ -4,6 +4,9 @@
 #include <util/Pose.hpp>
 #include <Config.hpp>
 #include <vector>
+#include <math.h>
+
+#define PI M_PI
 
 namespace dynamics{
 

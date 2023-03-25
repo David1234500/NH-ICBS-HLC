@@ -24,7 +24,7 @@ public:
         dynamics::data::Pose2D tp = {{0,0},0,0};
         
         mpnl_weights_t w;
-        double ts_ms = timestep_ms;
+        double ts_ms = 500.f;
         
         std::vector<double> ub = { PI / 7.f, PI / 7.f, 200.0, 200.0};
         std::vector<double> lb = {-PI / 7.f,-PI / 7.f,0.f,0.0};

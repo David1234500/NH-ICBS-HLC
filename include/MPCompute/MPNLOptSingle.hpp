@@ -9,25 +9,25 @@ public:
 
 
     struct mpnl_weights_t{
-        double mu_pd = 1.0f;
-        double mu_hd = 10.0f;
-        double mu_vd = 0.5f;
-        double mu_vccd = 0.01f;
-
-        double a_v = 20.f;
-        double a_p = 2.f;
-        double a_h = 0.05f * PI;
+        double mu_pd = 0.f;
+        double mu_hd = 0.f;
+        double mu_vd = 0.f;
+        double mu_vccd = 0.f;
     };
 
     struct mpnl_args_t{
         dynamics::data::Pose2D sp = {{0,0},0,0};
         dynamics::data::Pose2D tp = {{0,0},0,0};
         mpnl_weights_t w;
-        double ts_ms = timestep_ms;
-        std::vector<double> ub = { PI / 7.f, PI / 7.f, 100.0, 100.0};
-        std::vector<double> lb = {-PI / 7.f,-PI / 7.f,-100.0,-100.0};
-        double maxt = 2.f;
-        double st_val = 6.f;
+        double ts_ms = 0.f;
+        std::vector<double> ub;
+        std::vector<double> lb;
+        double maxt = 0.f;
+        double st_val = 0.f;
+
+        double a_v = 0.f;
+        double a_p = 0.f;
+        double a_h = 0.f;
     };
 
     enum mpnl_obj_pv_map{
@@ -77,7 +77,7 @@ public:
     static double constraint_position_delta(const std::vector <double> &x, std::vector<double> &grad, void* f_data){
         mpnl_args_t* args = static_cast<mpnl_args_t*>(f_data);
         auto p2 = eval_two(x,args);
-        return (args->tp.pos - p2.pos).norm() - args->w.a_p; 
+        return (args->tp.pos - p2.pos).norm() - args->a_p; 
     }
 
     static double constraint_heading_delta(const std::vector <double> &x, std::vector<double> &grad, void* f_data){
@@ -85,37 +85,54 @@ public:
         auto p2 = eval_two(x,args);
         double hd = std::abs(args->tp.h - p2.h);
         double hd_n = hd <= PI ? hd : 2 * PI - hd; 
-        return hd_n- args->w.a_h;
+        return hd_n- args->a_h;
     }
 
     static double constraint_velocity_delta(const std::vector <double> &x, std::vector<double> &grad, void* f_data){
         mpnl_args_t* args = static_cast<mpnl_args_t*>(f_data);
         auto p2 = eval_two(x,args);
-        return std::abs((0.5f * (x[c1_vcc] + x[c2_vcc])) + args->sp.vel - args->tp.vel) - args->w.a_v;
+        return std::abs((0.5f * (x[c1_vcc] + x[c2_vcc])) + args->sp.vel - args->tp.vel) - args->a_v;
     }
 
 
     MPNLOptSingle(){}
 
-    void prepare(mpnl_args_t args, bool enforce_constraints=false, bool complete_eval=false,nlopt::algorithm alg=nlopt::GN_ISRES){
+
+    void prepare(mpnl_args_t* args, bool enforce_constraints=false, bool complete_eval=false,nlopt::algorithm alg=nlopt::GN_ISRES){
         m_optimizer = std::make_shared<nlopt::opt>(alg, 4); 
         m_optimizer->set_min_objective(objective, static_cast<void*>(&args));
 
-        m_optimizer->set_lower_bounds(args.lb);
-        m_optimizer->set_upper_bounds(args.ub);
+        Config& config = Config::getInstance("path/to/your/config.json");
+
+        args->w.mu_pd = config.get<double>({"mpnl_weights", "mu_pd"});
+        args->w.mu_hd = config.get<double>({"mpnl_weights", "mu_hd"});
+        args->w.mu_vd = config.get<double>({"mpnl_weights", "mu_vd"});
+        args->w.mu_vccd = config.get<double>({"mpnl_weights", "mu_vccd"});
+        
+        args->ts_ms = config.get<double>({"mpnl_args", "ts_ms"});
+        args->ub = config.get<std::vector<double>>({"mpnl_args", "ub"});
+        args->lb = config.get<std::vector<double>>({"mpnl_args", "lb"});
+        args->maxt = config.get<double>({"mpnl_args", "maxt"});
+        args->st_val = config.get<double>({"mpnl_args", "st_val"});
+        args->a_v = config.get<double>({"mpnl_args", "a_v"});
+        args->a_p = config.get<double>({"mpnl_args", "a_p"});
+        args->a_h = config.get<double>({"mpnl_args", "a_h"});
+
+        m_optimizer->set_lower_bounds(args->lb);
+        m_optimizer->set_upper_bounds(args->ub);
 
         if(enforce_constraints){
-            m_optimizer->add_inequality_constraint(constraint_heading_delta, static_cast<void*>(&args), 0.01f);
-            m_optimizer->add_inequality_constraint(constraint_position_delta, static_cast<void*>(&args), 0.01f);
-            m_optimizer->add_inequality_constraint(constraint_velocity_delta, static_cast<void*>(&args), 0.01f);
+            m_optimizer->add_inequality_constraint(constraint_heading_delta, static_cast<void*>(args), 0.01f);
+            m_optimizer->add_inequality_constraint(constraint_position_delta, static_cast<void*>(args), 0.01f);
+            m_optimizer->add_inequality_constraint(constraint_velocity_delta, static_cast<void*>(args), 0.01f);
         }
 
-        double vhd = (args.sp.vel + args.tp.vel) / 4;
+        double vhd = (args->sp.vel + args->tp.vel) / 4;
         m_result = {0,0,vhd,vhd};
 
         // Set the stopping criteria
-        m_optimizer->set_maxtime(args.maxt);
-        m_optimizer->set_stopval(args.st_val);
+        m_optimizer->set_maxtime(args->maxt);
+        m_optimizer->set_stopval(args->st_val);
     }
 
     mpnl_return optimize(){

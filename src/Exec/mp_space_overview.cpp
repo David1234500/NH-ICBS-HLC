@@ -18,34 +18,34 @@ for(float test_timestep = 300.f; test_timestep <= 600.f; test_timestep += 100.f)
     for(uint32_t node_count = 50; node_count < 120; node_count += 10){
         for(float quality = 2.f; quality < 6.f; quality += 1.f){
 
-        state_change_fit_quality_angle = api / quality;
-        state_change_fit_quality_position =  xpc / quality;
-        recompute_inferred_values();
+        // state_change_fit_quality_angle = api / quality;
+        // state_change_fit_quality_position =  xpc / quality;
+        // recompute_inferred_values();
 
         json test;
-        test["settings"]["quality"] = quality;
-        test["settings"]["test_timestep"] = test_timestep;
+        // test["settings"]["quality"] = quality;
+        // test["settings"]["test_timestep"] = test_timestep;
         
-        timestep_ms = test_timestep;
-        test["settings"]["node_count"] = node_count;
-        map_size_x = node_count;
-        map_size_y = node_count;
+        // timestep_ms = test_timestep;
+        // test["settings"]["node_count"] = node_count;
+        // map_size_x = node_count;
+        // map_size_y = node_count;
 
-        test["settings"]["map_size_angle"] = map_size_angle;
-        test["settings"]["xpc"] = xpc;
-        test["settings"]["ypc"] = ypc;
-        test["settings"]["api"] = api;
+        // test["settings"]["map_size_angle"] = map_size_angle;
+        // test["settings"]["xpc"] = xpc;
+        // test["settings"]["ypc"] = ypc;
+        // test["settings"]["api"] = api;
 
-        test["settings"]["safe_radius"] = safe_radius;
-        test["settings"]["zero_velocity_level"] = zero_velocity_level;
+        // test["settings"]["safe_radius"] = safe_radius;
+        // test["settings"]["zero_velocity_level"] = zero_velocity_level;
 
-        for(auto vel: m_speedsFactor){
-            test["settings"]["m_speedsFactor"].push_back(vel);
-        }
+        // for(auto vel: m_speedsFactor){
+        //     test["settings"]["m_speedsFactor"].push_back(vel);
+        // }
 
-        test["settings"]["state_change_fit_quality_angle"] = state_change_fit_quality_angle;
-        test["settings"]["state_change_fit_quality_position"] = state_change_fit_quality_position;
-        test["settings"]["state_change_fit_allowed_speed_difference"] = state_change_fit_allowed_speed_difference;
+        // test["settings"]["state_change_fit_quality_angle"] = state_change_fit_quality_angle;
+        // test["settings"]["state_change_fit_quality_position"] = state_change_fit_quality_position;
+        // test["settings"]["state_change_fit_allowed_speed_difference"] = state_change_fit_allowed_speed_difference;
 
         std::string name = "mp_eval_" + std::to_string(test_timestep) + "_" + std::to_string(node_count)  + "_" + std::to_string(quality);
         rlog("mp_space", LOG_INFO, "PARAMETER TEST: " + std::to_string(test_timestep) + ":" + std::to_string(node_count));

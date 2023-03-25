@@ -11,7 +11,20 @@ MPNLOpt::MPNLOpt(){
     
 }
 
+
 void MPNLOpt::workerThreadMPEdges(uint32_t index){
+    int32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+    float xpc = Config::getInstance().get<float>({"disc","xstep"});
+    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float api = Config::getInstance().get<float>({"disc","hstep"});
+    int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    int32_t x_steps = Config::getInstance().get<int32_t>({"map","x_steps"});
+    int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+    std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
+
+    
     double solvetime = 0.f;
     while(!m_terminateMPThreads){
         
@@ -32,9 +45,9 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
         if(m_mpTaskQueue.size() % 10 == 0){
             double avg = 0.f;
             for(auto t: m_solvetimes){
-                avg += (1.f/32.f) * t.second;
+                avg += (1.f/30.f) * t.second;
             }
-            rlog("workerMPEdges", LOG_INFO, "Average solve time: " + std::to_string(avg) + "[ms] ESTTC: " + std::to_string((avg * m_mpTaskQueue.size())/60000.f) + "[m]" );
+            rlog("workerMPEdges", LOG_INFO, "Average solve time: " + std::to_string(avg) + "[ms] ESTTC: " + std::to_string(((avg * m_mpTaskQueue.size())/60000.f) / 15.f) + "[m]" );
         }
 
         m_mpTaskMutex.unlock();
@@ -50,11 +63,11 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, h_sw_beg, threadTask.tsi};
                 
                 MPNLOptSingle::mpnl_args_t args;
-                args.sp = {{0.f,0.f}, api * static_cast<float>(threadTask.cai), m_speedsFactor[threadTask.csi] * dynamics::SimpleDynamicsModel::velocity_limit()};
-                args.tp = {{(xpc*threadTask.txi), (ypc*threadTask.tyi)},  api * static_cast<float>(h_sw_beg), m_speedsFactor[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
+                args.sp = {{0.f,0.f}, api * static_cast<float>(threadTask.cai), vlevels[threadTask.csi] * dynamics::SimpleDynamicsModel::velocity_limit()};
+                args.tp = {{(xpc*threadTask.txi), (ypc*threadTask.tyi)},  api * static_cast<float>(h_sw_beg), vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
 
                 MPNLOptSingle nl_stm_opt;
-                nl_stm_opt.prepare(args, true, false, nlopt::GN_ISRES);
+                nl_stm_opt.prepare(&args, true, false, nlopt::GN_ISRES);
                 auto res = nl_stm_opt.optimize(); 
                 solvetime = 0.1 * static_cast<double>(res.rt_ms) + 0.9 * solvetime;
                 if(res.retcode <= 0 || res.retcode >= 4){
@@ -83,7 +96,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 double h_q2 = p_r.h + 0.5 * PI;
                 Eigen::Rotation2Df rot_q2(0.5 * PI);
                 dynamics::data::Position2Df pd_q2 = rot_q2 * p_r.pos;
-                uint32_t hi_q2 = h_sw_beg + (map_size_angle/4);
+                uint32_t hi_q2 = (h_sw_beg + (map_size_angle/4)) % map_size_angle;
                 
                 dynamics::data::Pose2D p_q2 = {pd_q2, h_q2, p_r.vel};
                 dynamics::data::PoseByIndex pi_q2 = {round(pd_q2[0] / xpc),round(pd_q2[1] / ypc), hi_q2,  threadTask.tsi};
@@ -102,7 +115,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 double h_q3 = p_r.h + PI;
                 Eigen::Rotation2Df rot_q3(PI);
                 dynamics::data::Position2Df pd_q3 = rot_q3 * p_r.pos;
-                uint32_t hi_q3 = h_sw_beg + (map_size_angle/2);
+                uint32_t hi_q3 = (h_sw_beg + (map_size_angle/2)) % map_size_angle;
                 
                 dynamics::data::Pose2D p_q3 = {pd_q3, h_q3, p_r.vel};
                 dynamics::data::PoseByIndex pi_q3 = {round(pd_q3[0] / xpc),round(pd_q3[1] / ypc), hi_q3,  threadTask.tsi};
@@ -120,7 +133,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 double h_q4 = p_r.h + 1.5f * PI;
                 Eigen::Rotation2Df rot_q4(1.5f * PI);
                 dynamics::data::Position2Df pd_q4 = rot_q4 * p_r.pos;
-                uint32_t hi_q4 = h_sw_beg + 3.f * (map_size_angle/4.f);
+                uint32_t hi_q4 = (h_sw_beg + 3 * (map_size_angle/4)) % map_size_angle;
                 
                 dynamics::data::Pose2D p_q4 = {pd_q4, h_q4, p_r.vel};
                 dynamics::data::PoseByIndex pi_q4 = {round(pd_q4[0] / xpc),round(pd_q4[1] / ypc), hi_q4,  threadTask.tsi};
@@ -141,9 +154,6 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 m_mpmap[threadTask.cai + 3*(map_size_angle/4)][threadTask.csi].push_back(mp_q4);  
                 m_mpTaskMutex.unlock();
                 h_sw_beg = (h_sw_beg + 1) % map_size_angle;
-
-                // m_terminateMPThreads = true;
-                // break;
             }
     
         }else{

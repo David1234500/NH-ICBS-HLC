@@ -51,16 +51,18 @@ return Pose2D{new_pos, new_head, velocity};
 }
 
 
-std::vector<dynamics::data::Vector2Df> SimpleDynamicsModel::vector_limits(float h, float vm){
+std::vector<dynamics::data::Vector2Df> SimpleDynamicsModel::vector_limits(float h, float max_vel){
+    static uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+ 
     std::vector<dynamics::data::Vector2Df> result;
     dynamics::data::Pose2D ps = {{0.f,0.f}, h, velocity_limit()};
     
-    auto p1p = computeNextPose(ps,  angle_limit() + 0.1f,vm*velocity_limit(), timestep_ms);
-    auto p2p = computeNextPose(p1p, angle_limit() + 0.1f,vm*velocity_limit(), timestep_ms);
+    auto p1p = computeNextPose(ps,  angle_limit() + 0.1f,max_vel, timestep_ms);
+    auto p2p = computeNextPose(p1p, angle_limit() + 0.1f,max_vel, timestep_ms);
     result.push_back(p2p.pos);
 
-    auto p1n = computeNextPose(ps,  -angle_limit() + 0.1f,vm*velocity_limit(), timestep_ms);
-    auto p2n = computeNextPose(p1n, -angle_limit() + 0.1f,vm*velocity_limit(), timestep_ms);
+    auto p1n = computeNextPose(ps,  -angle_limit() + 0.1f,max_vel, timestep_ms);
+    auto p2n = computeNextPose(p1n, -angle_limit() + 0.1f,max_vel, timestep_ms);
     result.push_back(p2n.pos);
 
     return result;

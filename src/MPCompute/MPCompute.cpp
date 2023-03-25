@@ -1,6 +1,6 @@
 #include <MPCompute/MPCompute.hpp>
 #include <nlohmann/json.hpp>
-
+#include <MPCompute/MPNLOptSingle.hpp>
 
 using json = nlohmann::json;
 
@@ -21,6 +21,102 @@ MPCompute::MPCompute(){
 
 MPCompute::~MPCompute(){
 
+}
+
+void MPCompute::addSymetricMPs(double st1, double st2, double vel1, double vel2, dynamics::data::PoseByIndex tp_bi, int32_t h_sw_beg, int32_t tht_cai, int32_t tht_csi, int32_t tht_tsi){
+    int32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+    float xpc = Config::getInstance().get<float>({"disc","xstep"});
+    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float api = Config::getInstance().get<float>({"disc","hstep"});
+
+    float fit_quality_angle = Config::getInstance().get<int>({"MPComputeBruteForce","fit_quality_angle"});
+    float fit_quality_position = Config::getInstance().get<int>({"MPComputeBruteForce","fit_quality_position"});
+    float fit_allowed_speed_difference = Config::getInstance().get<int>({"MPComputeBruteForce","fit_allowed_speed_difference"});
+
+    int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    int32_t x_steps = Config::getInstance().get<int32_t>({"map","x_steps"});
+    int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+    std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
+
+    dynamics::data::Pose2D sp = {{0,0},0,0};
+    auto p_1 = dynamics::SimpleDynamicsModel::computeNextPose(sp, st1, vel1, timestep_ms);
+    auto p_r = dynamics::SimpleDynamicsModel::computeNextPose(p_1, st2, vel2, timestep_ms);
+
+    // Q1 MP
+    dynamics::data::Pose2DWithError epose;
+    epose = p_r;
+    epose = tp_bi;
+
+    epose.s_a = st1;
+    epose.s_a_2 = st2;
+    epose.s_v = vel1;
+    epose.s_v_2 = vel2;
+    epose.bi_pose = tp_bi;
+    MotionPrimitive mp_q1 = {epose, tp_bi};
+
+    // Q2 MP
+    double h_q2 = p_r.h + 0.5 * PI;
+    Eigen::Rotation2Df rot_q2(0.5 * PI);
+    dynamics::data::Position2Df pd_q2 = rot_q2 * p_r.pos;
+    uint32_t hi_q2 = (h_sw_beg + (map_size_angle/4)) % map_size_angle;
+    
+    dynamics::data::Pose2D p_q2 = {pd_q2, h_q2, p_r.vel};
+    dynamics::data::PoseByIndex pi_q2 = {round(pd_q2[0] / xpc),round(pd_q2[1] / ypc), hi_q2,  tht_tsi};
+
+    dynamics::data::Pose2DWithError epose_q2;
+    epose_q2 = p_q2;
+    epose_q2.s_a = st1;
+    epose_q2.s_a_2 = st2;
+    epose_q2.s_v = vel1;
+    epose_q2.s_v_2 = vel2;
+    epose_q2.bi_pose = pi_q2;
+    
+    MotionPrimitive mp_q2 = {epose_q2, pi_q2};
+    
+    // Q3 MP
+    double h_q3 = p_r.h + PI;
+    Eigen::Rotation2Df rot_q3(PI);
+    dynamics::data::Position2Df pd_q3 = rot_q3 * p_r.pos;
+    uint32_t hi_q3 = (h_sw_beg + (map_size_angle/2)) % map_size_angle;
+    
+    dynamics::data::Pose2D p_q3 = {pd_q3, h_q3, p_r.vel};
+    dynamics::data::PoseByIndex pi_q3 = {round(pd_q3[0] / xpc),round(pd_q3[1] / ypc), hi_q3,  tht_tsi};
+
+    dynamics::data::Pose2DWithError epose_q3;
+    epose_q3 = p_q3;
+    epose_q3.s_a = st1;
+    epose_q3.s_a_2 = st2;
+    epose_q3.s_v = vel1;
+    epose_q3.s_v_2 = vel2;
+    epose_q3.bi_pose = pi_q3;
+    MotionPrimitive mp_q3 = {epose_q3, pi_q3};
+
+    // Q4 MP
+    double h_q4 = p_r.h + 1.5f * PI;
+    Eigen::Rotation2Df rot_q4(1.5f * PI);
+    dynamics::data::Position2Df pd_q4 = rot_q4 * p_r.pos;
+    uint32_t hi_q4 = (h_sw_beg + 3 * (map_size_angle/4)) % map_size_angle;
+    
+    dynamics::data::Pose2D p_q4 = {pd_q4, h_q4, p_r.vel};
+    dynamics::data::PoseByIndex pi_q4 = {round(pd_q4[0] / xpc),round(pd_q4[1] / ypc), hi_q4,  tht_tsi};
+
+    dynamics::data::Pose2DWithError epose_q4;
+    epose_q4 = p_q4;
+    epose_q4.s_a = st1;
+    epose_q4.s_a_2 = st2;
+    epose_q4.s_v = vel1;
+    epose_q4.s_v_2 = vel2;
+    epose_q4.bi_pose = pi_q4;
+    MotionPrimitive mp_q4 = {epose_q4, pi_q4};
+
+    m_mpTaskMutex.lock();
+    m_mpmap[tht_cai                       ][tht_csi].push_back(mp_q1);
+    m_mpmap[tht_cai +   (map_size_angle/4)][tht_csi].push_back(mp_q2);
+    m_mpmap[tht_cai +   (map_size_angle/2)][tht_csi].push_back(mp_q3);
+    m_mpmap[tht_cai + 3*(map_size_angle/4)][tht_csi].push_back(mp_q4);  
+    m_mpTaskMutex.unlock();
 }
 
 bool MPCompute::isInsideParallelogram(const Eigen::Vector2i& point, const Eigen::Vector2d& v1, const Eigen::Vector2d& v2) {
@@ -53,7 +149,18 @@ std::vector<Eigen::Vector2i> MPCompute::integerPointsInParallelogram(const Eigen
 
 
 void MPCompute::computeMPEdges(){
+    uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+    float xpc = Config::getInstance().get<float>({"disc","xstep"});
+    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float api = Config::getInstance().get<float>({"disc","hstep"});
+    int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+    std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
+
     float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
+
 
     //Compute size of the mp field based on reachable distance at the given speed
     int32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / xpc);
@@ -67,7 +174,7 @@ void MPCompute::computeMPEdges(){
             for(int32_t ts =  std::max(zero_velocity_level, sv - 1); ts < std::min(map_size_speed, sv + 2); ts ++){
 
                 //Compute pose of current node/vehicle
-                auto lim_vecs = dynamics::SimpleDynamicsModel::vector_limits(sh * api, 1.0f);
+                auto lim_vecs = dynamics::SimpleDynamicsModel::vector_limits(sh * api, vlevels[2] * dynamics::SimpleDynamicsModel::velocity_limit());
                 dynamics::data::Vector2Df vbase = {1.0f, 0.f};
                 auto vvec = Eigen::Rotation2Df(sh*api) * vbase;
                 
@@ -77,7 +184,7 @@ void MPCompute::computeMPEdges(){
                 double cosTheta = static_cast<double>(dotProduct) / (a_norm * b_norm);
                 double angleRadians = std::acos(cosTheta);
 
-                float reach_dist_vel_level = dynamics::SimpleDynamicsModel::velocity_limit() * (0.5f * (m_speedsFactor[sv] + m_speedsFactor[ts])) * (static_cast<float>(timestep_ms) / 1000.f);
+                float reach_dist_vel_level = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
                 double base_angle_radians = (M_PI - angleRadians) / 2.0;
                 double side_length = reach_dist_vel_level / std::sin(base_angle_radians);
                 auto p_integer_hull = integerPointsInParallelogram(lim_vecs[0].cast<double>() * (side_length / a_norm),lim_vecs[1].cast<double>() * (side_length / b_norm));
@@ -106,7 +213,7 @@ void MPCompute::computeMPEdges(){
                     }
 
                     MPTask nTask;    
-                    nTask = {x,y,ts,sh,sv,timestep_ms};
+                    nTask = {x,y,ts,sh,sv,(float)timestep_ms};
 
                     m_mpTaskQueue.push_back(nTask);
                 }
@@ -117,18 +224,28 @@ void MPCompute::computeMPEdges(){
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
     std::vector<std::thread> workers;
-    for(uint32_t i = 0; i < worker_counter; i++){
+    for(uint32_t i = 0; i < worker_count; i++){
         workers.push_back(std::thread(&MPCompute::workerThreadMPEdges, this, i));
     }
-    for(uint32_t i = 0; i < worker_counter; i++){
+    for(uint32_t i = 0; i < worker_count; i++){
         workers.at(i).join();
     }
 }
 
 
 void MPCompute::writeGraphToDisk(std::string name ){
-   json mp_map_dump;
+    uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+    float xpc = Config::getInstance().get<float>({"disc","xstep"});
+    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float api = Config::getInstance().get<float>({"disc","hstep"});
+    int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+    std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
 
+   
+   json mp_map_dump;
     mp_map_dump["info"]["m_mpMapReachableSpan"] = m_mpMapReachableSpan;
     mp_map_dump["info"]["m_mpMapCarOffset"] = m_mpMapCarOffset;
     mp_map_dump["info"]["size_a"] = map_size_angle;
@@ -144,7 +261,7 @@ void MPCompute::writeGraphToDisk(std::string name ){
                     node["pose"]["x"] =  (xpc*x);
                     node["pose"]["y"] =  (ypc*y);
                     node["pose"]["h"] =  api * static_cast<float>(a);
-                    node["pose"]["v"] =  m_speedsFactor[s] * dynamics::SimpleDynamicsModel::velocity_limit();
+                    node["pose"]["v"] =  vlevels[s] * dynamics::SimpleDynamicsModel::velocity_limit();
 
                     node["pose"]["xi"] = x;
                     node["pose"]["yi"] = y;
@@ -186,7 +303,7 @@ void MPCompute::writeGraphToDisk(std::string name ){
 
                 jedge["target"]["x"] = (xpc * edge.target.x);
                 jedge["target"]["y"] = (ypc * edge.target.y);
-                jedge["target"]["s"] = m_speedsFactor[edge.target.s] * dynamics::SimpleDynamicsModel::velocity_limit();
+                jedge["target"]["s"] = vlevels[edge.target.s] * dynamics::SimpleDynamicsModel::velocity_limit();
                 jedge["target"]["a"] = api * static_cast<float>(edge.target.a);
 
                 jedge["settings"]["a1"] = edge.link.s_a;
@@ -218,14 +335,25 @@ void MPCompute::loadGraphFromDisk(){
 }
 
 void MPCompute::loadGraphFromDisk(std::string path){
+    uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+    float xpc = Config::getInstance().get<float>({"disc","xstep"});
+    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float api = Config::getInstance().get<float>({"disc","hstep"});
+    int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+    std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
+
+
     std::ifstream ifs(path);
     json jf = json::parse(ifs);
     m_mpMapReachableSpan = jf["info"]["m_mpMapReachableSpan"];
     m_mpMapReachableSpan += 1;
     m_mpMapCarOffset = jf["info"]["m_mpMapCarOffset"];
 
-    std::cout << "Loading map with: " << jf["map"].size() << " and expected " << m_mpMapReachableSpan * m_mpMapReachableSpan * map_size_angle * map_size_speed <<std::endl;
-    assert(jf["map"].size() == m_mpMapReachableSpan * m_mpMapReachableSpan * map_size_angle * map_size_speed);
+    std::cout << "Loading map with: " << jf["map"].size() << " and expected " << 2*m_mpMapCarOffset * 2*m_mpMapCarOffset * map_size_angle * map_size_speed <<std::endl;
+    assert(jf["map"].size() ==  2*m_mpMapCarOffset * 2*m_mpMapCarOffset * map_size_angle * map_size_speed);
     uint32_t index = 0;
 
     for(auto edge: jf["edges"]){

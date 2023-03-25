@@ -17,7 +17,17 @@ int main() {
     planner.mp_comp.loadGraphFromDisk();
     std::cout << "Finished loading graph from disk!" << std::endl;
 
-    
+    static uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+    static float xpc = Config::getInstance().get<float>({"disc","xstep"});
+    static float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    static float api = Config::getInstance().get<float>({"disc","hstep"});
+    static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    static int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+    static std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
+
+
     dynamics::data::PoseByIndex end = {5,25,7,zero_velocity_level};
     dynamics::data::PoseByIndex start = {38,2,5,zero_velocity_level};
     std::vector<uint32_t> times;
