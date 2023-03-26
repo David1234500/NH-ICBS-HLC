@@ -80,13 +80,12 @@ MPBruteforce mp_comp;
 
 
 dynamics::data::PoseByIndex toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative){
-    return  (relative + base) - mp_comp.m_mpMapCarOffset;
+    return  (relative + base) - mp_comp.m_mpMapReachableNodeCount;
 }
 
 dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex global){
     static uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    static float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    static float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    static float dpc = Config::getInstance().get<float>({"disc","dstep"});
     static float api = Config::getInstance().get<float>({"disc","hstep"});
     static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
@@ -97,8 +96,8 @@ dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex global){
 
     dynamics::data::Pose2D global_pose;
     
-    global_pose.pos[0] = (xpc * global.x);
-    global_pose.pos[1] = (ypc * global.y);
+    global_pose.pos[0] = (dpc * global.x);
+    global_pose.pos[1] = (dpc * global.y);
     global_pose.h = api * static_cast<float>(global.a);
     global_pose.vel = vlevels[global.s] * dynamics::SimpleDynamicsModel::velocity_limit();
     
@@ -107,8 +106,7 @@ dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex global){
 
 dynamics::data::Pose2D indexToPose(dynamics::data::PBIConstraint global){
     static uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    static float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    static float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    static float dpc = Config::getInstance().get<float>({"disc","dstep"});
     static float api = Config::getInstance().get<float>({"disc","hstep"});
     static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
@@ -118,8 +116,8 @@ dynamics::data::Pose2D indexToPose(dynamics::data::PBIConstraint global){
 
     dynamics::data::Pose2D global_pose;
     
-    global_pose.pos[0] = (xpc * global.x);
-    global_pose.pos[1] = (ypc * global.y);
+    global_pose.pos[0] = (dpc * global.x);
+    global_pose.pos[1] = (dpc * global.y);
     global_pose.vel = 0.f;
     global_pose.h = 0;
     
@@ -165,13 +163,13 @@ void writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dynamics::data::
 
 
 dynamics::data::PoseByIndex findNearestPoseByIndex(dynamics::data::Pose2D pose){
-    static float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    static float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    static float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    
     static float api = Config::getInstance().get<float>({"disc","hstep"});
     static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
    
-    float near_x = pose.pos[0] / xpc;
-    float near_y = pose.pos[1] / ypc;
+    float near_x = pose.pos[0] / dpc;
+    float near_y = pose.pos[1] / dpc;
     pose.h = fmod(pose.h + 2*PI , 2*PI);
     float near_a = pose.h / api;
     dynamics::data::PoseByIndex result = {(int32_t)round(near_x),(int32_t)round(near_y),(int32_t)std::floor(near_a),zero_velocity_level};
@@ -180,7 +178,7 @@ dynamics::data::PoseByIndex findNearestPoseByIndex(dynamics::data::Pose2D pose){
 
 
 dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global){
-    return (global - base) +  mp_comp.m_mpMapCarOffset;
+    return (global - base) +  mp_comp.m_mpMapReachableNodeCount;
 }
 
 bool validatePosition(dynamics::data::PoseByIndex base, dynamics::data::Pose2DWithError edge){
@@ -322,8 +320,8 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
 
 std::vector<dynamics::data::Pose2WithTime> getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,MotionPrimitive>& edge_map, dynamics::data::PoseByIndex target){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    
     float api = Config::getInstance().get<float>({"disc","hstep"});
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
@@ -365,8 +363,8 @@ std::vector<dynamics::data::Pose2WithTime> getSplines(std::unordered_map<dynamic
 
 std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,MotionPrimitive>& edge_map, dynamics::data::PoseByIndex target){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    
     float api = Config::getInstance().get<float>({"disc","hstep"});
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});

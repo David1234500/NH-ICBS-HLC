@@ -17,6 +17,7 @@ public:
         double mu_l = 0.0f;
         double mu_lth = 0.0f;
         double mu_vd = 0.0f;
+        double mu_hth = 0.f;
     };
 
     struct mpnl_param_args_t{
@@ -33,13 +34,17 @@ public:
 
     enum mpnl_param_obj_pv_map{
         c_lamb = 0,
-        c_vs = 1,
-        c_lamth = 2,
-        c_st_1 = 3,
-        c_st_2 = 4,
-        c_st_3 = 5,
-        c_st_4 = 6,
-        c_hth = 7
+        c_acc_1 = 1,
+        c_acc_2 = 2,
+        c_lamth = 3,
+        c_st_1 = 4,
+        c_st_2 = 5,
+        c_st_3 = 6,
+        c_st_4 = 7,
+        c_st_5 = 8,
+        c_st_6 = 9,
+        c_st_7 = 10,
+        c_hth = 11
     };
 
     struct mpnl_param_constraint_args{
@@ -60,16 +65,14 @@ public:
 
 
     static dynamics::data::Pose2D eval_two_acc(std::vector<double> x, float st, dynamics::data::Pose2D sp, float ts){
-        double v = (0.5f * x[c_vs]);
-        auto p1 = dynamics::SimpleDynamicsModel::computeNextPose(sp, st, v, ts);
-        auto p2 = dynamics::SimpleDynamicsModel::computeNextPose(p1, st, v , ts);
+        auto p1 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(sp, st, x[c_acc_1], ts);
+        auto p2 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(p1, st, x[c_acc_2], ts);
         return p2;
     }
 
     static dynamics::data::Pose2D eval_two_steady(std::vector<double> x, float st, dynamics::data::Pose2D sp, float ts){
-        double v = x[c_vs];
-        auto p1 = dynamics::SimpleDynamicsModel::computeNextPose(sp, st, v, ts);
-        auto p2 = dynamics::SimpleDynamicsModel::computeNextPose(p1, st, v , ts);
+        auto p1 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(sp, st, 0, ts);
+        auto p2 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(p1, st, 0, ts);
         return p2;
     }
 
@@ -77,11 +80,13 @@ public:
     static double objective(const std::vector <double> &x, std::vector<double> &grad, void* f_data){
         mpnl_param_args_t* args = static_cast<mpnl_param_args_t*>(f_data);
         
-        double objv = args->w.mu_l * (x[c_lamb] - args->obj_lam_target) - std::abs(x[c_st_1])  - std::abs(x[c_st_2]) - std::abs(x[c_st_3]) - std::abs(x[c_hth]) - args->w.mu_lth * std::abs(x[c_lamth]);
+        double objv = args->w.mu_l * (x[c_lamb] - args->obj_lam_target) - std::abs(x[c_st_1])  - std::abs(x[c_st_2]) - std::abs(x[c_st_3]) + args->w.mu_hth * std::abs(x[c_hth]) - args->w.mu_lth * std::abs(x[c_lamth]);
 
         std::cout << "obj: " << std::to_string(objv)  <<" [" << std::to_string( x[c_lamb] - args->obj_lam_target)  << ", " << std::to_string(- std::abs(x[c_st_1]) - std::abs(x[c_st_2] - std::abs(x[c_st_3]))) << ", " << std::to_string(std::abs(x[c_hth])) << ", " <<std::to_string(std::abs(x[c_lamth])) << "]" << std::endl;
         return objv;
     }
+
+
 
     static double constraint_position_delta(const std::vector <double> &x, std::vector<double> &grad, void* f_data){
         static auto pc_args = static_cast<mpnl_param_constraint_args*>(f_data);
@@ -101,6 +106,7 @@ public:
         if(pc_args->accel){
             p2 = eval_two_acc(x,st,pc_args->sp, pc_args->args->ts_ms);
         }else{
+            pc_args->sp.vel = (x[c_acc_1] + x[c_acc_2]) * (pc_args->args->ts_ms / 1000.f);
             p2 = eval_two_steady(x,st,pc_args->sp, pc_args->args->ts_ms);
         }
         
@@ -116,8 +122,9 @@ public:
         
         dynamics::data::Pose2D p2;
         if(pc_args->accel){
-            p2 = eval_two_acc(x,st,pc_args->sp, pc_args->args->ts_ms);
+            p2 = eval_two_acc(x, st, pc_args->sp, pc_args->args->ts_ms);
         }else{
+            pc_args->sp.vel = (x[c_acc_1] + x[c_acc_2]) * (pc_args->args->ts_ms / 1000.f);
             p2 = eval_two_steady(x,st,pc_args->sp, pc_args->args->ts_ms);
         }
 
@@ -129,13 +136,14 @@ public:
     MPNLOptParameters(){}
 
     void prepare(mpnl_param_args_t* args, bool enforce_constraints=false, bool complete_eval=false,nlopt::algorithm alg=nlopt::GN_ISRES){
-        m_optimizer = std::make_shared<nlopt::opt>(alg, 8); 
+        m_optimizer = std::make_shared<nlopt::opt>(alg, 9); 
         m_optimizer->set_min_objective(objective, static_cast<void*>(args));
 
         Config& config = Config::getInstance();
         args->w.mu_l = config.get<double>({"mpnl_param_weights", "mu_l"});
         args->w.mu_lth = config.get<double>({"mpnl_param_weights", "mu_lth"});
         args->w.mu_vd = config.get<double>({"mpnl_param_weights", "mu_vd"});
+        args->w.mu_hth = config.get<double>({"mpnl_param_weights", "mu_hth"});
 
         args->ts_ms = config.get<double>({"mpnl_param_args", "ts_ms"});
         args->obj_lam_target = config.get<double>({"mpnl_param_args", "obj_lam_target"});
@@ -148,7 +156,7 @@ public:
         m_optimizer->set_upper_bounds(args->ub); 
 
         float hsteps =  Config::getInstance().get<float>({"map","angle_steps"});
-        float xstep =  Config::getInstance().get<float>({"disc","xstep"});
+        float dstep =  Config::getInstance().get<float>({"disc","dstep"});
         float hstep =  Config::getInstance().get<float>({"disc","hstep"});
 
         // PS -> P1 H0
@@ -211,7 +219,7 @@ public:
         m_optimizer->add_inequality_constraint(constraint_position_delta, static_cast<void*>(c5_args), 0.01f);
         m_optimizer->add_inequality_constraint(constraint_heading_delta, static_cast<void*>(c5_args), 0.01f);
 
-        // PS -> P4 H1
+        // PS -> P4 H0
         mpnl_param_constraint_args* c6_args = new mpnl_param_constraint_args;
         c6_args->args = args;
         c6_args->sp = {{0, 0}, 0, 0};
@@ -222,7 +230,7 @@ public:
         m_optimizer->add_inequality_constraint(constraint_position_delta, static_cast<void*>(c6_args), 0.01f);
         m_optimizer->add_inequality_constraint(constraint_heading_delta, static_cast<void*>(c6_args), 0.01f);
 
-        // PS -> P4 H0 with ST4
+        // PS -> P5 H0 H1 with ST4
         mpnl_param_constraint_args* c7_args = new mpnl_param_constraint_args;
         c7_args->args = args;
         c7_args->sp = {{0, 0}, 0, 0};
@@ -234,9 +242,52 @@ public:
         m_optimizer->add_inequality_constraint(constraint_heading_delta, static_cast<void*>(c7_args), 0.01f);
 
 
-        //TODO ADD ADDITIONAL CONSTRAINTS
+        // PS -> P5 H1 H1 with ST5
+        mpnl_param_constraint_args* c8_args = new mpnl_param_constraint_args;
+        c8_args->args = args;
+        c8_args->sp = {{0, 0}, hstep, 0};
+        c8_args->tp = {{0, 0}, hstep, 0};
+        c8_args->depents_on_st = c_st_5;
+        c8_args->lam_factor = {2.f,1.f};
+        c8_args->accel = false;
+        m_optimizer->add_inequality_constraint(constraint_position_delta, static_cast<void*>(c8_args), 0.01f);
+        m_optimizer->add_inequality_constraint(constraint_heading_delta, static_cast<void*>(c8_args), 0.01f);
+
+        // PS -> P5 H1 H0 with ST6
+        mpnl_param_constraint_args* c9_args = new mpnl_param_constraint_args;
+        c9_args->args = args;
+        c9_args->sp = {{0, 0}, hstep, 0};
+        c9_args->tp = {{0, 0}, 0, 0};
+        c9_args->depents_on_st = c_st_6;
+        c9_args->lam_factor = {2.f,1.f};
+        c9_args->accel = false;
+        m_optimizer->add_inequality_constraint(constraint_position_delta, static_cast<void*>(c9_args), 0.01f);
+        m_optimizer->add_inequality_constraint(constraint_heading_delta, static_cast<void*>(c9_args), 0.01f);
+
+        // PS -> P6 H1 H1 
+        mpnl_param_constraint_args* c10_args = new mpnl_param_constraint_args;
+        c10_args->args = args;
+        c10_args->sp = {{0, 0}, hstep, 0};
+        c10_args->tp = {{0, 0}, hstep, 0};
+        c10_args->depents_on_st = c_st_6;
+        c10_args->lam_factor = {2.f,2.f};
+        c10_args->accel = false;
+        m_optimizer->add_inequality_constraint(constraint_position_delta, static_cast<void*>(c10_args), 0.01f);
+        m_optimizer->add_inequality_constraint(constraint_heading_delta, static_cast<void*>(c10_args), 0.01f);
+
+        // PS -> P6 H0 H1 with ST7
+        mpnl_param_constraint_args* c11_args = new mpnl_param_constraint_args;
+        c11_args->args = args;
+        c11_args->sp = {{0, 0}, 0, 0};
+        c11_args->tp = {{0, 0}, hstep, 0};
+        c11_args->depents_on_st = c_st_7;
+        c11_args->lam_factor = {2.f,2.f};
+        c11_args->accel = false;
+        m_optimizer->add_inequality_constraint(constraint_position_delta, static_cast<void*>(c11_args), 0.01f);
+        m_optimizer->add_inequality_constraint(constraint_heading_delta, static_cast<void*>(c11_args), 0.01f);
 
         // Set the stopping criteria
+        m_result = args->lb;
         m_optimizer->set_maxtime(args->maxt);
         m_optimizer->set_stopval(args->st_val);
     }
@@ -247,7 +298,6 @@ public:
         }
 
         mpnl_param_return retval;
-        m_result = {20.f,125.f,0.f,0.f,0.f,0.f,0.f, 0.f};
         
         auto start = std::chrono::system_clock::now();
         retval.retcode = m_optimizer->optimize(m_result, retval.objf_val);
@@ -263,6 +313,43 @@ public:
         std::cout <<  "]" << std::endl;;
 
         return retval;
+    }
+
+    void visualize_results(mpnl_param_return* result){
+        
+        
+       
+        
+
+    }
+
+    json predict(dynamics::data::Pose2D veh_pose, float acc1, float acc2, float st_angle){
+        float hsteps =  Config::getInstance().get<float>({"map","angle_steps"});
+        float timestep_ms =  Config::getInstance().get<float>({"timestep_ms"});
+        float dstep =  Config::getInstance().get<float>({"disc","dstep"});
+        float hstep =  Config::getInstance().get<float>({"disc","hstep"});
+
+        json jedge;
+
+        dynamics::data::Pose2D next_pose;
+        for(float ts = 0; ts <= timestep_ms; ts += 50.f){
+            next_pose = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(veh_pose, st_angle, acc1, ts);
+            json point;
+            point["x"] = next_pose.pos[0];
+            point["y"] = next_pose.pos[1];
+            jedge["curve"].push_back(point);
+
+        }
+        
+    
+        for(float ts = 0; ts <= timestep_ms; ts += 50.f){
+            auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(next_pose, st_angle, acc2, ts);
+            json point;
+            point["x"] = next_pose2.pos[0];
+            point["y"] = next_pose2.pos[1];
+            jedge["curve"].push_back(point);
+        }
+        return  jedge;
     }
 
 

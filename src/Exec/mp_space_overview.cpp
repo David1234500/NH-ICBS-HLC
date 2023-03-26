@@ -19,7 +19,7 @@ for(float test_timestep = 300.f; test_timestep <= 600.f; test_timestep += 100.f)
         for(float quality = 2.f; quality < 6.f; quality += 1.f){
 
         // state_change_fit_quality_angle = api / quality;
-        // state_change_fit_quality_position =  xpc / quality;
+        // state_change_fit_quality_position =  dpc / quality;
         // recompute_inferred_values();
 
         json test;
@@ -32,8 +32,8 @@ for(float test_timestep = 300.f; test_timestep <= 600.f; test_timestep += 100.f)
         // map_size_y = node_count;
 
         // test["settings"]["map_size_angle"] = map_size_angle;
-        // test["settings"]["xpc"] = xpc;
-        // test["settings"]["ypc"] = ypc;
+        // test["settings"]["dpc"] = dpc;
+        // test["settings"]["dpc"] = dpc;
         // test["settings"]["api"] = api;
 
         // test["settings"]["safe_radius"] = safe_radius;

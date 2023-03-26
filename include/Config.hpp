@@ -33,6 +33,18 @@ public:
         return config_data;
     }
 
+    int32_t getXstep(){
+        double xcm = get<double>({"map","x_cm"});
+        double dstep = get<double>({"disc","dstep"});
+        return round(xcm/dstep);
+    }
+
+    int32_t getYstep(){
+        double xcm = get<double>({"map","y_cm"});
+        double dstep = get<double>({"disc","dstep"});
+        return round(xcm/dstep);
+    }
+
 private:
     Config(const std::string& filename) {
         if (!filename.empty()) {

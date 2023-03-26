@@ -14,13 +14,12 @@ MPNLOpt::MPNLOpt(){
 
 void MPNLOpt::workerThreadMPEdges(uint32_t index){
     int32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
     float api = Config::getInstance().get<float>({"disc","hstep"});
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
-    int32_t x_steps = Config::getInstance().get<int32_t>({"map","x_steps"});
+    int32_t x_steps = Config::getInstance().getXstep();
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
 
@@ -36,7 +35,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
         if(!m_mpTaskQueue.empty()){
             threadTask = *m_mpTaskQueue.begin();
             m_mpTaskQueue.erase(m_mpTaskQueue.begin());
-            rlog("workerMPEdges", LOG_INFO, std::to_string(m_mpTaskQueue.size()) + " Working now on task: " + std::to_string(threadTask.txi) +":"+ std::to_string(threadTask.tyi) + ":"+ std::to_string(threadTask.cai) +":"+ std::to_string(threadTask.csi));
+            rlog("workerMPEdges", LOG_INFO, std::to_string(m_mpTaskQueue.size()) + " Working now on task: " + std::to_string(threadTask.cai) +":"+ std::to_string(threadTask.csi) +" -> "+ std::to_string(threadTask.txi) +":"+ std::to_string(threadTask.tyi) + ":"+ std::to_string(threadTask.tsi));
             m_solvetimes[index] = solvetime;
             hasTask = true;
         }else{
@@ -54,20 +53,19 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
 
         if(hasTask){
            
-            int32_t h_sw_beg = ((threadTask.cai - (map_size_angle / 4)) + map_size_angle) % map_size_angle;
-            int32_t h_sw_end = ((threadTask.cai + (map_size_angle / 4)) + map_size_angle) % map_size_angle;
-
-            while(h_sw_beg != h_sw_end){
+            for(int32_t h_sw_beg = 0; h_sw_beg < map_size_angle; h_sw_beg ++){
             
                 //Compute best fit settings set to get from the current to the target location
                 dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, h_sw_beg, threadTask.tsi};
                 
                 MPNLOptSingle::mpnl_args_t args;
                 args.sp = {{0.f,0.f}, api * static_cast<float>(threadTask.cai), vlevels[threadTask.csi] * dynamics::SimpleDynamicsModel::velocity_limit()};
-                args.tp = {{(xpc*threadTask.txi), (ypc*threadTask.tyi)},  api * static_cast<float>(h_sw_beg), vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
+                args.tp = {{(dpc*threadTask.txi), (dpc*threadTask.tyi)},  api * static_cast<float>(h_sw_beg), vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
 
                 MPNLOptSingle nl_stm_opt;
-                nl_stm_opt.prepare(&args, true, false, nlopt::GN_ISRES);
+                // nl_stm_opt.prepare(&args, true, false, nlopt::GN_ISRES);
+                nl_stm_opt.prepare(&args, false, false, nlopt::GN_CRS2_LM);
+                
                 auto res = nl_stm_opt.optimize(); 
                 solvetime = 0.1 * static_cast<double>(res.rt_ms) + 0.9 * solvetime;
                 if(res.retcode <= 0 || res.retcode >= 4){
@@ -75,75 +73,83 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                     continue;
                 }
 
-                auto p_r = MPNLOptSingle::eval_two(res.result, &args);
+                auto p1 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(args.sp, res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_st_a], res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_acc], timestep_ms);
+                auto pr = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(p1,      res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_st_a], res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_acc], timestep_ms);
                 
                 // Q1 MP
                 dynamics::data::Pose2DWithError epose;
-                epose = p_r;
+                epose = pr;
                 epose = target_pose_by_index;
 
                 epose.s_a = res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_st_a];
                 epose.s_a_2 = res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_st_a];
-                epose.s_v = args.sp.vel + 0.5f * res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_vcc];
-                epose.s_v_2 = epose.s_v + 0.5f * res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_vcc];
+                double v_end_1 = args.sp.vel + res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_acc] * (timestep_ms / 1000.f);
+                double v_end_2 = v_end_1 + res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_acc] * (timestep_ms / 1000.f);
+
+                epose.s_v = (args.sp.vel + v_end_1) / 2;
+                epose.s_v_2 = (v_end_1 + v_end_2) / 2;
+
                 epose.bi_pose = target_pose_by_index;
                 MotionPrimitive mp_q1 = {epose, target_pose_by_index};
 
-                rlog("workerMPEdges", LOG_INFO,"Added transition with " + std::to_string(res.retcode) +  ":" + std::to_string(res.objf_val) +" to " + std::to_string(epose.pos[0]) +":"+ std::to_string(epose.pos[1]) 
-                + " -> s " + std::to_string(epose.s_a) +"_"+ std::to_string(epose.s_v) +  " st " + std::to_string(res.rt_ms));
+                rlog("workerMPEdges", LOG_INFO,"Added transition with " + std::to_string(res.retcode) +  ":" + std::to_string(res.objf_val) +": [" + std::to_string(threadTask.cai) +":"+ std::to_string(threadTask.csi) 
+                + "] ->  [" + std::to_string(res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_st_a]) + ", " + std::to_string(res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_st_a])
+                + ", " + std::to_string(res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_acc])  + ", " + std::to_string(res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_acc]) + "] -> "
+                + "[" + std::to_string(epose.pos[0])  + ", " + std::to_string(epose.pos[1]) + ", " + std::to_string(epose.h) + ", " + std::to_string(epose.vel)+ "]");
+
 
                 // Q2 MP
-                double h_q2 = p_r.h + 0.5 * PI;
+                double h_q2 = pr.h + 0.5 * PI;
                 Eigen::Rotation2Df rot_q2(0.5 * PI);
-                dynamics::data::Position2Df pd_q2 = rot_q2 * p_r.pos;
+                dynamics::data::Position2Df pd_q2 = rot_q2 * pr.pos;
                 uint32_t hi_q2 = (h_sw_beg + (map_size_angle/4)) % map_size_angle;
                 
-                dynamics::data::Pose2D p_q2 = {pd_q2, h_q2, p_r.vel};
-                dynamics::data::PoseByIndex pi_q2 = {round(pd_q2[0] / xpc),round(pd_q2[1] / ypc), hi_q2,  threadTask.tsi};
+                dynamics::data::Pose2D p_q2 = {pd_q2, h_q2, pr.vel};
+                dynamics::data::PoseByIndex pi_q2 = {round(pd_q2[0] / dpc),round(pd_q2[1] / dpc), hi_q2,  threadTask.tsi};
 
                 dynamics::data::Pose2DWithError epose_q2;
                 epose_q2 = p_q2;
                 epose_q2.s_a = res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_st_a];
                 epose_q2.s_a_2 = res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_st_a];
-                epose_q2.s_v = args.sp.vel + 0.5f * res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_vcc];
-                epose_q2.s_v_2 = epose.s_v + 0.5f * res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_vcc];
+                epose_q2.s_v = (args.sp.vel + v_end_1) / 2;
+                epose_q2.s_v_2 = (v_end_1 + v_end_2) / 2;
                 epose_q2.bi_pose = pi_q2;
                 
                 MotionPrimitive mp_q2 = {epose_q2, pi_q2};
                 
                 // Q3 MP
-                double h_q3 = p_r.h + PI;
+                double h_q3 = pr.h + PI;
                 Eigen::Rotation2Df rot_q3(PI);
-                dynamics::data::Position2Df pd_q3 = rot_q3 * p_r.pos;
+                dynamics::data::Position2Df pd_q3 = rot_q3 * pr.pos;
                 uint32_t hi_q3 = (h_sw_beg + (map_size_angle/2)) % map_size_angle;
                 
-                dynamics::data::Pose2D p_q3 = {pd_q3, h_q3, p_r.vel};
-                dynamics::data::PoseByIndex pi_q3 = {round(pd_q3[0] / xpc),round(pd_q3[1] / ypc), hi_q3,  threadTask.tsi};
+                dynamics::data::Pose2D p_q3 = {pd_q3, h_q3, pr.vel};
+                dynamics::data::PoseByIndex pi_q3 = {round(pd_q3[0] / dpc),round(pd_q3[1] / dpc), hi_q3,  threadTask.tsi};
 
                 dynamics::data::Pose2DWithError epose_q3;
                 epose_q3 = p_q3;
                 epose_q3.s_a = res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_st_a];
                 epose_q3.s_a_2 = res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_st_a];
-                epose_q3.s_v = args.sp.vel + 0.5f * res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_vcc];
-                epose_q3.s_v_2 = epose.s_v + 0.5f * res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_vcc];
+                epose_q3.s_v = (args.sp.vel + v_end_1) / 2;
+                epose_q3.s_v_2 = (v_end_1 + v_end_2) / 2;
                 epose_q3.bi_pose = pi_q3;
                 MotionPrimitive mp_q3 = {epose_q3, pi_q3};
 
                 // Q4 MP
-                double h_q4 = p_r.h + 1.5f * PI;
+                double h_q4 = pr.h + 1.5f * PI;
                 Eigen::Rotation2Df rot_q4(1.5f * PI);
-                dynamics::data::Position2Df pd_q4 = rot_q4 * p_r.pos;
+                dynamics::data::Position2Df pd_q4 = rot_q4 * pr.pos;
                 uint32_t hi_q4 = (h_sw_beg + 3 * (map_size_angle/4)) % map_size_angle;
                 
-                dynamics::data::Pose2D p_q4 = {pd_q4, h_q4, p_r.vel};
-                dynamics::data::PoseByIndex pi_q4 = {round(pd_q4[0] / xpc),round(pd_q4[1] / ypc), hi_q4,  threadTask.tsi};
+                dynamics::data::Pose2D p_q4 = {pd_q4, h_q4, pr.vel};
+                dynamics::data::PoseByIndex pi_q4 = {round(pd_q4[0] / dpc),round(pd_q4[1] / dpc), hi_q4,  threadTask.tsi};
 
                 dynamics::data::Pose2DWithError epose_q4;
                 epose_q4 = p_q4;
                 epose_q4.s_a = res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_st_a];
                 epose_q4.s_a_2 = res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_st_a];
-                epose_q4.s_v = args.sp.vel + 0.5f * res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_vcc];
-                epose_q4.s_v_2 = epose.s_v + 0.5f * res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_vcc];
+                epose_q4.s_v = (args.sp.vel + v_end_1) / 2;
+                epose_q4.s_v_2 = (v_end_1 + v_end_2) / 2;
                 epose_q4.bi_pose = pi_q4;
                 MotionPrimitive mp_q4 = {epose_q4, pi_q4};
 

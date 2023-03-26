@@ -47,11 +47,11 @@ MPCompute();
 
 void computeMPEdges();
 
+std::vector<Eigen::Vector2i> computeConicIntegerHull(float heading);
 bool  isInsideParallelogram(const Eigen::Vector2i& point, const Eigen::Vector2d& v1, const Eigen::Vector2d& v2);
 std::vector<Eigen::Vector2i> integerPointsInParallelogram(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2);
 
-uint32_t m_mpMapReachableSpan = 0;
-uint32_t m_mpMapCarOffset = 0;
+int32_t m_mpMapReachableNodeCount = 0;
 std::map<uint32_t, std::map<uint32_t, std::vector<MotionPrimitive>>> m_mpmap;
 
 std::mutex m_mpTaskMutex;
@@ -64,6 +64,7 @@ void writeGraphToDisk(std::string name = "mp_state_graph.json");
 void loadGraphFromDisk();
 void loadGraphFromDisk(std::string path);
 void printPositions();
+void writeIntegerHullToDisc(std::vector<Eigen::Vector2i> hull, std::string name = "mp_integer_hull.json");
 
 };
 

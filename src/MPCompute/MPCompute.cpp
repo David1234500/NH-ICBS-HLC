@@ -1,7 +1,7 @@
 #include <MPCompute/MPCompute.hpp>
 #include <nlohmann/json.hpp>
 #include <MPCompute/MPNLOptSingle.hpp>
-
+#include <vector>
 using json = nlohmann::json;
 
 
@@ -25,8 +25,8 @@ MPCompute::~MPCompute(){
 
 void MPCompute::addSymetricMPs(double st1, double st2, double vel1, double vel2, dynamics::data::PoseByIndex tp_bi, int32_t h_sw_beg, int32_t tht_cai, int32_t tht_csi, int32_t tht_tsi){
     int32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    
     float api = Config::getInstance().get<float>({"disc","hstep"});
 
     float fit_quality_angle = Config::getInstance().get<int>({"MPComputeBruteForce","fit_quality_angle"});
@@ -39,6 +39,7 @@ void MPCompute::addSymetricMPs(double st1, double st2, double vel1, double vel2,
     int32_t x_steps = Config::getInstance().get<int32_t>({"map","x_steps"});
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
+    
 
     dynamics::data::Pose2D sp = {{0,0},0,0};
     auto p_1 = dynamics::SimpleDynamicsModel::computeNextPose(sp, st1, vel1, timestep_ms);
@@ -63,7 +64,7 @@ void MPCompute::addSymetricMPs(double st1, double st2, double vel1, double vel2,
     uint32_t hi_q2 = (h_sw_beg + (map_size_angle/4)) % map_size_angle;
     
     dynamics::data::Pose2D p_q2 = {pd_q2, h_q2, p_r.vel};
-    dynamics::data::PoseByIndex pi_q2 = {round(pd_q2[0] / xpc),round(pd_q2[1] / ypc), hi_q2,  tht_tsi};
+    dynamics::data::PoseByIndex pi_q2 = {round(pd_q2[0] / dpc),round(pd_q2[1] / dpc), hi_q2,  tht_tsi};
 
     dynamics::data::Pose2DWithError epose_q2;
     epose_q2 = p_q2;
@@ -82,7 +83,7 @@ void MPCompute::addSymetricMPs(double st1, double st2, double vel1, double vel2,
     uint32_t hi_q3 = (h_sw_beg + (map_size_angle/2)) % map_size_angle;
     
     dynamics::data::Pose2D p_q3 = {pd_q3, h_q3, p_r.vel};
-    dynamics::data::PoseByIndex pi_q3 = {round(pd_q3[0] / xpc),round(pd_q3[1] / ypc), hi_q3,  tht_tsi};
+    dynamics::data::PoseByIndex pi_q3 = {round(pd_q3[0] / dpc),round(pd_q3[1] / dpc), hi_q3,  tht_tsi};
 
     dynamics::data::Pose2DWithError epose_q3;
     epose_q3 = p_q3;
@@ -100,7 +101,7 @@ void MPCompute::addSymetricMPs(double st1, double st2, double vel1, double vel2,
     uint32_t hi_q4 = (h_sw_beg + 3 * (map_size_angle/4)) % map_size_angle;
     
     dynamics::data::Pose2D p_q4 = {pd_q4, h_q4, p_r.vel};
-    dynamics::data::PoseByIndex pi_q4 = {round(pd_q4[0] / xpc),round(pd_q4[1] / ypc), hi_q4,  tht_tsi};
+    dynamics::data::PoseByIndex pi_q4 = {round(pd_q4[0] / dpc),round(pd_q4[1] / dpc), hi_q4,  tht_tsi};
 
     dynamics::data::Pose2DWithError epose_q4;
     epose_q4 = p_q4;
@@ -132,11 +133,8 @@ bool MPCompute::isInsideParallelogram(const Eigen::Vector2i& point, const Eigen:
 
 std::vector<Eigen::Vector2i> MPCompute::integerPointsInParallelogram(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2) {
     std::vector<Eigen::Vector2i> points;
-    Eigen::Vector2i min_corner = v1.cwiseMin(v2).cast<int>();
-    Eigen::Vector2i max_corner = v1.cwiseMax(v2).cast<int>();
-
-    for (int i = min_corner.x(); i <= max_corner.x(); ++i) {
-        for (int j = min_corner.y(); j <= max_corner.y(); ++j) {
+    for (int i = 0; i <= std::max(v1.cast<int>().x(),v2.cast<int>().x()); ++i) {
+        for (int j =  std::min(v1.cast<int>().y(),v2.cast<int>().y()); j <=  std::max(v1.cast<int>().y(),v2.cast<int>().y()); ++j) {
             Eigen::Vector2i point(i, j);
             if (isInsideParallelogram(point, v1, v2)) {
                 points.push_back(point);
@@ -147,11 +145,52 @@ std::vector<Eigen::Vector2i> MPCompute::integerPointsInParallelogram(const Eigen
     return points;
 }
 
+std::vector<Eigen::Vector2i> MPCompute::computeConicIntegerHull(float heading){
+    std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"}); 
+    uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+
+    auto lim_vecs = dynamics::SimpleDynamicsModel::vector_limits(heading, vlevels[2] * dynamics::SimpleDynamicsModel::velocity_limit());
+    dynamics::data::Vector2Df vbase = {1.0f, 0.f};
+    auto vvec = Eigen::Rotation2Df(heading) * vbase;
+
+    int dotProduct = lim_vecs[0].dot(lim_vecs[1]);
+    double a_norm = lim_vecs[0].norm();
+    double b_norm = lim_vecs[1].norm();
+    double cosTheta = static_cast<double>(dotProduct) / (a_norm * b_norm);
+    double angleRadians = std::acos(cosTheta);
+
+    float reach_dist_vel_level = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
+    double base_angle_radians = (M_PI - angleRadians) / 2.0;
+    double side_length = reach_dist_vel_level / std::sin(base_angle_radians);
+    auto p_integer_hull = integerPointsInParallelogram((lim_vecs[0].cast<double>()/a_norm) * side_length,(lim_vecs[1].cast<double>()/b_norm)* side_length );
+                
+    rlog("computeConicIntegerHull", LOG_INFO," L1 Vector: [" + std::to_string(lim_vecs[0][0]) + ", " + std::to_string(lim_vecs[0][1]) +"]");
+    rlog("computeConicIntegerHull", LOG_INFO," L2 Vector: [" + std::to_string(lim_vecs[1][0]) + ", " + std::to_string(lim_vecs[1][1]) +"]");
+    rlog("computeConicIntegerHull", LOG_INFO," Veh Vector: [" + std::to_string(vvec[0]) + ", " + std::to_string(vvec[1]) +"]");
+    
+    
+
+    return p_integer_hull; 
+}
+
+void MPCompute::writeIntegerHullToDisc( std::vector<Eigen::Vector2i> hull, std::string name){
+    json hull_json;
+
+    for(auto vec: hull){
+        json point;
+        point["x"] = vec[0];
+        point["y"] = vec[1];
+        hull_json.push_back(point);
+    }
+
+    std::ofstream o(name);
+    o << hull_json << std::endl;
+    o.close();
+}
 
 void MPCompute::computeMPEdges(){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
     float api = Config::getInstance().get<float>({"disc","hstep"});
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
@@ -160,13 +199,8 @@ void MPCompute::computeMPEdges(){
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
 
     float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
-
-
     //Compute size of the mp field based on reachable distance at the given speed
-    int32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / xpc);
-    uint32_t reachable_node_span = (2 * reachable_node_count); 
-    m_mpMapReachableSpan = reachable_node_span;
-    m_mpMapCarOffset = reachable_node_count; 
+    m_mpMapReachableNodeCount = static_cast<uint32_t>(reachable_distance / dpc);
 
     // Compute for each heading and speed from our original vehicle
     for(int32_t sv = zero_velocity_level; sv < map_size_speed; sv ++){
@@ -174,41 +208,26 @@ void MPCompute::computeMPEdges(){
             for(int32_t ts =  std::max(zero_velocity_level, sv - 1); ts < std::min(map_size_speed, sv + 2); ts ++){
 
                 //Compute pose of current node/vehicle
-                auto lim_vecs = dynamics::SimpleDynamicsModel::vector_limits(sh * api, vlevels[2] * dynamics::SimpleDynamicsModel::velocity_limit());
-                dynamics::data::Vector2Df vbase = {1.0f, 0.f};
-                auto vvec = Eigen::Rotation2Df(sh*api) * vbase;
-                
-                int dotProduct = lim_vecs[0].dot(lim_vecs[1]);
-                double a_norm = lim_vecs[0].norm();
-                double b_norm = lim_vecs[1].norm();
-                double cosTheta = static_cast<double>(dotProduct) / (a_norm * b_norm);
-                double angleRadians = std::acos(cosTheta);
+                auto p_integer_hull = computeConicIntegerHull(sh * api);
 
-                float reach_dist_vel_level = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
-                double base_angle_radians = (M_PI - angleRadians) / 2.0;
-                double side_length = reach_dist_vel_level / std::sin(base_angle_radians);
-                auto p_integer_hull = integerPointsInParallelogram(lim_vecs[0].cast<double>() * (side_length / a_norm),lim_vecs[1].cast<double>() * (side_length / b_norm));
-                
                 std::set<Eigen::Vector2i, Vector2iComparator> pi_integer_hull;
                 for(auto p: p_integer_hull){
-                    Eigen::Vector2i pbi = {p[0] / xpc, p[1] / ypc};
+                    Eigen::Vector2i pbi = {p[0] / dpc, p[1] / dpc};
                     pi_integer_hull.insert(pbi);
                 }
 
-                rlog("workerMPEdges", LOG_INFO," Creating task for configuration: [" + std::to_string(angleRadians) + ", " + std::to_string(p_integer_hull.size()) + ", "+ std::to_string(pi_integer_hull.size()) + ", " + std::to_string(sv) +", "+ std::to_string(sh) + ", "+ std::to_string(ts) + ", " + std::to_string(reachable_node_count) + "]");
-                rlog("workerMPEdges", LOG_INFO," L1 Vector: [" + std::to_string(lim_vecs[0][0]) + ", " + std::to_string(lim_vecs[0][1]) +"]");
-                rlog("workerMPEdges", LOG_INFO," L2 Vector: [" + std::to_string(lim_vecs[1][0]) + ", " + std::to_string(lim_vecs[1][1]) +"]");
-                rlog("workerMPEdges", LOG_INFO," Veh Vector: [" + std::to_string(vvec[0]) + ", " + std::to_string(vvec[1]) +"]");
+                if(sv == zero_velocity_level && ts == zero_velocity_level){
+                    continue;
+                }
+
+                rlog("computeConicIntegerHull", LOG_INFO," Creating task for configuration: ["+ std::to_string(p_integer_hull.size()) + ", "+ std::to_string(pi_integer_hull.size()) + ", " + std::to_string(sv) +", "+ std::to_string(sh) + ", "+ std::to_string(ts) + ", " + std::to_string(m_mpMapReachableNodeCount) + "]");
 
                 for(auto ip: pi_integer_hull){
                     int32_t x = ip[0];
                     int32_t y = ip[1];
 
-                    if(x == 0 && y == 0){
-                        continue;
-                    }
 
-                    if(sv == zero_velocity_level && ts == zero_velocity_level){
+                    if(x == 0 && y == 0){
                         continue;
                     }
 
@@ -235,8 +254,8 @@ void MPCompute::computeMPEdges(){
 
 void MPCompute::writeGraphToDisk(std::string name ){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    
     float api = Config::getInstance().get<float>({"disc","hstep"});
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
@@ -245,21 +264,20 @@ void MPCompute::writeGraphToDisk(std::string name ){
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
 
    
-   json mp_map_dump;
-    mp_map_dump["info"]["m_mpMapReachableSpan"] = m_mpMapReachableSpan;
-    mp_map_dump["info"]["m_mpMapCarOffset"] = m_mpMapCarOffset;
+    json mp_map_dump;
+    mp_map_dump["info"]["m_mpMapReachableNodeCount"] = m_mpMapReachableNodeCount;
     mp_map_dump["info"]["size_a"] = map_size_angle;
     mp_map_dump["info"]["size_s"] = map_size_speed;
 
     // Dump array to list
-    for(int32_t x = -static_cast<int32_t>(m_mpMapCarOffset); x < static_cast<int32_t>(m_mpMapCarOffset); x ++){
-        for(int32_t y = -static_cast<int32_t>(m_mpMapCarOffset); y < static_cast<int32_t>(m_mpMapCarOffset); y ++){
+    for(int32_t x = -static_cast<int32_t>(m_mpMapReachableNodeCount); x < static_cast<int32_t>(m_mpMapReachableNodeCount); x ++){
+        for(int32_t y = -static_cast<int32_t>(m_mpMapReachableNodeCount); y < static_cast<int32_t>(m_mpMapReachableNodeCount); y ++){
             for(int32_t a = 0; a < map_size_angle; a ++){
                 for(int32_t s = 0; s < map_size_speed; s ++){
                     //Compute position, heading and velocity of the node
                     json node;
-                    node["pose"]["x"] =  (xpc*x);
-                    node["pose"]["y"] =  (ypc*y);
+                    node["pose"]["x"] =  (dpc*x);
+                    node["pose"]["y"] =  (dpc*y);
                     node["pose"]["h"] =  api * static_cast<float>(a);
                     node["pose"]["v"] =  vlevels[s] * dynamics::SimpleDynamicsModel::velocity_limit();
 
@@ -301,8 +319,8 @@ void MPCompute::writeGraphToDisk(std::string name ){
                     jedge["curve"].push_back(point);
                 }
 
-                jedge["target"]["x"] = (xpc * edge.target.x);
-                jedge["target"]["y"] = (ypc * edge.target.y);
+                jedge["target"]["x"] = (dpc * edge.target.x);
+                jedge["target"]["y"] = (dpc * edge.target.y);
                 jedge["target"]["s"] = vlevels[edge.target.s] * dynamics::SimpleDynamicsModel::velocity_limit();
                 jedge["target"]["a"] = api * static_cast<float>(edge.target.a);
 
@@ -336,8 +354,7 @@ void MPCompute::loadGraphFromDisk(){
 
 void MPCompute::loadGraphFromDisk(std::string path){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
     float api = Config::getInstance().get<float>({"disc","hstep"});
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
@@ -348,12 +365,10 @@ void MPCompute::loadGraphFromDisk(std::string path){
 
     std::ifstream ifs(path);
     json jf = json::parse(ifs);
-    m_mpMapReachableSpan = jf["info"]["m_mpMapReachableSpan"];
-    m_mpMapReachableSpan += 1;
-    m_mpMapCarOffset = jf["info"]["m_mpMapCarOffset"];
+    m_mpMapReachableNodeCount = jf["info"]["m_mpMapReachableNodeCount"];
 
-    std::cout << "Loading map with: " << jf["map"].size() << " and expected " << 2*m_mpMapCarOffset * 2*m_mpMapCarOffset * map_size_angle * map_size_speed <<std::endl;
-    assert(jf["map"].size() ==  2*m_mpMapCarOffset * 2*m_mpMapCarOffset * map_size_angle * map_size_speed);
+    std::cout << "Loading map with: " << jf["map"].size() << " and expected " << 2*m_mpMapReachableNodeCount * 2*m_mpMapReachableNodeCount * map_size_angle * map_size_speed <<std::endl;
+    assert(jf["map"].size() ==  2*m_mpMapReachableNodeCount * 2*m_mpMapReachableNodeCount * map_size_angle * map_size_speed);
     uint32_t index = 0;
 
     for(auto edge: jf["edges"]){

@@ -12,13 +12,13 @@ using json = nlohmann::json;
 
 ReachabilityResult CBSPlanner::checkForReachability(){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    
     float api = Config::getInstance().get<float>({"disc","hstep"});
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
-    int32_t x_steps = Config::getInstance().get<int32_t>({"map","x_steps"});
+    int32_t x_steps = Config::getInstance().getXstep();
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
 
@@ -27,7 +27,7 @@ ReachabilityResult CBSPlanner::checkForReachability(){
     result.reachable = true;
 
     float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
-    int32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / xpc);
+    int32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / dpc);
 
     uint32_t count = 0;
     uint64_t path_length = 0;
@@ -152,8 +152,8 @@ ReachabilityResult CBSPlanner::checkForReachability(){
 
 void CBSPlanner::writeMultiplePathsToDisk(constraint_node cnode, std::string name){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    
     float api = Config::getInstance().get<float>({"disc","hstep"});
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
@@ -191,8 +191,8 @@ void CBSPlanner::writeMultiplePathsToDisk(constraint_node cnode, std::string nam
 
 constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    
     float api = Config::getInstance().get<float>({"disc","hstep"});
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});

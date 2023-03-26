@@ -19,6 +19,7 @@ public:
     SimpleDynamicsModel();
 
     static Pose2D computeNextPose(Pose2D& current_pose, float steering_angle, float velocity, float time);
+    static Pose2D computeNextPoseUnderAcceleration(Pose2D& current_pose, float steering_angle, float acceleration, float time);
     static dynamics::data::Pose2DWithError forceBestFit(Pose2D current_pose, PoseByIndex tpi, Pose2D target_pose, float timestep, float allowed_speed_deviation);
     static dynamics::data::Pose2DWithError forceBestFitSingleStep(Pose2D current_pose, PoseByIndex tpi, Pose2D target_pose, float timestep);
 

@@ -18,8 +18,8 @@ int main() {
     std::cout << "Finished loading graph from disk!" << std::endl;
 
     static uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    static float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    static float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    static float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    
     static float api = Config::getInstance().get<float>({"disc","hstep"});
     static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});

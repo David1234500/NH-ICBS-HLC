@@ -12,7 +12,7 @@ public:
         double mu_pd = 0.f;
         double mu_hd = 0.f;
         double mu_vd = 0.f;
-        double mu_vccd = 0.f;
+        double mu_accd = 0.f;
     };
 
     struct mpnl_args_t{
@@ -33,8 +33,8 @@ public:
     enum mpnl_obj_pv_map{
         c1_st_a = 0,
         c2_st_a = 1,
-        c1_vcc = 2,
-        c2_vcc = 3
+        c1_acc = 2,
+        c2_acc = 3
     };
 
     struct mpnl_return{
@@ -46,10 +46,8 @@ public:
 
 
     static dynamics::data::Pose2D eval_two(std::vector<double> x, mpnl_args_t* args){
-        double v1 = (0.5f * x[c1_vcc]) + args->sp.vel;
-        double v2 = (0.5f * (x[c1_vcc] + x[c2_vcc])) + args->sp.vel;
-        auto p1 = dynamics::SimpleDynamicsModel::computeNextPose(args->sp,x[c1_st_a], v1, args->ts_ms);
-        auto p2 = dynamics::SimpleDynamicsModel::computeNextPose(p1, x[c2_st_a], v2 , args->ts_ms);
+        auto p1 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(args->sp,x[c1_st_a], x[c1_acc], args->ts_ms);
+        auto p2 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(p1,      x[c2_st_a], x[c2_acc], args->ts_ms);
         return p2;
     }
 
@@ -64,13 +62,10 @@ public:
 
         double pd =  (args->tp.pos - p2.pos).norm(); 
         
-        double vd =  std::abs((0.5f * (x[c1_vcc] + x[c2_vcc])) + args->sp.vel - args->tp.vel);
-        double vccd = std::abs(x[c1_vcc]) + std::abs(x[c2_vcc]);
+        double vd =  std::abs(p2.vel - args->tp.vel);
+        double accd = std::abs(x[c1_acc]) + std::abs(x[c2_acc]);
 
-        double objv = args->w.mu_hd * hd_n + args->w.mu_pd * pd + args->w.mu_vd * vd + args->w.mu_vccd * vccd;
-        
-        // std::cout << "obj nadj: " << std::to_string(objv)  <<" [" << std::to_string(pd) << ", " << std::to_string(hd_n) << ", " << std::to_string(vd) << ", " << std::to_string(vccd) << "]" << std::endl;
-        // std::cout << "obj  adj: " << std::to_string(objv)  <<" [" << std::to_string( args->w.mu_pd * pd) << ", " << std::to_string(args->w.mu_hd * hd_n) << ", " << std::to_string(args->w.mu_vd * vd) << ", " << std::to_string(args->w.mu_vccd * vccd) << "]" << std::endl;
+        double objv = args->w.mu_hd * hd_n + args->w.mu_pd * pd + args->w.mu_vd * vd + args->w.mu_accd * accd;
         return objv;
     }
 
@@ -91,7 +86,7 @@ public:
     static double constraint_velocity_delta(const std::vector <double> &x, std::vector<double> &grad, void* f_data){
         mpnl_args_t* args = static_cast<mpnl_args_t*>(f_data);
         auto p2 = eval_two(x,args);
-        return std::abs((0.5f * (x[c1_vcc] + x[c2_vcc])) + args->sp.vel - args->tp.vel) - args->a_v;
+        return std::abs(p2.vel - args->tp.vel);
     }
 
 
@@ -100,14 +95,14 @@ public:
 
     void prepare(mpnl_args_t* args, bool enforce_constraints=false, bool complete_eval=false,nlopt::algorithm alg=nlopt::GN_ISRES){
         m_optimizer = std::make_shared<nlopt::opt>(alg, 4); 
-        m_optimizer->set_min_objective(objective, static_cast<void*>(&args));
+        m_optimizer->set_min_objective(objective, static_cast<void*>(args));
 
-        Config& config = Config::getInstance("path/to/your/config.json");
+        Config& config = Config::getInstance();
 
         args->w.mu_pd = config.get<double>({"mpnl_weights", "mu_pd"});
         args->w.mu_hd = config.get<double>({"mpnl_weights", "mu_hd"});
         args->w.mu_vd = config.get<double>({"mpnl_weights", "mu_vd"});
-        args->w.mu_vccd = config.get<double>({"mpnl_weights", "mu_vccd"});
+        args->w.mu_accd = config.get<double>({"mpnl_weights", "mu_vccd"});
         
         args->ts_ms = config.get<double>({"mpnl_args", "ts_ms"});
         args->ub = config.get<std::vector<double>>({"mpnl_args", "ub"});
@@ -127,8 +122,7 @@ public:
             m_optimizer->add_inequality_constraint(constraint_velocity_delta, static_cast<void*>(args), 0.01f);
         }
 
-        double vhd = (args->sp.vel + args->tp.vel) / 4;
-        m_result = {0,0,vhd,vhd};
+        m_result = {0,0,0,0};
 
         // Set the stopping criteria
         m_optimizer->set_maxtime(args->maxt);

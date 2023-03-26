@@ -14,7 +14,7 @@ fig.suptitle('Motion Primitives Visualisation')
 grid = {}
 
 # create 3x1 subfigs
-subfigs = fig.subfigures(nrows=y["info"]["size_s"] * 2, ncols=1)
+subfigs = fig.subfigures(nrows=y["info"]["size_s"] * y["info"]["size_s"], ncols=1)
 for row, subfig in enumerate(subfigs):
     subfig.suptitle(f'Source Velocity Level: {row}')
     grid[row] = {}

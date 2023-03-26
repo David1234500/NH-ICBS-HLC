@@ -51,6 +51,51 @@ return Pose2D{new_pos, new_head, velocity};
 }
 
 
+Pose2D SimpleDynamicsModel::computeNextPoseUnderAcceleration(Pose2D& current_pose, float steering_angle, float acceleration, float time){
+
+// Compute driven distance 
+float time_sec = time / 1000.f; //millisec
+float acc_dist = 0.5 * acceleration * std::pow(time_sec,2.f);
+float dist = current_pose.vel * time_sec + acc_dist;
+
+steering_angle = fmod(steering_angle + 2*PI , 2*PI);
+
+//Case of no steering angle
+if(steering_angle <= 0.05f){
+    Vector2Df dp = {dist , 0.f};
+    Eigen::Rotation2Df rotation(current_pose.h);
+    auto dph = rotation * dp;
+    auto new_pos = current_pose.pos + dph;
+    return Pose2D{new_pos, current_pose.h, current_pose.vel + acceleration * time_sec};
+}
+
+// Compute radius of driven curve
+float radius = 15 / std::sin(steering_angle);  
+
+// Compute circumference of driven circle
+float circ = 2 * PI * radius;
+
+// Compute drive angle inside circle
+float circ_comp = dist / circ * 2 * PI;
+
+// Compute new x_diff offset
+float dx = std::sin(circ_comp) * radius;
+float dpy = std::cos(circ_comp) * radius;
+float dy = radius - dpy;
+
+// Position offset assuming car points perfectly along x axis
+Vector2Df dp = {dx,dy};
+Eigen::Rotation2Df rotation(current_pose.h);
+
+// Compute new valid position
+auto dph = rotation * dp;
+auto new_pos = current_pose.pos + dph;
+auto new_head = current_pose.h + circ_comp;
+
+return Pose2D{new_pos, new_head, current_pose.vel + acceleration * time_sec};
+}
+
+
 std::vector<dynamics::data::Vector2Df> SimpleDynamicsModel::vector_limits(float h, float max_vel){
     static uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
  
@@ -61,8 +106,8 @@ std::vector<dynamics::data::Vector2Df> SimpleDynamicsModel::vector_limits(float 
     auto p2p = computeNextPose(p1p, angle_limit() + 0.1f,max_vel, timestep_ms);
     result.push_back(p2p.pos);
 
-    auto p1n = computeNextPose(ps,  -angle_limit() + 0.1f,max_vel, timestep_ms);
-    auto p2n = computeNextPose(p1n, -angle_limit() + 0.1f,max_vel, timestep_ms);
+    auto p1n = computeNextPose(ps,  -angle_limit() - 0.1f,max_vel, timestep_ms);
+    auto p2n = computeNextPose(p1n, -angle_limit() - 0.1f,max_vel, timestep_ms);
     result.push_back(p2n.pos);
 
     return result;

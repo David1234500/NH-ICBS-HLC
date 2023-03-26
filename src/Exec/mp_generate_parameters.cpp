@@ -5,8 +5,8 @@
 
 int main() {
     int32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
-    float xpc = Config::getInstance().get<float>({"disc","xstep"});
-    float ypc = Config::getInstance().get<float>({"disc","ystep"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    
     float api = Config::getInstance().get<float>({"disc","hstep"});
 
     float fit_quality_angle = Config::getInstance().get<int>({"MPComputeBruteForce","fit_quality_angle"});
@@ -16,19 +16,23 @@ int main() {
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
-    int32_t x_steps = Config::getInstance().get<int32_t>({"map","x_steps"});
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
 
     std::shared_ptr<MPNLOptParameters> param_solver = std::make_shared<MPNLOptParameters>();
 
     MPNLOptParameters::mpnl_param_args_t args;
-    args.st_val = 10;
-    args.ts_ms = timestep_ms;
-
-    args.obj_lam_target = 15.f;
-
     param_solver->prepare(&args);
-    param_solver->optimize();
+    auto ret = param_solver->optimize();
+
     std::cout << "Completed computation" << std::endl;
+    std::cout << "Node spacing [cm]: " << std::to_string(ret.result[MPNLOptParameters::c_lamb]) << std::endl;
+    std::cout << "Node spacing tolerance [cm]: " << std::to_string(ret.result[MPNLOptParameters::c_lamth]) << std::endl;
+    std::cout << "Acceleration 1 [cm/s]: " << std::to_string(ret.result[MPNLOptParameters::c_acc_1]) << std::endl;
+    std::cout << "Acceleration 2 [cm/s]: " << std::to_string(ret.result[MPNLOptParameters::c_acc_2]) << std::endl;
+    std::cout << "Velocity Level [cm/s]: " << std::to_string((ret.result[MPNLOptParameters::c_acc_2] + ret.result[MPNLOptParameters::c_acc_1]) * (timestep_ms / 1000.f)) << std::endl;
+    std::cout << "Heading tolerance [rad]: " << std::to_string(ret.result[MPNLOptParameters::c_hth]) << std::endl;
+    std::cout << "Steering Angle for {0,0, hstep} -> {lambda, 0, hstep} [rad]: " << std::to_string(ret.result[MPNLOptParameters::c_st_1]) << std::endl;
+    std::cout << "Steering Angle for {0,0, 0} -> {lambda, lambda, hstep} [rad]: " << std::to_string(ret.result[MPNLOptParameters::c_st_2]) << std::endl;
+    std::cout << "Steering Angle for {0,0, 2 * hstep} -> {0, lambda, 2 * hstep} [rad]: " << std::to_string(ret.result[MPNLOptParameters::c_st_3]) << std::endl;
 
 }

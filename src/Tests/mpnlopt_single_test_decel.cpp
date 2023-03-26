@@ -38,10 +38,10 @@ int main(){
     MPNLOptSingle opt;
     
     MPNLOptSingle::mpnl_args_t args; 
-    args.sp = {{0.f,0.f},0.f,50.f};
-    args.tp = {{40.f,40.f},1.0f * PI,50.f};
+    args.sp = {{0.f,0.f},0.f,60.f};
+    args.tp = {{30.f,0.f},0.f,0.f};
 
-    opt.prepare(&args, true, false, nlopt::GN_ISRES); // GN_DIRECT,  GN_ESCH and GN_ISRES, GN_CRS2_LM (best)
+    opt.prepare(&args, false, false, nlopt::GN_CRS2_LM); // GN_DIRECT,  GN_ESCH and GN_ISRES, GN_CRS2_LM (best)
 
     auto res = opt.optimize();
 
@@ -52,7 +52,7 @@ int main(){
     std::cout << "retcode " << std::to_string(res.retcode) << std::endl;
     std::cout << "rt " << std::to_string(res.rt_ms) << std::endl;
     std::cout << "c_st_a " << std::to_string(res.result[0]) << ", "<< std::to_string(res.result[1]) << std::endl;
-    std::cout << "c_vcc " << std::to_string(res.result[2]) << ", "<< std::to_string(res.result[3]) << std::endl;
+    std::cout << "c_acc " << std::to_string(res.result[2]) << ", "<< std::to_string(res.result[3]) << std::endl;
     std::cout << "res_pose ((" << std::to_string(rpose.pos[0]) << ", "<< std::to_string(rpose.pos[1]) << "), " + std::to_string(rpose.h) +", " + std::to_string(rpose.vel) + ")"<< std::endl;
 
     std::vector<dynamics::data::Pose2D> resulting_pose;

@@ -40,7 +40,7 @@ for edge in y["edges"]:
     ex.append(edge["target"]["x"])
     ey.append(edge["target"]["y"])
 
-    if edge["targeti"]["s"] != 1:
+    if edge["targeti"]["s"] != 2:
         continue
     
     grid[edge["source"]["a"]][edge["targeti"]["a"]].plot(ex,ey)
