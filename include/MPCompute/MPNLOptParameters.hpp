@@ -316,11 +316,69 @@ public:
     }
 
     void visualize_results(mpnl_param_return* result){
-        
-        
-       
-        
+        float hsteps =  Config::getInstance().get<float>({"map","angle_steps"});
+        float dstep =  Config::getInstance().get<float>({"disc","dstep"});
+        float hstep =  Config::getInstance().get<float>({"disc","hstep"});
 
+        json res;
+
+        json edge_0;
+        edge_0["ID"] = "PS -> P1 H0";
+        dynamics::data::Pose2D sp0 = {{0, 0}, 0, 0};
+        edge_0["edge"] = predict(sp0, result->result[c_acc_1], result->result[c_acc_2], 0);
+        res.push_back(edge_0);
+
+        json edge_1;
+        edge_1["ID"] = "PS -> P2 H1";
+        dynamics::data::Pose2D sp1 = {{0, 0}, hstep, 0};
+        edge_1["edge"] = predict(sp1, result->result[c_acc_1], result->result[c_acc_2], 0);
+        res.push_back(edge_1);
+
+        json edge_2;
+        edge_2["ID"] = "PS -> P1 H1 with ST1";
+        dynamics::data::Pose2D sp2 = {{0, 0}, hstep, 0};
+        edge_2["edge"] = predict(sp2, result->result[c_acc_1], result->result[c_acc_2], result->result[c_st_1]);
+        res.push_back(edge_2);
+
+        json edge_3;
+        edge_3["ID"] = "PS -> P2 H0 with ST2";
+        dynamics::data::Pose2D sp3 = {{0, 0}, 0, 0};
+        edge_3["edge"] = predict(sp3, result->result[c_acc_1], result->result[c_acc_2], result->result[c_st_2]);
+        res.push_back(edge_3);
+
+        json edge_4;
+        edge_4["ID"] = "PS -> P3 H2";
+        dynamics::data::Pose2D sp4 = {{0, 0}, 2 * hstep, 0};
+        edge_4["edge"] = predict(sp4, result->result[c_acc_1], result->result[c_acc_2], 0);
+        res.push_back(edge_4);
+
+        json edge_5;
+        edge_5["ID"] = "PS -> P3 H1 with ST3";
+        dynamics::data::Pose2D sp5 = {{0, 0}, hstep, 0};
+        edge_5["edge"] = predict(sp5, result->result[c_acc_1], result->result[c_acc_2], result->result[c_st_3]);
+        res.push_back(edge_5);
+
+        json edge_6;
+        edge_6["ID"] = "PS -> P4 H0";
+        dynamics::data::Pose2D sp6 = {{0, 0}, 0, 0};
+        edge_6["edge"] = predict(sp6, result->result[c_acc_1], result->result[c_acc_2], 0);
+        res.push_back(edge_6);
+
+        json edge_7;
+        edge_7["ID"] = "PS -> P5 H0 H1 with ST4";
+        dynamics::data::Pose2D sp7 = {{0, 0}, 0, 0};
+        edge_7["edge"] = predict(sp7, result->result[c_acc_1], result->result[c_acc_2], result->result[c_st_4]);
+        res.push_back(edge_7);
+
+        json edge_8;
+        edge_8["ID"] = "PS -> P5 H1 H1 with ST5";
+        dynamics::data::Pose2D sp8 = {{0, 0}, hstep, 0};
+        edge_8["edge"] = predict(sp8, result->result[c_acc_1], result->result[c_acc_2], result->result[c_st_5]);
+        res.push_back(edge_8);
+        
+        std::ofstream o("mp_param_res.json");
+        o << res << std::endl;
+        o.close();
     }
 
     json predict(dynamics::data::Pose2D veh_pose, float acc1, float acc2, float st_angle){
@@ -340,7 +398,6 @@ public:
             jedge["curve"].push_back(point);
 
         }
-        
     
         for(float ts = 0; ts <= timestep_ms; ts += 50.f){
             auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(next_pose, st_angle, acc2, ts);

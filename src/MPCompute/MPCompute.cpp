@@ -26,22 +26,17 @@ MPCompute::~MPCompute(){
 void MPCompute::addSymetricMPs(double st1, double st2, double vel1, double vel2, dynamics::data::PoseByIndex tp_bi, int32_t h_sw_beg, int32_t tht_cai, int32_t tht_csi, int32_t tht_tsi){
     int32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
     float dpc = Config::getInstance().get<float>({"disc","dstep"});
-    
     float api = Config::getInstance().get<float>({"disc","hstep"});
-
-    float fit_quality_angle = Config::getInstance().get<int>({"MPComputeBruteForce","fit_quality_angle"});
-    float fit_quality_position = Config::getInstance().get<int>({"MPComputeBruteForce","fit_quality_position"});
-    float fit_allowed_speed_difference = Config::getInstance().get<int>({"MPComputeBruteForce","fit_allowed_speed_difference"});
 
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
-    int32_t x_steps = Config::getInstance().get<int32_t>({"map","x_steps"});
+    int32_t x_steps = Config::getInstance().getXstep();
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
     
 
-    dynamics::data::Pose2D sp = {{0,0},0,0};
+    dynamics::data::Pose2D sp = {{0,0},tht_cai * api,0};
     auto p_1 = dynamics::SimpleDynamicsModel::computeNextPose(sp, st1, vel1, timestep_ms);
     auto p_r = dynamics::SimpleDynamicsModel::computeNextPose(p_1, st2, vel2, timestep_ms);
 
@@ -211,10 +206,13 @@ void MPCompute::computeMPEdges(){
                 auto p_integer_hull = computeConicIntegerHull(sh * api);
 
                 std::set<Eigen::Vector2i, Vector2iComparator> pi_integer_hull;
+                std::vector<Eigen::Vector2i> pi_hull;
                 for(auto p: p_integer_hull){
                     Eigen::Vector2i pbi = {p[0] / dpc, p[1] / dpc};
                     pi_integer_hull.insert(pbi);
+                    pi_hull.push_back(pbi);
                 }
+                writeIntegerHullToDisc(pi_hull, "hull_"+std::to_string(sh)+".json");
 
                 if(sv == zero_velocity_level && ts == zero_velocity_level){
                     continue;

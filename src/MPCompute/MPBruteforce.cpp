@@ -12,9 +12,9 @@ void MPBruteforce::workerThreadMPEdges(uint32_t index){
     
     float api = Config::getInstance().get<float>({"disc","hstep"});
 
-    float fit_quality_angle = Config::getInstance().get<int>({"MPComputeBruteForce","fit_quality_angle"});
-    float fit_quality_position = Config::getInstance().get<int>({"MPComputeBruteForce","fit_quality_position"});
-    float fit_allowed_speed_difference = Config::getInstance().get<int>({"MPComputeBruteForce","fit_allowed_speed_difference"});
+    float fit_quality_angle = Config::getInstance().get<float>({"MPComputeBruteForce","fit_quality_angle"});
+    float fit_quality_position = Config::getInstance().get<float>({"MPComputeBruteForce","fit_quality_position"});
+    float fit_allowed_speed_difference = Config::getInstance().get<float>({"MPComputeBruteForce","fit_allowed_speed_difference"});
 
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
@@ -40,7 +40,7 @@ void MPBruteforce::workerThreadMPEdges(uint32_t index){
             m_mpTaskQueue.erase(m_mpTaskQueue.begin());
             
             rlog("workerMPEdges", LOG_INFO," Working now on task: " + std::to_string(threadTask.txi) +":"+ std::to_string(threadTask.tyi) + ":"+ std::to_string(threadTask.cai) +":"+ std::to_string(threadTask.csi));
-            rlog("workerMPEdges", LOG_INFO," P_avg:["  + std::to_string(prune_by_distance) +":"+ std::to_string(dist_error_avg) + ":"+ std::to_string(prune_by_angle) +":"+ std::to_string(angle_error_avg) + "]" );
+            // rlog("workerMPEdges", LOG_INFO," P_avg:["  + std::to_string(prune_by_distance) +":"+ std::to_string(dist_error_avg) + ":"+ std::to_string(prune_by_angle) +":"+ std::to_string(angle_error_avg) + "]" );
             
             
             hasTask = true;

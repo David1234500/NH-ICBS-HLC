@@ -25,6 +25,9 @@ public:
             }
             return temp.get<T>();
         } catch (const json::out_of_range& e) {
+            for (const std::string& key : keys) {
+              std::cout << "Missing key " << key << std::endl;
+            }
             throw std::runtime_error("Config key not found");
         }
     }

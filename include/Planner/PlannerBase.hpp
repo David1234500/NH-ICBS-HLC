@@ -80,7 +80,7 @@ MPBruteforce mp_comp;
 
 
 dynamics::data::PoseByIndex toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative){
-    return  (relative + base) - mp_comp.m_mpMapReachableNodeCount;
+    return relative + base;
 }
 
 dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex global){
@@ -164,7 +164,6 @@ void writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dynamics::data::
 
 dynamics::data::PoseByIndex findNearestPoseByIndex(dynamics::data::Pose2D pose){
     static float dpc = Config::getInstance().get<float>({"disc","dstep"});
-    
     static float api = Config::getInstance().get<float>({"disc","hstep"});
     static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
    
@@ -178,15 +177,15 @@ dynamics::data::PoseByIndex findNearestPoseByIndex(dynamics::data::Pose2D pose){
 
 
 dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex global){
-    return (global - base) +  mp_comp.m_mpMapReachableNodeCount;
+    return global - base;
 }
 
 bool validatePosition(dynamics::data::PoseByIndex base, dynamics::data::Pose2DWithError edge){
-    int32_t x_steps = Config::getInstance().get<int32_t>({"map","x_steps"});
-    if(base.x < 0 || base.x > x_steps){
+    int32_t x_steps = Config::getInstance().getXstep();
+    if(base.x < -x_steps || base.x > x_steps){
         return false;
     }
-    if(base.y < 0 || base.y > x_steps){
+    if(base.y < -x_steps || base.y > x_steps){
         return false;
     }
 
@@ -309,7 +308,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
     rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
     rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a));
     
-    // writeVisitedNodesToDisk(start,target,cameFrom);
+    writeVisitedNodesToDisk(start,target,cameFrom);
     LLResult res;
     res.found_path = false;
     res.spline.clear();

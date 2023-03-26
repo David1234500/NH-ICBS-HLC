@@ -32,8 +32,8 @@ y = json.loads(x)
 plt.plot(y["start"]["x"],y["start"]["y"], marker="o")
 plt.plot(y["target"]["x"],y["target"]["y"], marker="x")
 
-plt.xlim((0,90))
-plt.ylim((0,90))
+# plt.xlim((0,90))
+# plt.ylim((0,90))
 
 for v in y["nodes"]:
     x = [v["x"],v["px"]]

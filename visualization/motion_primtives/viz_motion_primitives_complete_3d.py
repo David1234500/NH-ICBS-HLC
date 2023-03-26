@@ -23,7 +23,8 @@ for edge in y["edges"]:
 
     ex.append(edge["target"]["x"])
     ey.append(edge["target"]["y"])
-    ez = [edge["source"]["s"] for x in ey]
+    
+    ez = [edge["source"]["s"] + edge["targeti"]["s"] for x in ey]
 
     ax.plot(ex,ey,ez)
 
