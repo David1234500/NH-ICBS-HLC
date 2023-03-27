@@ -83,6 +83,31 @@ dynamics::data::PoseByIndex toGlobalIndex(dynamics::data::PoseByIndex base, dyna
     return relative + base;
 }
 
+std::vector<dynamics::data::Pose2WithTime> interpolatePathSegment(const dynamics::data::Pose2WithTime& start,
+                                                                  const dynamics::data::Pose2WithTime& end,
+                                                                  float resolution) {
+    std::vector<dynamics::data::Pose2WithTime> interpolated_path;
+    float total_distance = (end.pos - start.pos).norm();
+    int num_steps = static_cast<int>(std::ceil(total_distance / resolution));
+
+    for (int i = 0; i <= num_steps; ++i) {
+        float t = static_cast<float>(i) / num_steps;
+        dynamics::data::Pose2WithTime interpolated_pose;
+
+        interpolated_pose.pos = start.pos * (1 - t) + end.pos * t;
+        interpolated_pose.h = start.h + t * (end.h - start.h);
+        interpolated_pose.vel = start.vel + t * (end.vel - start.vel);
+        interpolated_pose.time_ms = start.time_ms + t * (end.time_ms - start.time_ms);
+        // interpolated_pose.baseNode = start;
+        interpolated_pose.time_index = start.time_index + i;
+
+        interpolated_path.push_back(interpolated_pose);
+    }
+
+    return interpolated_path;
+}
+
+
 dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex global){
     static uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
     static float dpc = Config::getInstance().get<float>({"disc","dstep"});
@@ -264,7 +289,6 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
             // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP or KD Tree to avoid this computation every time
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
-                
                 //std::abs((current.timestep + 1) - obstacle.t) <= 1 &&
                 if(  gl_neighbor.x == obstacle.x && gl_neighbor.y == obstacle.y){
                     discard_due_to_obstacle = true;
@@ -371,8 +395,6 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
 
-
-    
     auto current = target;
     std::vector<dynamics::data::PoseByIndex> nodes;
     std::vector<MotionPrimitive> edges;
@@ -400,7 +422,7 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
             dynamics::data::Pose2WithTime next_with_time;
             next_with_time.baseNode = nodes.at(i - 1);
             
-            next_with_time.time_index = i;
+            next_with_time.time_index = time_index;
             next_with_time = next_pose;
 
             next_with_time.time_ms = time_index * 2 * timestep_ms + ts;
@@ -414,7 +436,7 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
             next_pose2_with_time = next_pose2;
             
             next_pose2_with_time.baseNode = nodes.at(i - 1);
-            next_pose2_with_time.time_index = i;
+            next_pose2_with_time.time_index = time_index;
             
             next_pose2_with_time.time_ms = time_index * 2 * timestep_ms + timestep_ms + ts;
             result.push_back(next_pose2_with_time);
@@ -536,6 +558,9 @@ void writeCurveToDisk(std::vector<dynamics::data::Pose2WithTime> path, std::stri
         json node;
         node["x"] = current.pos[0];
         node["y"] = current.pos[1];
+        node["ti"] = current.time_index;
+        node["t"] = current.time_ms;
+        node["v"] = current.vel;
 
         astar_path["path"].push_back(node);
     }

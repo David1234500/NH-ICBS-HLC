@@ -37,7 +37,7 @@ int main() {
     std::cout << "Completed Astar" << std::endl;
     std::cout << res.path->size() << std::endl;
     planner.writePathToDisk(*res.path, "path1.json");
-    planner.writeCurveToDisk(res.spline, "spline1.json");
+    planner.writeCurveToDisk(res.interprimitive, "spline1.json");
     
     for(uint32_t i = 0; i < times.size(); i ++){
         std::cout << "times " << i << " " << times.at(i) << std::endl; 

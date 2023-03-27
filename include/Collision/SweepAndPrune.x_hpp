@@ -1,0 +1,81 @@
+#ifndef SWEEP_AND_PRUNE_HPP
+#define SWEEP_AND_PRUNE_HPP
+
+#include <Collision/CollisionDetectBase.hpp>
+#include <Config.hpp>
+
+class SweepAndPrune : public CollisionDetectBase {
+public:
+    struct AABB {
+        Eigen::Vector2f min;
+        Eigen::Vector2f max;
+    };
+
+    static bool compareAABBs(const std::pair<AABB, size_t>& a, const std::pair<AABB, size_t>& b) {
+        return a.first.min.x() < b.first.min.x();
+    }
+
+    static bool checkOverlap(const AABB& a, const AABB& b) {
+        return (a.min.x() <= b.max.x() && a.max.x() >= b.min.x()) &&
+               (a.min.y() <= b.max.y() && a.max.y() >= b.min.y());
+    }
+
+    CollisionInfo checkForCollision(const std::vector<dynamics::data::Pose2WithTime>& track1,
+                                      const std::vector<dynamics::data::Pose2WithTime>& track2) override {
+
+        auto& config = Config::getInstance();
+        float over_threshold = config.get<float>({"collision_detect","ov_appr_threshold"});
+        float close_threshold = config.get<float>({"collision_detect","ov_appr_threshold"}); 
+        uint32_t step_overapproximation = config.get<uint32_t>({"collision_detect","ov_appr_step"}); 
+
+        std::vector<std::pair<AABB, size_t>> aabbs1;
+        std::vector<std::pair<AABB, size_t>> aabbs2;
+
+        for (size_t i = 0; i < track1.size(); ++i) {
+            AABB aabb;
+            aabb.min = track1[i].pos - Eigen::Vector2f(close_threshold, close_threshold);
+            aabb.max = track1[i].pos + Eigen::Vector2f(close_threshold, close_threshold);
+            aabbs1.emplace_back(aabb, i);
+        }
+
+        for (size_t i = 0; i < track2.size(); ++i) {
+            AABB aabb;
+            aabb.min = track2[i].pos - Eigen::Vector2f(close_threshold, close_threshold);
+            aabb.max = track2[i].pos + Eigen::Vector2f(close_threshold, close_threshold);
+            aabbs2.emplace_back(aabb, i);
+        }
+
+        std::sort(aabbs1.begin(), aabbs1.end(), compareAABBs);
+        std::sort(aabbs2.begin(), aabbs2.end(), compareAABBs);
+
+        size_t index1 = 0;
+        size_t index2 = 0;
+
+        while (index1 < aabbs1.size() && index2 < aabbs2.size()) {
+            const auto& aabb1 = aabbs1[index1];
+            const auto& aabb2 = aabbs2[index2];
+
+            if (aabb1.first.min.x() > aabb2.first.max.x()) {
+                index2++;
+            } else if (aabb1.first.max.x() < aabb2.first.min.x()) {
+                index1++;
+            } else {
+                if (checkOverlap(aabb1.first, aabb2.first)) {
+                    CollisionInfo result;
+                    result.collision_occurred = true;
+                    result.pose1 = track1[aabb1.second];
+                    result.pose2 = track2[aabb2.second];
+                    result.index1 = aabb1.second;
+                    result.index2 = aabb2.second;
+                    return result;
+                }
+                index1++;
+                index2++;
+            }
+        }
+
+        return CollisionInfo{false, size_t(-1), size_t(-1), dynamics::data::Pose2WithTime(), dynamics::data::Pose2WithTime()};
+    }
+};
+
+#endif

@@ -139,7 +139,7 @@ struct Pose2WithTime{
     /* Heading in radians */
     float h = 0.f; 
 
-    /* Velocity in m/s */
+    /* Velocity in cm/s */
     float vel = 0.f;
 
     float time_ms = 0.f;

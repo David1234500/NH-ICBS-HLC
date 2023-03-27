@@ -198,7 +198,7 @@ void MPCompute::computeMPEdges(){
     m_mpMapReachableNodeCount = static_cast<uint32_t>(reachable_distance / dpc);
 
     // Compute for each heading and speed from our original vehicle
-    for(int32_t sv = zero_velocity_level; sv < map_size_speed; sv ++){
+    for(int32_t sv = zero_velocity_level; sv < map_size_speed; sv ++){ //TODO CHANGE THIS BACK
         for(int32_t sh = 0; sh < map_size_angle / 4; sh ++){
             for(int32_t ts =  std::max(zero_velocity_level, sv - 1); ts < std::min(map_size_speed, sv + 2); ts ++){
 
@@ -274,10 +274,10 @@ void MPCompute::writeGraphToDisk(std::string name ){
                 for(int32_t s = 0; s < map_size_speed; s ++){
                     //Compute position, heading and velocity of the node
                     json node;
-                    node["pose"]["x"] =  (dpc*x);
-                    node["pose"]["y"] =  (dpc*y);
-                    node["pose"]["h"] =  api * static_cast<float>(a);
-                    node["pose"]["v"] =  vlevels[s] * dynamics::SimpleDynamicsModel::velocity_limit();
+                    node["pose"]["x"] = (dpc*x);
+                    node["pose"]["y"] = (dpc*y);
+                    node["pose"]["h"] = api * static_cast<float>(a);
+                    node["pose"]["v"] = vlevels[s] * dynamics::SimpleDynamicsModel::velocity_limit();
 
                     node["pose"]["xi"] = x;
                     node["pose"]["yi"] = y;

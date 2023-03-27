@@ -22,7 +22,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
     int32_t x_steps = Config::getInstance().getXstep();
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
-
+    bool mpnl_debug = Config::getInstance().get<bool>({"mpnl_debug"});
     
     double solvetime = 0.f;
     while(!m_terminateMPThreads){
@@ -52,8 +52,8 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
         m_mpTaskMutex.unlock();
 
         if(hasTask){
-           
-            for(int32_t h_sw_beg = 0; h_sw_beg < map_size_angle; h_sw_beg ++){
+
+            for(int32_t h_sw_beg = (threadTask.cai - (map_size_angle / 3) + map_size_angle) % map_size_angle; h_sw_beg != (threadTask.cai + (map_size_angle / 3)) % map_size_angle; h_sw_beg ++){
             
                 //Compute best fit settings set to get from the current to the target location
                 dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, h_sw_beg, threadTask.tsi};
@@ -63,19 +63,31 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 args.tp = {{(dpc*threadTask.txi), (dpc*threadTask.tyi)},  api * static_cast<float>(h_sw_beg), vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
 
                 MPNLOptSingle nl_stm_opt;
-                // nl_stm_opt.prepare(&args, true, false, nlopt::GN_ISRES);
-                nl_stm_opt.prepare(&args, false, false, nlopt::GN_CRS2_LM);
+                nl_stm_opt.prepare(&args, true, false);
                 
                 auto res = nl_stm_opt.optimize(); 
                 solvetime = 0.1 * static_cast<double>(res.rt_ms) + 0.9 * solvetime;
+
+                auto p1 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(args.sp, res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_st_a], res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_acc], timestep_ms);
+                auto pr = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(p1,      res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_st_a], res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_acc], timestep_ms);
+                
+                if(mpnl_debug){
+                    std::cout << "src" << std::to_string(0) << ", " << std::to_string (0) << ", " << std::to_string(api * static_cast<float>(threadTask.cai)) << ", " << vlevels[threadTask.csi] * dynamics::SimpleDynamicsModel::velocity_limit() << std::endl;
+                    std::cout << "targ" << std::to_string(dpc*threadTask.txi) << ", " << std::to_string (dpc*threadTask.tyi) << ", " << std::to_string(api * static_cast<float>(h_sw_beg)) << ", " << vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit() << std::endl;
+                    std::cout << "obj " << std::to_string(res.objf_val) << std::endl;
+                    std::cout << "retcode " << std::to_string(res.retcode) << std::endl;
+                    std::cout << "rt " << std::to_string(res.rt_ms) << std::endl;
+                    std::cout << "c_st_a " << std::to_string(res.result[0]) << ", "<< std::to_string(res.result[1]) << std::endl;
+                    std::cout << "c_vcc " << std::to_string(res.result[2]) << ", "<< std::to_string(res.result[3]) << std::endl;
+                    std::cout << "res_pose ((" << std::to_string(pr.pos[0]) << ", "<< std::to_string(pr.pos[1]) << "), " + std::to_string(pr.h) +", " + std::to_string(pr.vel) + ")"<< std::endl;
+                    std::cout << std::endl;
+                }
+
                 if(res.retcode <= 0 || res.retcode >= 4){
                     h_sw_beg = (h_sw_beg + 1) % map_size_angle;
                     continue;
                 }
 
-                auto p1 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(args.sp, res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_st_a], res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_acc], timestep_ms);
-                auto pr = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(p1,      res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_st_a], res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_acc], timestep_ms);
-                
                 // Q1 MP
                 dynamics::data::Pose2DWithError epose;
                 epose = pr;
@@ -159,7 +171,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 m_mpmap[threadTask.cai +   (map_size_angle/2)][threadTask.csi].push_back(mp_q3);
                 m_mpmap[threadTask.cai + 3*(map_size_angle/4)][threadTask.csi].push_back(mp_q4);  
                 m_mpTaskMutex.unlock();
-                h_sw_beg = (h_sw_beg + 1) % map_size_angle;
+                
             }
     
         }else{

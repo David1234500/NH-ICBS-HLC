@@ -23,6 +23,7 @@ int main() {
     MPNLOptParameters::mpnl_param_args_t args;
     param_solver->prepare(&args);
     auto ret = param_solver->optimize();
+    param_solver->visualize_results(&ret);
 
     std::cout << "Completed computation" << std::endl;
     std::cout << "Node spacing [cm]: " << std::to_string(ret.result[MPNLOptParameters::c_lamb]) << std::endl;
