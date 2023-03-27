@@ -7,7 +7,7 @@
     },
     "timestep_ms": 500.0,
     "disc": {
-        "dstep": 7.0,
+        "dstep": 14.0,
         "hstep": 0.785398163
     },
     "collision_detect":{

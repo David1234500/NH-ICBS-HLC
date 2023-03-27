@@ -110,6 +110,10 @@ public:
             p2 = eval_two_steady(x,st,pc_args->sp, pc_args->args->ts_ms);
         }
         
+        std::cout << "PConstraint: " << std::to_string((pc_args->tp.pos - p2.pos).norm()) << ":" << (pc_args->tp.pos - p2.pos).norm() - x[c_lamth] << std::endl;
+        std::cout << "tp " << std::to_string(p2.pos[0]) << ", " << std::to_string (p2.pos[1]) << ", " << std::to_string(p2.h) << ", " << p2.vel << std::endl;
+        std::cout << "p2 " << std::to_string(pc_args->tp.pos[0]) << ", " << std::to_string (pc_args->tp.pos[1]) << ", " << std::to_string(pc_args->tp.h) << ", " << pc_args->tp.vel << std::endl;
+        
         return (pc_args->tp.pos - p2.pos).norm() - x[c_lamth]; 
     }
 

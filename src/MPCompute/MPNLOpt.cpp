@@ -53,7 +53,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
 
         if(hasTask){
 
-            for(int32_t h_sw_beg = (threadTask.cai - (map_size_angle / 3) + map_size_angle) % map_size_angle; h_sw_beg != (threadTask.cai + (map_size_angle / 3)) % map_size_angle; h_sw_beg ++){
+            for(int32_t h_sw_beg =0 ; h_sw_beg < map_size_angle; h_sw_beg ++){
             
                 //Compute best fit settings set to get from the current to the target location
                 dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, h_sw_beg, threadTask.tsi};
@@ -84,7 +84,6 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 }
 
                 if(res.retcode <= 0 || res.retcode >= 4){
-                    h_sw_beg = (h_sw_beg + 1) % map_size_angle;
                     continue;
                 }
 

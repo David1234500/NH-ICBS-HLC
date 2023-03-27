@@ -29,7 +29,7 @@ int main() {
 
 
     dynamics::data::PoseByIndex end = {5,25,7,zero_velocity_level};
-    dynamics::data::PoseByIndex start = {38,2,5,zero_velocity_level};
+    dynamics::data::PoseByIndex start = {25,2,5,zero_velocity_level};
     std::vector<uint32_t> times;
     std::cout << "Start AStar!" << std::endl;
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
