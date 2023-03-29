@@ -82,6 +82,7 @@ struct PBIConstraint{
     int32_t y = 0;
  
     int32_t t = 0;
+    
     int32_t id = 0;
 
     inline void operator=(const PoseByIndex& e){
@@ -145,7 +146,7 @@ struct Pose2WithTime{
     float time_ms = 0.f;
 
     PoseByIndex baseNode;
-    uint32_t time_index = 0;
+    uint32_t path_depth_index = 0;
 
     inline void operator=(Pose2D e){
         pos = e.pos;

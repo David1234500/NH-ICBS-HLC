@@ -6,6 +6,7 @@
 
 class SweepAndPrune : public CollisionDetectBase {
 public:
+    
     struct AABB {
         Eigen::Vector2f min;
         Eigen::Vector2f max;

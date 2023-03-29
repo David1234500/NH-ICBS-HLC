@@ -33,7 +33,13 @@ int main() {
     std::vector<uint32_t> times;
     std::cout << "Start AStar!" << std::endl;
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    auto res = planner.astar(start,end, std::vector<dynamics::data::PBIConstraint>());
+    std::vector<dynamics::data::PBIConstraint> constraints;
+    dynamics::data::PBIConstraint constr = {28,-7,3,0};
+    constraints.push_back(constr);
+    dynamics::data::PBIConstraint constr2 = {26,6,6,0};
+    constraints.push_back(constr2);
+
+    auto res = planner.astar(start,end, constraints);
     std::cout << "Completed Astar" << std::endl;
     std::cout << res.path->size() << std::endl;
     planner.writeCurveToDisk(res, "llres1.json");

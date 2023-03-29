@@ -45,5 +45,5 @@ for edge in y["edges"]:
     grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].set_ylim([-100,100])
 
 
-plt.show()
+plt.savefig("../motion_primitives_by_angle.png")
 

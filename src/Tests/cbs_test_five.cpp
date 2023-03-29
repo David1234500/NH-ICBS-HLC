@@ -24,8 +24,8 @@ int main() {
     targets.push_back(end);
     starts.push_back(start);
 
-    dynamics::data::PoseByIndex end2 = {16,6,6,1};
-    dynamics::data::PoseByIndex start2 = {18,2,6,1};
+    dynamics::data::PoseByIndex end2 = {23,6,6,1};
+    dynamics::data::PoseByIndex start2 = {6,19,6,1};
     targets.push_back(end2);
     starts.push_back(start2);
 
@@ -33,6 +33,11 @@ int main() {
     dynamics::data::PoseByIndex start3 = {3,19,6,1};
     targets.push_back(end3);
     starts.push_back(start3);
+
+    dynamics::data::PoseByIndex end4 = {20,6,6,1};
+    dynamics::data::PoseByIndex start4 = {10,19,6,1};
+    targets.push_back(end4);
+    starts.push_back(start4);
 
     std::cout << "Finished a star computation" << std::endl;
     

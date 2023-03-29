@@ -5,10 +5,12 @@
 #include <unordered_map>
 #include <fstream>
 #include <queue>
+#include <nlohmann/json.hpp>
+
 #include <DynamicsModel/SingleTrackModel.hpp>
 #include <MPCompute/MPBruteforce.hpp>
+#include <Collision/CollisionDetectBase.hpp>
 
-#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
@@ -30,6 +32,8 @@ struct LLResult{
     uint16_t car_id = 0;
 };
 
+
+
 struct ReachabilityResult{
     bool reachable = false;
     float mean_path_length = 0.f;
@@ -44,7 +48,9 @@ struct ReachabilityResult{
 struct constraint_node{
     uint64_t sic = 0;
     uint32_t node_id = 0;
+    
     std::vector<dynamics::data::PBIConstraint> avoid;
+    
     std::map<int32_t, LLResult> result;
    
     bool operator < (const constraint_node r) const {
@@ -99,7 +105,7 @@ std::vector<dynamics::data::Pose2WithTime> interpolatePathSegment(const dynamics
         interpolated_pose.vel = start.vel + t * (end.vel - start.vel);
         interpolated_pose.time_ms = start.time_ms + t * (end.time_ms - start.time_ms);
         // interpolated_pose.baseNode = start;
-        interpolated_pose.time_index = start.time_index + i;
+        interpolated_pose.path_depth_index = start.path_depth_index + i;
 
         interpolated_path.push_back(interpolated_pose);
     }
@@ -206,7 +212,7 @@ dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynam
 }
 
 bool validatePosition(dynamics::data::PoseByIndex base, dynamics::data::Pose2DWithError edge){
-    int32_t x_steps = Config::getInstance().getXstep();
+    static int32_t x_steps = Config::getInstance().getXstep();
     if(base.x < -x_steps || base.x > x_steps){
         return false;
     }
@@ -225,9 +231,9 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
     std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
     std::unordered_map<dynamics::data::PoseByIndex, MotionPrimitive> usedEdge;
 
-    for(auto obstacle: obstacles){
-        rlog("ASTAR", LOG_INFO, "A*S Obstacle: " + std::to_string(obstacle.x) + ":" + std::to_string(obstacle.y) + ":" + std::to_string(obstacle.t));
-    }
+    // for(auto obstacle: obstacles){
+    //     rlog("ASTAR", LOG_INFO, "A*S Obstacle: " + std::to_string(obstacle.x) + ":" + std::to_string(obstacle.y) + ":" + std::to_string(obstacle.t));
+    // }
 
     auto current_pose = indexToPose(start);
     auto target_pose = indexToPose(target);
@@ -249,11 +255,11 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
         explored_nodes += 1;
 
         if(current.pose == target){
-            rlog("ASTAR", LOG_INFO, "Found path for " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
+            // rlog("ASTAR", LOG_INFO, "Found path for " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
             
             LLResult res;
             res.path = getPath(cameFrom, current.pose);
-            res.spline = getSplines(cameFrom, usedEdge, current.pose);
+            // res.spline = getSplines(cameFrom, usedEdge, current.pose);
             res.interprimitive = getInterPrimitivPositions(cameFrom, usedEdge, current.pose);
 
             res.found_path = true;
@@ -261,18 +267,18 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
             return res;
         }
 
-        bool discard = false;
-        for(auto obstacle : obstacles){
-            //std::abs(current.timestep - obstacle.t) <= 1  &&
-            if(  current.pose.x == obstacle.x && current.pose.y == obstacle.y){
-                rlog("ASTAR", LOG_INFO, "2. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(current.pose.x) + ":" + std::to_string(current.pose.y));
-                discard = true;
-                break;
-            }
-        }
-        if(discard){
-            continue;
-        }
+        // bool discard = false;
+        // for(auto obstacle : obstacles){
+        //     if( std::abs(current.timestep - obstacle.t) <= 1 && std::abs(current.pose.x - obstacle.x ) <= 1 && std::abs(current.pose.y - obstacle.y) <= 1){
+        //         rlog("ASTAR", LOG_INFO, "2. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(current.pose.x) + ":" + std::to_string(current.pose.y));
+        //         discard = true;
+        //         break;
+        //     }
+        // }
+        // if(discard){
+        //     openQueue.pop();
+        //     continue;
+        // }
 
 
         openQueue.pop();
@@ -290,9 +296,9 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
                 //std::abs((current.timestep + 1) - obstacle.t) <= 1 &&
-                if(  gl_neighbor.x == obstacle.x && gl_neighbor.y == obstacle.y){
+               if( std::abs(current.timestep - obstacle.t) <= 1 && std::abs(current.pose.x - obstacle.x ) <= 1 && std::abs(current.pose.y - obstacle.y) <= 1){
                     discard_due_to_obstacle = true;
-                    rlog("ASTAR", LOG_INFO, "1. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + "-" + std::to_string(std::abs(current.timestep - obstacle.t)) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y));
+                    // rlog("ASTAR", LOG_INFO, "1. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + "-" + std::to_string(std::abs(current.timestep - obstacle.t)) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y));
                     break;
                 }
 
@@ -302,10 +308,6 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
 
                 auto current_pose = indexToPose(current.pose); 
                 float dist = (neigh_pose.pos - current_pose.pos).norm();
-                
-                if(current.pose.s != rel_neighbor.target.s){
-                    dist *= 1.4f;
-                }
 
                 float tentative_score = gScore[current.pose] + dist; 
                 if(gScore.count(gl_neighbor) == 0 || tentative_score < gScore[gl_neighbor]){
@@ -327,12 +329,11 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
         }
     }
     
-    writeVisitedNodesToDisk(start, target, cameFrom);
-    rlog("ASTAR", LOG_WARNING, "Found no viable path with #open: " + std::to_string(explored_nodes));
-    rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
-    rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a));
-    
-    writeVisitedNodesToDisk(start,target,cameFrom);
+    // writeVisitedNodesToDisk(start, target, cameFrom);
+    // rlog("ASTAR", LOG_WARNING, "Found no viable path with #open: " + std::to_string(explored_nodes));
+    // rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
+    // rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a));
+
     LLResult res;
     res.found_path = false;
     res.spline.clear();
@@ -368,17 +369,17 @@ std::vector<dynamics::data::Pose2WithTime> getSplines(std::unordered_map<dynamic
 
     std::vector<dynamics::data::Pose2WithTime> result;
     
-    uint32_t time_index = 0;
+    uint32_t path_depth_index = 0;
     dynamics::data::Pose2D veh_pose = indexToPose(nodes.at( nodes.size() - 1));
 
     for(int64_t i = nodes.size() - 1; i >= 0; i --){
 
         dynamics::data::Pose2WithTime next_with_time;
         next_with_time = indexToPose(nodes.at(i)); 
-        next_with_time.time_ms = (time_index * 2 * timestep_ms); 
+        next_with_time.time_ms = (path_depth_index * 2 * timestep_ms); 
         result.push_back(next_with_time);
 
-        time_index += 1;
+        path_depth_index += 1;
     }
     
     return result;
@@ -409,7 +410,7 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
     edges.push_back(edge_map[current]);
 
     std::vector<dynamics::data::Pose2WithTime> result;
-    uint32_t time_index = 0;
+    uint32_t path_depth_index = 0;
     float half_step =  (timestep_ms / 2);
     
     for(int64_t i = nodes.size() - 1; i > 0; i --){
@@ -422,10 +423,10 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
             dynamics::data::Pose2WithTime next_with_time;
             next_with_time.baseNode = nodes.at(i - 1);
             
-            next_with_time.time_index = time_index;
+            next_with_time.path_depth_index = path_depth_index;
             next_with_time = next_pose;
 
-            next_with_time.time_ms = time_index * 2 * timestep_ms + ts;
+            next_with_time.time_ms = path_depth_index * 2 * timestep_ms + ts;
             result.push_back(next_with_time);
         }
         
@@ -436,22 +437,22 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
             next_pose2_with_time = next_pose2;
             
             next_pose2_with_time.baseNode = nodes.at(i - 1);
-            next_pose2_with_time.time_index = time_index;
+            next_pose2_with_time.path_depth_index = path_depth_index;
             
-            next_pose2_with_time.time_ms = time_index * 2 * timestep_ms + timestep_ms + ts;
+            next_pose2_with_time.time_ms = path_depth_index * 2 * timestep_ms + timestep_ms + ts;
             result.push_back(next_pose2_with_time);
         }
 
 
-        time_index += 1;
+        path_depth_index += 1;
     }
     
     dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(0));
     dynamics::data::Pose2WithTime next_with_time;
     next_with_time = veh_pose;
     next_with_time.baseNode = nodes.at(0);
-    next_with_time.time_index = 0;
-    next_with_time.time_ms = time_index * 2 * timestep_ms;
+    next_with_time.path_depth_index = 0;
+    next_with_time.time_ms = path_depth_index * 2 * timestep_ms;
     result.push_back(next_with_time);
 
     return result;
@@ -491,8 +492,14 @@ void enqueue_astar(dynamics::data::PoseByIndex& start, dynamics::data::PoseByInd
     LLJob job;
     
     job.job_id = id;
+    
     job.avoid.clear();
-    job.avoid = constraint.avoid; // this should just copy the constraints with correct ids
+    for(auto constr: constraint.avoid){
+        if(constr.id == id){
+            job.avoid.push_back(constr);
+        }
+    }
+    
     job.start_positions = start;
     job.target_positions = target;
     job.car_id = id;
@@ -533,40 +540,39 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> getPath(std::unordered
 }
 
 
-void writePathToDisk( std::vector<dynamics::data::PoseByIndex> path, std::string name){
-    json astar_path;
+void writeCurveToDisk(LLResult res, std::string name){
     
-    for(auto current: path){
-        json node;
-        node["x"] = current.x;
-        node["y"] = current.y;
-        node["s"] = current.s;
-        node["a"] = current.a;
-        astar_path["path"].push_back(node);
+    
+    json llres;
+    
+   for(auto current: *res.path){
+        json pnode;
+        pnode["x"] = current.x;
+        pnode["y"] = current.y;
+        pnode["s"] = current.s;
+        pnode["a"] = current.a;
+        llres["path"].push_back(pnode);
     }
 
-    //dump file to disc
-    std::ofstream o(name);
-    o << astar_path << std::endl;
-    o.close();
-}
+    //secondly by precise positions
+    for(auto current: res.interprimitive){
+        json pnode;
+        pnode["x"] = current.pos[0];
+        pnode["y"] = current.pos[1];
+        pnode["s"] = current.vel;
+        pnode["a"] = current.h;
+        pnode["t"] = current.time_ms;
+        pnode["ti"] = current.path_depth_index;
 
-void writeCurveToDisk(std::vector<dynamics::data::Pose2WithTime> path, std::string name){
-    json astar_path;
-    
-    for(auto current: path){
-        json node;
-        node["x"] = current.pos[0];
-        node["y"] = current.pos[1];
-        node["ti"] = current.time_index;
-        node["t"] = current.time_ms;
-        node["v"] = current.vel;
-
-        astar_path["path"].push_back(node);
+        pnode["bnode"]["x"] =  indexToPose(current.baseNode).pos[0];
+        pnode["bnode"]["y"] =  indexToPose(current.baseNode).pos[1];
+        pnode["bnode"]["a"] =  indexToPose(current.baseNode).vel;
+        pnode["bnode"]["s"] =  indexToPose(current.baseNode).h;
+        llres["interprimitive"].push_back(pnode);
     }
     //dump file to disc
     std::ofstream o(name);
-    o << astar_path << std::endl;
+    o << llres << std::endl;
     o.close();
 }
 

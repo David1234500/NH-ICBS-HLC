@@ -24,8 +24,8 @@ int main() {
     targets.push_back(end);
     starts.push_back(start);
 
-    dynamics::data::PoseByIndex end2 = {16,6,6,1};
-    dynamics::data::PoseByIndex start2 = {18,2,6,1};
+    dynamics::data::PoseByIndex end2 = {23,6,6,1};
+    dynamics::data::PoseByIndex start2 = {6,19,6,1};
     targets.push_back(end2);
     starts.push_back(start2);
 

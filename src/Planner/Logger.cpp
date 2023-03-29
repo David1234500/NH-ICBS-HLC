@@ -6,7 +6,7 @@
 std::mutex log_mutex;
 
 void rlog(std::string func, LLEVEL log_level, std::string text, bool disable) {
-  if(disable){
+  if(disable || log_level > LOG_WARNING){
     return;
   }
 
@@ -27,6 +27,10 @@ void rlog(std::string func, LLEVEL log_level, std::string text, bool disable) {
       break;
     case LOG_INFO:
       std::cout << "[INFO][" << std::this_thread::get_id() << "][" << ms << "-"
+                << func << "] " << text << std::endl;
+      break;
+    case LOG_DEBUG:
+      std::cout << "[DEB][" << std::this_thread::get_id() << "][" << ms << "-"
                 << func << "] " << text << std::endl;
       break;
   }

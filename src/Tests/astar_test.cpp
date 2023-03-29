@@ -35,7 +35,7 @@ int main() {
     std::cout << "Completed Astar" << std::endl;
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
-        planner->writePathToDisk(*res.path, "path1.json");
+        planner->writeCurveToDisk(res, "path1.json");
         // planner->writeCurveToDisk(res.spline, "curve.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
@@ -54,7 +54,7 @@ int main() {
     
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
-        planner->writePathToDisk(*res.path, "path2.json");
+        planner->writeCurveToDisk(res, "path2.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }
@@ -70,7 +70,7 @@ int main() {
     std::cout << "Completed Astar" << std::endl;
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
-        planner->writePathToDisk(*res.path, "path3.json");
+        planner->writeCurveToDisk(res, "path3.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }
@@ -86,7 +86,7 @@ int main() {
     std::cout << "Completed Astar" << std::endl;
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
-        planner->writePathToDisk(*res.path, "path4.json");
+        planner->writeCurveToDisk(res, "path4.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }

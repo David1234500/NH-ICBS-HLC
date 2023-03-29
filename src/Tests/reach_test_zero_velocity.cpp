@@ -31,7 +31,7 @@ int main() {
     if(res.found_path){ 
 
         std::cout << res.path->size() << std::endl;
-        planner->writePathToDisk(*res.path, "path1.json");
+        planner->writeCurveToDisk(res, "path1.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }

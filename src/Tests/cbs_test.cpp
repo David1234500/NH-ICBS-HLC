@@ -40,8 +40,8 @@ int main() {
     std::cout << "Finished a cbs computation" << std::endl;
    planner->writeMultiplePathsToDisk(result, "cbs_result.json");
 
-   planner->writeCurveToDisk(result.result[0].spline, "cbs_track_car_0.json");
-   planner->writeCurveToDisk(result.result[1].spline, "cbs_track_car_1.json");
+   planner->writeCurveToDisk(result.result[0], "ll_res_0.json");
+   planner->writeCurveToDisk(result.result[1], "ll_res_1.json");
 
 }
 

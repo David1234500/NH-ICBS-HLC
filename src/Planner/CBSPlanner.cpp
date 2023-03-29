@@ -1,6 +1,7 @@
 #include <Planner/CBSPlanner.hpp>
 #include <Planner/Logger.hpp>
-
+#include <Collision/CircleApproximation.hpp>
+#include <Collision/CollisionDetectBase.hpp> 
 #include <nlohmann/json.hpp>
 #include <fstream>
 
@@ -158,7 +159,7 @@ void CBSPlanner::writeMultiplePathsToDisk(constraint_node cnode, std::string nam
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
-    int32_t x_steps = Config::getInstance().get<int32_t>({"map","x_steps"});
+    int32_t x_steps = Config::getInstance().getXstep();
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
 
@@ -189,6 +190,27 @@ void CBSPlanner::writeMultiplePathsToDisk(constraint_node cnode, std::string nam
     o.close();
 }
 
+CollisionInfo checkCollisionWithinConstraintNode(const constraint_node& constraintNode) {
+    CircleApproximation collisionChecker;
+
+    for (auto it1 = constraintNode.result.begin(); it1 != constraintNode.result.end(); ++it1) {
+        for (auto it2 = std::next(it1); it2 != constraintNode.result.end(); ++it2) {
+            const LLResult& llResult1 = it1->second;
+            const LLResult& llResult2 = it2->second;
+
+            CollisionInfo collisionInfo = collisionChecker.checkForCollision(llResult1.interprimitive, llResult2.interprimitive);
+            if (collisionInfo.collision_occurred) {
+                collisionInfo.car_index_1 = it1->first;
+                collisionInfo.car_index_2 = it2->first;
+                
+                return collisionInfo;
+            }
+        }
+    }
+
+    return CollisionInfo(); // Return an empty CollisionInfo object if no collision occurred
+}
+
 constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
     float dpc = Config::getInstance().get<float>({"disc","dstep"});
@@ -201,7 +223,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
 
    
-    std::cout << "CBS start" << std::endl;
+    rlog("CBS", LOG_DEBUG, "CBS start");
     uint32_t node_id = 0;
 
     for(uint32_t i = 0; i < worker_count; i ++){
@@ -212,12 +234,12 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     std::priority_queue<constraint_node> openSet;
     constraint_node node;
     for(uint32_t i = 0; i < start_positions.size(); i ++){
-        enqueue_astar( start_positions.at(i),target_positions.at(i), node, i);
+        enqueue_astar(start_positions.at(i),target_positions.at(i), node, i);
     }
 
     //Wait for all threads to termiante
    
-    std::cout << "[INFO CBS] All threads returned" << std::endl;
+    rlog("CBS", LOG_DEBUG, "All threads returned");
     // Compute SIC by hop count
     
     await_astar_result(start_positions.size());
@@ -226,25 +248,25 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
         
         if(!m_lowLevelResults.at(i).found_path){
-            std::cout << "CBS INFEASIBLE due to not finding initial path" << std::endl;
+             rlog("CBS", LOG_ERROR, "CBS INFEASIBLE due to not finding initial path");
             return constraint_node();
         }
         sic += m_lowLevelResults.at(i).path->size();
     }
     // Create initial constraint node
-    rlog("cbs", LOG_INFO, "All results feasible, now starting main cbs iterations.");
+    rlog("cbs", LOG_DEBUG, "All results feasible, now starting main cbs iterations.");
 
     node.sic = sic;
     node.node_id = node_id;
     node.avoid.clear();
-    for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
-        node.result[m_lowLevelResults.at(i).car_id] = m_lowLevelResults.at(i);
+    for(auto res: m_lowLevelResults){
+        node.result[res.car_id] = res;
     }
 
     m_lowLevelResults.clear();
     m_lowLevelJobs.clear();
     
-    std::cout << "[INFO CBS] Finished intial low level phase for all vehicles" << std::endl;
+   rlog("CBS", LOG_DEBUG, "Finished initial low level phase for all vehicles");
 
 
     // Insert initial constraint node into list
@@ -252,132 +274,48 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     while(!openSet.empty()){
         constraint_node node = openSet.top();
         openSet.pop();
-
         
-        std::cout << "[INFO CBS] Iteration, openSet: " << openSet.size() << std::endl;
-        std::cout << "[INFO CBS] SIC: " << node.sic << std::endl;
-        std::cout << "[INFO CBS] Current Node ID: " << node.node_id << std::endl;
-        std::cout << "[INFO CBS] Obstacles:";
+        rlog("CBS", LOG_DEBUG, "Iteration, openSet: " + std::to_string(openSet.size()));
+        rlog("CBS", LOG_DEBUG, "SIC: " + std::to_string(node.sic));
+        rlog("CBS", LOG_DEBUG, "Current Node ID: " + std::to_string(node.node_id));
 
-        writeConstraintNodeToDisk(node,"node" + std::to_string(node.node_id) + ".json");
-        std::cout << std::endl;
-
-        //Validate Solution in first node to find conflicts
-        std::array<dynamics::data::PoseByIndex,2> conflicting_poses; 
-        int32_t conflict_step = -1;
-        std::array<int32_t,2> conflicting_vehicles = {-1,-1};
-
-        // for(int32_t car_index = 0; car_index < start_positions.size(); car_index ++){
-        //     for (int32_t car_index2 = car_index + 1; car_index2 < start_positions.size(); car_index2 ++){
-                
-        //         uint32_t max_interprim_length = std::max(node.result[car_index].interprimitive.size(), node.result[car_index2].interprimitive.size());
-        //         for(uint32_t inter_prim_index = 0; inter_prim_index < max_interprim_length; inter_prim_index ++){
-                    
-        //             uint32_t int_prim_index_clamped_car1 = std::min(inter_prim_index, (uint32_t) node.result[car_index].interprimitive.size() - 1);
-        //             uint32_t int_prim_index_clamped_car2 = std::min(inter_prim_index, (uint32_t) node.result[car_index2].interprimitive.size() - 1);
-                    
-        //             auto inter_pose_car_1 = node.result[car_index].interprimitive.at(int_prim_index_clamped_car1);
-        //             auto inter_pose_car_2 = node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2); 
-
-        //             if((inter_pose_car_1.pos - inter_pose_car_2.pos).norm() < safe_level2_rad){
-
-        //                 conflict_step = node.result[car_index].interprimitive.at(int_prim_index_clamped_car1).time_index;
-        //                 conflicting_vehicles = {car_index, car_index2};
-        //                 conflicting_poses = { node.result[car_index].interprimitive.at(int_prim_index_clamped_car1).baseNode, node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).baseNode };
-                        
-        //                 rlog("CBS", LOG_INFO, "Found L2 Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]));
-        //                 rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index].interprimitive.at(int_prim_index_clamped_car1).pos[0]) + ":" + std::to_string(node.result[car_index].interprimitive.at(int_prim_index_clamped_car1).pos[1]) );
-        //                 rlog("CBS", LOG_INFO, "Position B: " + std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).pos[0]) + ":" +  std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).pos[1]) );       
-        //                 rlog("CBS", LOG_INFO, "Base Node: " + std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).baseNode.x) + ":" +  std::to_string(node.result[car_index2].interprimitive.at(int_prim_index_clamped_car2).baseNode.y) );                                                                                       
-        //                 break;
-
-        //             }
-        //         }
-
-                // for(int32_t i = 1; i < std::max(node.result[car_index].path->size(), node.result[car_index2].path->size()); i ++){
-                    
+        // writeConstraintNodeToDisk(node,"node" + std::to_string(node.node_id) + ".json");
 
 
-                //     int32_t path_index_car_a = node.result[car_index].path->size() - std::min(i, (int32_t)node.result[car_index].path->size());
-                //     int32_t path_index_car_b = node.result[car_index2].path->size() - std::min(i, (int32_t)node.result[car_index2].path->size());
-
-                //     auto pose_car_a = indexToPose(node.result[car_index].path->at(path_index_car_a));
-                //     auto pose_car_b = indexToPose(node.result[car_index2].path->at(path_index_car_b));
-                    
-                //     //Level 1: Detection of close intersection
-                //     if((pose_car_a.pos - pose_car_b.pos).norm() < safe_radius){
-                        
-                //          rlog("CBS", LOG_INFO, "Found L1 Conflict... A " + std::to_string(path_index_car_a) + ":" + std::to_string(node.result[car_index].path->size()));
-                //          rlog("CBS", LOG_INFO, "Pose A " + std::to_string(pose_car_a.pos[0]) + ":" + std::to_string(pose_car_a.pos[1]));
-                //          rlog("CBS", LOG_INFO, "Found L1 Conflict... B " + std::to_string(path_index_car_b) + ":" + std::to_string(node.result[car_index2].path->size()));
-                //          rlog("CBS", LOG_INFO, "Pose B " + std::to_string(pose_car_b.pos[0]) + ":" + std::to_string(pose_car_b.pos[1]));
-
-                //         //Level 2: Switch to denser representation
-                //         for(int32_t interprim = 20 * (i - 1); interprim < std::max( node.result[car_index].interprimitive.size(), node.result[car_index2].interprimitive.size()) &&
-                //                                               interprim < 20 * (i + 1); interprim ++ ){
-
-            
-                //             int32_t inter_path_index_car_a = node.result[car_index].interprimitive.size()  - std::max(1, std::min(interprim, (int32_t)node.result[car_index].interprimitive.size()));
-                //             int32_t inter_path_index_car_b = node.result[car_index2].interprimitive.size() - std::max(1, std::min(interprim, (int32_t)node.result[car_index2].interprimitive.size()));
-
-                //             rlog("CBS", LOG_INFO, "Testing L2 Conflict... A " + std::to_string(inter_path_index_car_a) + ":" + std::to_string(node.result[car_index].interprimitive.size()));
-                //             rlog("CBS", LOG_INFO, "Testing L2 Conflict... B " + std::to_string(inter_path_index_car_b) + ":" + std::to_string(node.result[car_index2].interprimitive.size()));
-
-                //             auto inter_pose_car_a = node.result[car_index].interprimitive.at(inter_path_index_car_a);
-                //             auto inter_pose_car_b = node.result[car_index2].interprimitive.at(inter_path_index_car_b); 
-
-                //             rlog("CBS", LOG_INFO, "Pose L2 A " + std::to_string(inter_pose_car_a.pos[0]) + ":" + std::to_string(inter_pose_car_a.pos[1]));
-                //             rlog("CBS", LOG_INFO, "Pose L2 B " + std::to_string(inter_pose_car_b.pos[0]) + ":" + std::to_string(inter_pose_car_b.pos[1]));
-
-                //             if((inter_pose_car_a.pos - inter_pose_car_b.pos).norm() < safe_level2_rad){
-
-                                // conflict_step = i;
-                                // conflicting_vehicles = {car_index, car_index2};
-                                // conflicting_poses = {node.result[car_index].path->at(path_index_car_a ), node.result[car_index2].path->at(path_index_car_b)};
-                                
-                //                 rlog("CBS", LOG_INFO, "Found L2 Conflict: " + std::to_string(conflict_step) + " with " +  std::to_string(conflicting_vehicles[0]) + ":" +  std::to_string(conflicting_vehicles[1]));
-                //                 rlog("CBS", LOG_INFO, "Position A: " + std::to_string(node.result[car_index2].path->at(path_index_car_b).x) + ":" + std::to_string(node.result[car_index2].path->at(path_index_car_b).y) );
-                //                 rlog("CBS", LOG_INFO, "Position B: " + std::to_string(node.result[car_index].path->at(path_index_car_a).x) + ":" +  std::to_string(node.result[car_index].path->at(path_index_car_a).y) );                                               
-                            
-                //             }
-                //         }
-                //     }
-                // }   
-        //     }
-        // }
-
+        auto info = checkCollisionWithinConstraintNode(node);
+       
         
         // Check if we have just obtained a valid solution -> terminate if yes
-        if(conflict_step == -1){
-            std::cout << "CBS SUCCESSFULL TERMINATION!" << std::endl;
+        if(!info.collision_occurred){
+            rlog("CBS", LOG_DEBUG, "CBS SUCCESSFULL TERMINATION!");
             return node;
+        }else{
+            rlog("CBS", LOG_DEBUG, "CBS found conflict");
+            // CollisionDetectBase::print_collision_info(info);
         }
 
         // Add new constraints and replan
         for(uint32_t vehicle_index = 0; vehicle_index < 2; vehicle_index ++){
 
-            auto vehicle_in_conflict = conflicting_vehicles[vehicle_index];
-            auto vehicle_conflict = conflicting_poses[vehicle_index];
-
             // Create new constraint node
             constraint_node constraint;
             constraint.sic = 0;
 
-            dynamics::data::PBIConstraint constr;
-            constr.id = vehicle_in_conflict;
-            constr = vehicle_conflict;
-            constr.t = conflict_step;
-
-            std::cout << "[INFO CBS] Adding new constraint to situation: " << vehicle_conflict.x << ":" << vehicle_conflict.y << ":" << conflict_step << ":" << vehicle_in_conflict<< std::endl;
-
-              if(std::find(node.avoid.begin(), node.avoid.end(), constr) == node.avoid.end()){
+            if(vehicle_index == 0){
+                dynamics::data::PBIConstraint constr;
+                constr.id = info.car_index_1;
+                constr = info.pose1bi;
+                constr.t = info.pose1.path_depth_index;
+                constraint.avoid = node.avoid;
                 constraint.avoid.push_back(constr);
             }else{
-                rlog("CBS", LOG_ERROR, " Readding same conflict.... this should not happen");
+                dynamics::data::PBIConstraint constr2;
+                constr2.id = info.car_index_2;
+                constr2 = info.pose2bi;
+                constr2.t = info.pose2.path_depth_index;
+                constraint.avoid = node.avoid;
+                constraint.avoid.push_back(constr2);
             }
-            
-            constraint.avoid.insert(constraint.avoid.end(), node.avoid.begin(), node.avoid.end());
-            
 
             // TODO: maybe restore astar compute from here
             // Just add path again until conflict with all neighbors as open nodes and recompute scores
@@ -418,9 +356,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             // Add new constraint node if it is feasible
             if(found_paths_for_all_vehicles){
                 openSet.push(constraint);
-                rlog("CBS", LOG_INFO, "Adding new node with ID: " + std::to_string(constraint.node_id));
+                rlog("CBS", LOG_DEBUG, "Adding new node with ID: " + std::to_string(constraint.node_id));
             }else{
-                std::cout << "CBS Found infeasible node" << std::endl;
+                rlog("CBS", LOG_DEBUG, "CBS Found infeasible node");
             }
         }
     }
@@ -431,24 +369,20 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     }
 
     constraint_node dnode;
-    std::cout << "CBS EMPTY OPEN SET... infeasible" << std::endl;
+    rlog("CBS", LOG_ERROR, "CBS EMPTY OPEN SET... infeasible");
     return dnode;
 }
 
 
-/*  uint64_t sic = 0;
-    uint32_t node_id = 0;
-    std::vector<dynamics::data::PBIConstraint> avoid;
-    std::map<int32_t, LLResult> result;
-*/
-
 void CBSPlanner::writeConstraintNodeToDisk(constraint_node cnode, std::string name){
     json node;
-    rlog("CBS", LOG_INFO, "Writing CBS Constraint Node to disk...");
+    rlog("CBS", LOG_DEBUG, "Writing CBS Constraint Node to disk...");
 
     node["sic"] = cnode.sic;
     node["node_id"] = cnode.node_id;
 
+
+    //Known conflicts to avoid (obstacles in next Conflict based search iteration)
     for(auto constr: cnode.avoid){
         json jconstr;
         jconstr["x"] = indexToPose(constr).pos[0];
@@ -457,9 +391,12 @@ void CBSPlanner::writeConstraintNodeToDisk(constraint_node cnode, std::string na
         jconstr["t"] = constr.t;
         node["avoid"].push_back(jconstr);
     }
-
+    
+    //Vehicle paths 
     for(auto vres: cnode.result){
         json path_vehicle;
+
+        // first by visited nodes
         for(auto current: *vres.second.path){
             json pnode;
             pnode["x"] = indexToPose(current).pos[0];
@@ -469,12 +406,20 @@ void CBSPlanner::writeConstraintNodeToDisk(constraint_node cnode, std::string na
             path_vehicle["path"].push_back(pnode);
         }
 
+        //secondly by precise positions
         for(auto current: vres.second.interprimitive){
             json pnode;
             pnode["x"] = current.pos[0];
             pnode["y"] = current.pos[1];
             pnode["s"] = current.vel;
             pnode["a"] = current.h;
+            pnode["t"] = current.time_ms;
+            pnode["ti"] = current.path_depth_index;
+
+            pnode["bnode"]["x"] =  indexToPose(current.baseNode).pos[0];
+            pnode["bnode"]["y"] =  indexToPose(current.baseNode).pos[1];
+            pnode["bnode"]["a"] =  indexToPose(current.baseNode).vel;
+            pnode["bnode"]["s"] =  indexToPose(current.baseNode).h;
             path_vehicle["interprimitive"].push_back(pnode);
         }
 
