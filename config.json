@@ -2,7 +2,7 @@
     "map": {
         "angle_steps": 8,
         "speed_steps": 3,
-        "x_cm": 400,
+        "x_cm": 450,
         "y_cm": 400
     },
     "timestep_ms": 500.0,
@@ -15,6 +15,10 @@
         "ov_appr_threshold": 50.0,
         "ov_appr_step": 5,
         "cl_appr_threshold": 15.0
+    },
+    "border_detect":{
+        "approx_count":4,
+        "mp_sample_count":4
     },
     "velocity":{
         "acc_limit":60.0,

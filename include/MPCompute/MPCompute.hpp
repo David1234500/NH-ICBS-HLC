@@ -20,6 +20,9 @@
 struct MotionPrimitive{
     dynamics::data::Pose2DWithError link;
     dynamics::data::PoseByIndex target;
+
+    //Only four samples from the original path
+    std::vector<dynamics::data::Pose2D> trajectory;
 };
 
 struct MPNode{
@@ -47,9 +50,9 @@ MPCompute();
 
 void computeMPEdges();
 
-std::vector<Eigen::Vector2i> computeConicIntegerHull(float heading);
+std::vector<Eigen::Vector2i> computeConicIntegerHull(float heading, float vel_modifier=1.f);
 bool  isInsideParallelogram(const Eigen::Vector2i& point, const Eigen::Vector2d& v1, const Eigen::Vector2d& v2);
-std::vector<Eigen::Vector2i> integerPointsInParallelogram(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2);
+std::vector<Eigen::Vector2i> integerPointsInParallelogram(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2, int32_t xstep);
 
 int32_t m_mpMapReachableNodeCount = 0;
 std::map<uint32_t, std::map<uint32_t, std::vector<MotionPrimitive>>> m_mpmap;
@@ -64,7 +67,7 @@ void writeGraphToDisk(std::string name = "mp_state_graph.json");
 void loadGraphFromDisk();
 void loadGraphFromDisk(std::string path);
 void printPositions();
-void writeIntegerHullToDisc(std::vector<Eigen::Vector2i> hull, std::string name = "mp_integer_hull.json");
+void writeIntegerHullToDisc(std::vector<Eigen::Vector2i> hull, int32_t sv, int32_t ts, float head, std::string name = "mp_integer_hull.json");
 
 };
 

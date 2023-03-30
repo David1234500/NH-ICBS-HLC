@@ -16,10 +16,6 @@ int main() {
     std::cout << "Loading graph from disk!" << std::endl;
     planner->mp_comp.loadGraphFromDisk();
     std::cout << "Finished loading graph from disk!" << std::endl;
-
-    //Start: 30:30:7:2
-    //Target: 28:12:1:2
-    
     
     dynamics::data::PoseByIndex start = {30,30,7,2};
     dynamics::data::PoseByIndex end = {28,12,1,2};

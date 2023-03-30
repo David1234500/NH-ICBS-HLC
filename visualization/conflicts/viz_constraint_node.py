@@ -82,7 +82,7 @@ def visualize_constraints(file_name, lower_threshold, time_interval=500):
     plt.legend()
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig("../constraint_node.png")
 
 # Use the function to visualize constraints from a JSON file
 visualize_constraints(sys.argv[1], lower_threshold=10)

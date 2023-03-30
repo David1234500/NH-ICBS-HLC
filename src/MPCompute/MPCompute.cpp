@@ -126,10 +126,11 @@ bool MPCompute::isInsideParallelogram(const Eigen::Vector2i& point, const Eigen:
     return (x[0] >= 0) && (x[1] >= 0) && (x[0] <= 1) && (x[1] <= 1);
 }
 
-std::vector<Eigen::Vector2i> MPCompute::integerPointsInParallelogram(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2) {
+std::vector<Eigen::Vector2i> MPCompute::integerPointsInParallelogram(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2, int32_t xstep) {
     std::vector<Eigen::Vector2i> points;
-    for (int i = 0; i <= std::max(v1.cast<int>().x(),v2.cast<int>().x()); ++i) {
-        for (int j =  std::min(v1.cast<int>().y(),v2.cast<int>().y()); j <=  std::max(v1.cast<int>().y(),v2.cast<int>().y()); ++j) {
+    int32_t dpc = Config::getInstance().get<int32_t>({"disc","dstep"});
+    for (int i = -dpc * xstep; i <= dpc * xstep; ++i) {
+        for (int j =  -dpc * xstep; j <= dpc * xstep; ++j) {
             Eigen::Vector2i point(i, j);
             if (isInsideParallelogram(point, v1, v2)) {
                 points.push_back(point);
@@ -140,11 +141,12 @@ std::vector<Eigen::Vector2i> MPCompute::integerPointsInParallelogram(const Eigen
     return points;
 }
 
-std::vector<Eigen::Vector2i> MPCompute::computeConicIntegerHull(float heading){
+std::vector<Eigen::Vector2i> MPCompute::computeConicIntegerHull(float heading, float vel_modifier){
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"}); 
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+    int32_t xstep = Config::getInstance().getXstep();
 
-    auto lim_vecs = dynamics::SimpleDynamicsModel::vector_limits(heading, vlevels[2] * dynamics::SimpleDynamicsModel::velocity_limit());
+    auto lim_vecs = dynamics::SimpleDynamicsModel::vector_limits(heading, vel_modifier * vlevels[2] * dynamics::SimpleDynamicsModel::velocity_limit());
     dynamics::data::Vector2Df vbase = {1.0f, 0.f};
     auto vvec = Eigen::Rotation2Df(heading) * vbase;
 
@@ -157,25 +159,32 @@ std::vector<Eigen::Vector2i> MPCompute::computeConicIntegerHull(float heading){
     float reach_dist_vel_level = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
     double base_angle_radians = (M_PI - angleRadians) / 2.0;
     double side_length = reach_dist_vel_level / std::sin(base_angle_radians);
-    auto p_integer_hull = integerPointsInParallelogram((lim_vecs[0].cast<double>()/a_norm) * side_length,(lim_vecs[1].cast<double>()/b_norm)* side_length );
+    auto p_integer_hull = integerPointsInParallelogram((lim_vecs[0].cast<double>()/a_norm) * side_length,(lim_vecs[1].cast<double>()/b_norm)* side_length,xstep);
                 
     rlog("computeConicIntegerHull", LOG_INFO," L1 Vector: [" + std::to_string(lim_vecs[0][0]) + ", " + std::to_string(lim_vecs[0][1]) +"]");
     rlog("computeConicIntegerHull", LOG_INFO," L2 Vector: [" + std::to_string(lim_vecs[1][0]) + ", " + std::to_string(lim_vecs[1][1]) +"]");
     rlog("computeConicIntegerHull", LOG_INFO," Veh Vector: [" + std::to_string(vvec[0]) + ", " + std::to_string(vvec[1]) +"]");
     
-    
 
     return p_integer_hull; 
 }
 
-void MPCompute::writeIntegerHullToDisc( std::vector<Eigen::Vector2i> hull, std::string name){
+void MPCompute::writeIntegerHullToDisc( std::vector<Eigen::Vector2i> hull, int32_t sv, int32_t ts, float head, std::string name){
     json hull_json;
+
+    hull_json["source_velocity"] = sv;
+    hull_json["target_velocity"] = ts;
+    hull_json["heading"] = head;
+
+    if(hull.empty()){
+        return;
+    }
 
     for(auto vec: hull){
         json point;
         point["x"] = vec[0];
         point["y"] = vec[1];
-        hull_json.push_back(point);
+        hull_json["points"].push_back(point);
     }
 
     std::ofstream o(name);
@@ -203,7 +212,7 @@ void MPCompute::computeMPEdges(){
             for(int32_t ts =  std::max(zero_velocity_level, sv - 1); ts < std::min(map_size_speed, sv + 2); ts ++){
 
                 //Compute pose of current node/vehicle
-                auto p_integer_hull = computeConicIntegerHull(sh * api);
+                auto p_integer_hull = computeConicIntegerHull(sh * api, (sv < zero_velocity_level ? -1 : 1));
 
                 std::set<Eigen::Vector2i, Vector2iComparator> pi_integer_hull;
                 std::vector<Eigen::Vector2i> pi_hull;
@@ -212,7 +221,7 @@ void MPCompute::computeMPEdges(){
                     pi_integer_hull.insert(pbi);
                     pi_hull.push_back(pbi);
                 }
-                writeIntegerHullToDisc(pi_hull, "hull_"+std::to_string(sh)+".json");
+                writeIntegerHullToDisc(pi_hull, sv, ts, sh * api, "hull_"+std::to_string(sh)+ "_" +std::to_string(sv)+ ".json");
 
                 if(sv == zero_velocity_level && ts == zero_velocity_level){
                     continue;
@@ -358,6 +367,7 @@ void MPCompute::loadGraphFromDisk(std::string path){
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+    int32_t mp_sample_count = Config::getInstance().get<int32_t>({"border_detect","mp_sample_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
 
 
@@ -389,6 +399,13 @@ void MPCompute::loadGraphFromDisk(std::string path){
         tedge.target.a = edge["targeti"]["a"];
         tedge.target.x = edge["targeti"]["x"];
         tedge.target.y = edge["targeti"]["y"];
+
+        for (int32_t i = 0; i < edge["curve"].size(); i += (edge["curve"].size() / mp_sample_count)) {
+            dynamics::data::Pose2D pose;
+            pose.pos[0] = edge["curve"].at(i)["x"];
+            pose.pos[1] = edge["curve"].at(i)["y"];
+            tedge.trajectory.push_back(pose);
+        }
 
         m_mpmap[edge["source"]["a"]][edge["source"]["s"]].push_back(tedge);
     }

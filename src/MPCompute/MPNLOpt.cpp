@@ -30,7 +30,6 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
         bool hasTask = false;
         MPTask threadTask;
        
-        
         m_mpTaskMutex.lock();
         if(!m_mpTaskQueue.empty()){
             threadTask = *m_mpTaskQueue.begin();

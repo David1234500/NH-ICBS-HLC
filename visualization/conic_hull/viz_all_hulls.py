@@ -1,0 +1,38 @@
+import os
+import json
+import matplotlib.pyplot as plt
+
+def load_json_files(directory):
+    json_files = []
+    for file in os.listdir(directory):
+        if file.endswith('.json') and file.startswith('hull_'):
+            with open(os.path.join(directory, file), 'r') as f:
+                json_data = json.load(f)
+                json_files.append(json_data)
+    return json_files
+
+def visualize_hulls(json_files):
+    num_files = len(json_files)
+    fig, axes = plt.subplots(nrows=num_files, ncols=1, figsize=(8, num_files * 4))
+    
+    if num_files == 1:
+        axes = [axes]
+
+    for i, data in enumerate(json_files):
+        source_velocity = data['source_velocity']
+        target_velocity = data['target_velocity']
+        heading = data['heading']
+        print(data.keys())
+        hull_points = [(point['x'], point['y']) for point in data['points']]
+
+        x, y = zip(*hull_points)
+        axes[i].scatter(x, y)
+        axes[i].set_title(f'Source Heading: {heading}, Source Velocity: {source_velocity}, Target Velocity: {target_velocity}')
+        axes[i].set_aspect('equal', adjustable='datalim')
+
+    # plt.tight_layout()
+    plt.savefig("../conic_hulls.png")
+
+if __name__ == '__main__':
+    json_files = load_json_files(".")
+    visualize_hulls(json_files)

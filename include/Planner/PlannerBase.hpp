@@ -7,6 +7,7 @@
 #include <queue>
 #include <nlohmann/json.hpp>
 
+#include <util/Pose.hpp>
 #include <DynamicsModel/SingleTrackModel.hpp>
 #include <MPCompute/MPBruteforce.hpp>
 #include <Collision/CollisionDetectBase.hpp>
@@ -211,16 +212,35 @@ dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynam
     return global - base;
 }
 
-bool validatePosition(dynamics::data::PoseByIndex base, dynamics::data::Pose2DWithError edge){
+bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::PoseByIndex& base, dynamics::data::Pose2DWithError& edge, std::vector<dynamics::data::Pose2D>& mp_trajectory){
     static int32_t x_steps = Config::getInstance().getXstep();
     static int32_t y_steps = Config::getInstance().getYstep();
-    if(base.x < -x_steps || base.x > x_steps){
-        return false;
-    }
-    if(base.y < -y_steps || base.y > y_steps){
+
+    static int32_t x_cm = Config::getInstance().get<int32_t>({"map","x_cm"});
+    static int32_t y_cm = Config::getInstance().get<int32_t>({"map","y_cm"});
+    
+    static int32_t dstep = Config::getInstance().get<int32_t>({"disc","dstep"});
+    static int32_t ov_approx = Config::getInstance().get<int32_t>({"border_detect","approx_count"});
+
+    if(base.x < 0 || base.x > x_steps ||
+       base.y < 0 || base.x > y_steps){
         return false;
     }
 
+    // Overapprox
+    static int32_t x_lower_thres =  (ov_approx);
+    static int32_t x_upper_thres =   (x_steps - ov_approx);
+    static int32_t y_lower_thres =  (ov_approx);
+    static int32_t y_upper_thres =   (y_steps - ov_approx);
+    
+    if(base.x < x_lower_thres || base.x > x_upper_thres || base.y < y_lower_thres || base.x > y_upper_thres){
+        for(auto pose: mp_trajectory){
+            register auto position = cpose.pos + pose.pos;
+            if(position[0] > x_cm || position[0] < 0 || position[1] > y_cm || position[1] < 0){
+                return false;
+            }
+        }   
+    }
     return true;
 }
 
@@ -231,10 +251,6 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
 
     std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
     std::unordered_map<dynamics::data::PoseByIndex, MotionPrimitive> usedEdge;
-
-    // for(auto obstacle: obstacles){
-    //     rlog("ASTAR", LOG_INFO, "A*S Obstacle: " + std::to_string(obstacle.x) + ":" + std::to_string(obstacle.y) + ":" + std::to_string(obstacle.t));
-    // }
 
     auto current_pose = indexToPose(start);
     auto target_pose = indexToPose(target);
@@ -256,58 +272,36 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
         explored_nodes += 1;
 
         if(current.pose == target){
-            // rlog("ASTAR", LOG_INFO, "Found path for " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
+            rlog("ASTAR", LOG_INFO, "Found path for " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
             
             LLResult res;
             res.path = getPath(cameFrom, current.pose);
             res.spline = getSplines(cameFrom, usedEdge, current.pose);
             res.interprimitive = getInterPrimitivPositions(cameFrom, usedEdge, current.pose);
-
             res.found_path = true;
 
             return res;
         }
 
-        // bool discard = false;
-        // for(auto obstacle : obstacles){
-        //     if( std::abs(current.timestep - obstacle.t) <= 1 && std::abs(current.pose.x - obstacle.x ) <= 1 && std::abs(current.pose.y - obstacle.y) <= 1){
-        //         rlog("ASTAR", LOG_INFO, "2. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + " l: " + std::to_string(current.pose.x) + ":" + std::to_string(current.pose.y));
-        //         discard = true;
-        //         break;
-        //     }
-        // }
-        // if(discard){
-        //     openQueue.pop();
-        //     continue;
-        // }
-
-
         openQueue.pop();
+        auto current_pose = indexToPose(current.pose);
         for(auto rel_neighbor: mp_comp.m_mpmap[current.pose.a][current.pose.s]){
-
             dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(current.pose, rel_neighbor.target);
             auto neigh_pose = indexToPose(gl_neighbor);
 
-            // Invalid position, so we can skip this
-            if(!validatePosition(gl_neighbor, rel_neighbor.link)){
+            if(!validatePosition(current_pose, gl_neighbor, rel_neighbor.link, rel_neighbor.trajectory)){
                 continue;
             }
             
-            // TODO POSSIBLY DO A LOOKUP USING UNORDERED MAP or KD Tree to avoid this computation every time
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
-                //std::abs((current.timestep + 1) - obstacle.t) <= 1 &&
-               if( std::abs(current.timestep - obstacle.t) <= 1 && std::abs(current.pose.x - obstacle.x ) <= 1 && std::abs(current.pose.y - obstacle.y) <= 1){
+               if( std::abs(current.timestep - obstacle.t) <= 1 && std::abs(current.pose.x - obstacle.x ) == 0 && std::abs(current.pose.y - obstacle.y) == 0){
                     discard_due_to_obstacle = true;
-                    // rlog("ASTAR", LOG_INFO, "1. Discarding neighbor due to conflict t: " + std::to_string(current.timestep) + "-" + std::to_string(std::abs(current.timestep - obstacle.t)) + " l: " + std::to_string(gl_neighbor.x) + ":" + std::to_string(gl_neighbor.y));
                     break;
                 }
-
             }
 
             if(!discard_due_to_obstacle){
-
-                auto current_pose = indexToPose(current.pose); 
                 float dist = (neigh_pose.pos - current_pose.pos).norm();
 
                 float tentative_score = gScore[current.pose] + dist; 
@@ -545,7 +539,7 @@ void writeCurveToDisk(LLResult res, std::string name){
     
     
     json llres;
-    
+
    for(auto current: *res.path){
         json pnode;
         pnode["x"] = current.x;
