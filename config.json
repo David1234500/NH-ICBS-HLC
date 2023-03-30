@@ -7,13 +7,13 @@
     },
     "timestep_ms": 500.0,
     "disc": {
-        "dstep": 7.0,
-        "hstep": 0.785398163
+        "dstep": 5.0,
+        "hstep": 0.785
     },
     "collision_detect":{
         "mode":"circle",
         "ov_appr_threshold": 50.0,
-        "ov_appr_step": 5,
+        "ov_appr_step": 7,
         "cl_appr_threshold": 15.0
     },
     "border_detect":{
@@ -44,11 +44,11 @@
       "ts_ms": 500.0,
       "ub": [ 0.39269908169872414,  0.39269908169872414,  60.0,  60.0],
       "lb": [-0.39269908169872414, -0.39269908169872414, -60.0, -60.0],
-      "maxt": 2.0,
-      "st_val": 10.0,
+      "maxt": 1.0,
+      "st_val": 6.0,
       "a_v": 10.0,
-      "a_p": 1.0,
-      "a_h": 0.075
+      "a_p": 1.5,
+      "a_h": 0.1
     },
     "mpnl_debug":false,
 

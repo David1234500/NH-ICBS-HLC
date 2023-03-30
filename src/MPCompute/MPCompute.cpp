@@ -141,10 +141,11 @@ std::vector<Eigen::Vector2i> MPCompute::integerPointsInParallelogram(const Eigen
     return points;
 }
 
-std::vector<Eigen::Vector2i> MPCompute::computeConicIntegerHull(float heading, float vel_modifier){
+ std::pair<std::vector<Eigen::Vector2i>,uint32_t> MPCompute::computeConicIntegerHull(float heading, float vel_modifier){
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"}); 
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
     int32_t xstep = Config::getInstance().getXstep();
+    float hstep = Config::getInstance().get<float>({"disc","hstep"});
 
     auto lim_vecs = dynamics::SimpleDynamicsModel::vector_limits(heading, vel_modifier * vlevels[2] * dynamics::SimpleDynamicsModel::velocity_limit());
     dynamics::data::Vector2Df vbase = {1.0f, 0.f};
@@ -166,7 +167,7 @@ std::vector<Eigen::Vector2i> MPCompute::computeConicIntegerHull(float heading, f
     rlog("computeConicIntegerHull", LOG_INFO," Veh Vector: [" + std::to_string(vvec[0]) + ", " + std::to_string(vvec[1]) +"]");
     
 
-    return p_integer_hull; 
+    return std::pair<std::vector<Eigen::Vector2i>,uint32_t>(p_integer_hull, round(angleRadians / hstep));
 }
 
 void MPCompute::writeIntegerHullToDisc( std::vector<Eigen::Vector2i> hull, int32_t sv, int32_t ts, float head, std::string name){
@@ -212,11 +213,11 @@ void MPCompute::computeMPEdges(){
             for(int32_t ts =  std::max(zero_velocity_level, sv - 1); ts < std::min(map_size_speed, sv + 2); ts ++){
 
                 //Compute pose of current node/vehicle
-                auto p_integer_hull = computeConicIntegerHull(sh * api, (sv < zero_velocity_level ? -1 : 1));
+                auto hull_angle_pair = computeConicIntegerHull(sh * api, (sv < zero_velocity_level ? -1 : 1));
 
                 std::set<Eigen::Vector2i, Vector2iComparator> pi_integer_hull;
                 std::vector<Eigen::Vector2i> pi_hull;
-                for(auto p: p_integer_hull){
+                for(auto p: hull_angle_pair.first){
                     Eigen::Vector2i pbi = {p[0] / dpc, p[1] / dpc};
                     pi_integer_hull.insert(pbi);
                     pi_hull.push_back(pbi);
@@ -227,19 +228,18 @@ void MPCompute::computeMPEdges(){
                     continue;
                 }
 
-                rlog("computeConicIntegerHull", LOG_INFO," Creating task for configuration: ["+ std::to_string(p_integer_hull.size()) + ", "+ std::to_string(pi_integer_hull.size()) + ", " + std::to_string(sv) +", "+ std::to_string(sh) + ", "+ std::to_string(ts) + ", " + std::to_string(m_mpMapReachableNodeCount) + "]");
+                rlog("computeConicIntegerHull", LOG_INFO," Creating task for configuration: ["+ std::to_string(hull_angle_pair.first.size()) + ", "+ std::to_string(pi_integer_hull.size()) + ", " + std::to_string(sv) +", "+ std::to_string(sh) + ", "+ std::to_string(ts) + ", " + std::to_string(m_mpMapReachableNodeCount) +  ", " + std::to_string(hull_angle_pair.second) + "]");
 
                 for(auto ip: pi_integer_hull){
                     int32_t x = ip[0];
                     int32_t y = ip[1];
-
 
                     if(x == 0 && y == 0){
                         continue;
                     }
 
                     MPTask nTask;    
-                    nTask = {x,y,ts,sh,sv,(float)timestep_ms};
+                    nTask = {x,y,ts,sh,sv, hull_angle_pair.second};
 
                     m_mpTaskQueue.push_back(nTask);
                 }

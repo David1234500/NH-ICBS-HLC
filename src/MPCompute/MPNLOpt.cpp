@@ -52,14 +52,16 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
 
         if(hasTask){
 
-            for(int32_t h_sw_beg =0 ; h_sw_beg < map_size_angle; h_sw_beg ++){
+            int start_angle = (threadTask.cai - threadTask.mhd + map_size_angle) % map_size_angle;
+            int end_angle = (threadTask.cai + threadTask.mhd + map_size_angle) % map_size_angle;
+            for (int tsh = start_angle; tsh != end_angle; tsh = (tsh + 1) % map_size_angle) {
             
                 //Compute best fit settings set to get from the current to the target location
-                dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, h_sw_beg, threadTask.tsi};
+                dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, tsh, threadTask.tsi};
                 
                 MPNLOptSingle::mpnl_args_t args;
                 args.sp = {{0.f,0.f}, api * static_cast<float>(threadTask.cai), vlevels[threadTask.csi] * dynamics::SimpleDynamicsModel::velocity_limit()};
-                args.tp = {{(dpc*threadTask.txi), (dpc*threadTask.tyi)},  api * static_cast<float>(h_sw_beg), vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
+                args.tp = {{(dpc*threadTask.txi), (dpc*threadTask.tyi)},  api * static_cast<float>(tsh), vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
 
                 MPNLOptSingle nl_stm_opt;
                 nl_stm_opt.prepare(&args, true, false);
@@ -72,7 +74,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 
                 if(mpnl_debug){
                     std::cout << "src" << std::to_string(0) << ", " << std::to_string (0) << ", " << std::to_string(api * static_cast<float>(threadTask.cai)) << ", " << vlevels[threadTask.csi] * dynamics::SimpleDynamicsModel::velocity_limit() << std::endl;
-                    std::cout << "targ" << std::to_string(dpc*threadTask.txi) << ", " << std::to_string (dpc*threadTask.tyi) << ", " << std::to_string(api * static_cast<float>(h_sw_beg)) << ", " << vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit() << std::endl;
+                    std::cout << "targ" << std::to_string(dpc*threadTask.txi) << ", " << std::to_string (dpc*threadTask.tyi) << ", " << std::to_string(api * static_cast<float>(tsh)) << ", " << vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit() << std::endl;
                     std::cout << "obj " << std::to_string(res.objf_val) << std::endl;
                     std::cout << "retcode " << std::to_string(res.retcode) << std::endl;
                     std::cout << "rt " << std::to_string(res.rt_ms) << std::endl;
@@ -112,7 +114,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 double h_q2 = pr.h + 0.5 * PI;
                 Eigen::Rotation2Df rot_q2(0.5 * PI);
                 dynamics::data::Position2Df pd_q2 = rot_q2 * pr.pos;
-                uint32_t hi_q2 = (h_sw_beg + (map_size_angle/4)) % map_size_angle;
+                uint32_t hi_q2 = (tsh + (map_size_angle/4)) % map_size_angle;
                 
                 dynamics::data::Pose2D p_q2 = {pd_q2, h_q2, pr.vel};
                 dynamics::data::PoseByIndex pi_q2 = {round(pd_q2[0] / dpc),round(pd_q2[1] / dpc), hi_q2,  threadTask.tsi};
@@ -131,7 +133,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 double h_q3 = pr.h + PI;
                 Eigen::Rotation2Df rot_q3(PI);
                 dynamics::data::Position2Df pd_q3 = rot_q3 * pr.pos;
-                uint32_t hi_q3 = (h_sw_beg + (map_size_angle/2)) % map_size_angle;
+                uint32_t hi_q3 = (tsh + (map_size_angle/2)) % map_size_angle;
                 
                 dynamics::data::Pose2D p_q3 = {pd_q3, h_q3, pr.vel};
                 dynamics::data::PoseByIndex pi_q3 = {round(pd_q3[0] / dpc),round(pd_q3[1] / dpc), hi_q3,  threadTask.tsi};
@@ -149,7 +151,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 double h_q4 = pr.h + 1.5f * PI;
                 Eigen::Rotation2Df rot_q4(1.5f * PI);
                 dynamics::data::Position2Df pd_q4 = rot_q4 * pr.pos;
-                uint32_t hi_q4 = (h_sw_beg + 3 * (map_size_angle/4)) % map_size_angle;
+                uint32_t hi_q4 = (tsh + 3 * (map_size_angle/4)) % map_size_angle;
                 
                 dynamics::data::Pose2D p_q4 = {pd_q4, h_q4, pr.vel};
                 dynamics::data::PoseByIndex pi_q4 = {round(pd_q4[0] / dpc),round(pd_q4[1] / dpc), hi_q4,  threadTask.tsi};

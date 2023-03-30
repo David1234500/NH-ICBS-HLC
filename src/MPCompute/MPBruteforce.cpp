@@ -39,7 +39,7 @@ void MPBruteforce::workerThreadMPEdges(uint32_t index){
             threadTask = *m_mpTaskQueue.begin();
             m_mpTaskQueue.erase(m_mpTaskQueue.begin());
             
-            rlog("workerMPEdges", LOG_INFO," Working now on task: " + std::to_string(threadTask.txi) +":"+ std::to_string(threadTask.tyi) + ":"+ std::to_string(threadTask.cai) +":"+ std::to_string(threadTask.csi));
+            rlog("workerMPEdges", LOG_INFO,std::to_string(m_mpTaskQueue.size()) +" Working now on task: " + std::to_string(threadTask.txi) +":"+ std::to_string(threadTask.tyi) + ":"+ std::to_string(threadTask.cai) +":"+ std::to_string(threadTask.csi));
             // rlog("workerMPEdges", LOG_INFO," P_avg:["  + std::to_string(prune_by_distance) +":"+ std::to_string(dist_error_avg) + ":"+ std::to_string(prune_by_angle) +":"+ std::to_string(angle_error_avg) + "]" );
             
             
@@ -53,31 +53,31 @@ void MPBruteforce::workerThreadMPEdges(uint32_t index){
             
             dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * static_cast<float>(threadTask.cai), vlevels[threadTask.csi] * dynamics::SimpleDynamicsModel::velocity_limit()};
            
-                for(int32_t a = 0; a < map_size_angle; a ++){
+            int start_angle = (threadTask.cai - threadTask.mhd + map_size_angle) % map_size_angle;
+            int end_angle = (threadTask.cai + threadTask.mhd + map_size_angle) % map_size_angle;
+            for (int tsh = start_angle; tsh != end_angle; tsh = (tsh + 1) % map_size_angle) {
                 
                     //Compute best fit settings set to get from the current to the target location
-                    dynamics::data::PoseByIndex tp_bi = {threadTask.txi,threadTask.tyi, a, threadTask.tsi};
-                    dynamics::data::Pose2D target_pose = {{ (dpc*threadTask.txi), (dpc*threadTask.tyi)},  api * static_cast<float>(a), vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
+                    dynamics::data::PoseByIndex tp_bi = {threadTask.txi,threadTask.tyi, tsh, threadTask.tsi};
+                    dynamics::data::Pose2D target_pose = {{ (dpc*threadTask.txi), (dpc*threadTask.tyi)},  api * static_cast<float>(tsh), vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
 
                     double speed_delta = fit_allowed_speed_difference;
-                    auto epose = dynamics::SimpleDynamicsModel::forceBestFit(veh_pose, tp_bi, target_pose, threadTask.tstep, speed_delta);
+                    auto epose = dynamics::SimpleDynamicsModel::forceBestFit(veh_pose, tp_bi, target_pose, timestep_ms, speed_delta);
                     
                     //Discard if error greater than half of the angular resolution 
                     if(epose.a_error > fit_quality_angle){
                         prune_by_angle += 1;
-                        angle_error_avg = 0.1 * fit_quality_angle + 0.9 * angle_error_avg;
                         continue;
                     }
                     if(epose.p_error > fit_quality_position){
                         prune_by_distance += 1;
-                        dist_error_avg = 0.1 * fit_quality_position + 0.9 * dist_error_avg;
                         continue;
                     }
                     
-                    rlog("workerMPEdges", LOG_INFO,"Added edge to " + std::to_string(epose.pos[0]) +":"+ std::to_string(epose.pos[1]) 
-                    + " -> s" + std::to_string(epose.s_a) +"_"+ std::to_string(epose.s_v) + "e" + std::to_string(epose.p_error) +  "p" + std::to_string(a) +"_"+ std::to_string(threadTask.tsi));
+                    rlog("workerMPEdges", LOG_INFO,  " Added edge to " + std::to_string(epose.pos[0]) +":"+ std::to_string(epose.pos[1]) 
+                    + " -> s" + std::to_string(epose.s_a) +"_"+ std::to_string(epose.s_v) + "e" + std::to_string(epose.p_error) +  "p" + std::to_string(tsh) +"_"+ std::to_string(threadTask.tsi));
 
-                    addSymetricMPs(epose.s_a,epose.s_a_2,epose.s_v, epose.s_v_2, tp_bi, a, threadTask.cai, threadTask.csi, threadTask.tsi);
+                    addSymetricMPs(epose.s_a,epose.s_a_2,epose.s_v, epose.s_v_2, tp_bi, tsh, threadTask.cai, threadTask.csi, threadTask.tsi);
             }
     
         }else{

@@ -37,8 +37,8 @@ struct MPTask{
     int32_t tsi = 0;
     int32_t cai = 0;
     int32_t csi = 0;
-    
-    float tstep = 0.0f;
+
+    int32_t mhd = 0;
 };
 
 
@@ -50,8 +50,8 @@ MPCompute();
 
 void computeMPEdges();
 
-std::vector<Eigen::Vector2i> computeConicIntegerHull(float heading, float vel_modifier=1.f);
-bool  isInsideParallelogram(const Eigen::Vector2i& point, const Eigen::Vector2d& v1, const Eigen::Vector2d& v2);
+std::pair<std::vector<Eigen::Vector2i>,uint32_t> computeConicIntegerHull(float heading, float vel_modifier=1.f);
+bool isInsideParallelogram(const Eigen::Vector2i& point, const Eigen::Vector2d& v1, const Eigen::Vector2d& v2);
 std::vector<Eigen::Vector2i> integerPointsInParallelogram(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2, int32_t xstep);
 
 int32_t m_mpMapReachableNodeCount = 0;

@@ -13,6 +13,7 @@ fig = plt.figure(constrained_layout=True)
 fig.suptitle('Motion Primitives Visualisation')
 grid = {}
 
+
 # create 3x1 subfigs
 subfigs = fig.subfigures(nrows=y["info"]["size_s"] * y["info"]["size_s"], ncols=1)
 for row, subfig in enumerate(subfigs):
@@ -45,5 +46,5 @@ for edge in y["edges"]:
     grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].set_ylim([-100,100])
 
 
-plt.savefig("../motion_primitives_by_angle.png")
+plt.savefig("../motion_primitives_by_angle.png", dpi=500)
 
