@@ -6,7 +6,7 @@
 std::mutex log_mutex;
 
 void rlog(std::string func, LLEVEL log_level, std::string text, bool disable) {
-  if(disable || log_level > LOG_WARNING){
+  if(disable || log_level > 50){
     return;
   }
 

@@ -213,10 +213,11 @@ dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynam
 
 bool validatePosition(dynamics::data::PoseByIndex base, dynamics::data::Pose2DWithError edge){
     static int32_t x_steps = Config::getInstance().getXstep();
+    static int32_t y_steps = Config::getInstance().getYstep();
     if(base.x < -x_steps || base.x > x_steps){
         return false;
     }
-    if(base.y < -x_steps || base.y > x_steps){
+    if(base.y < -y_steps || base.y > y_steps){
         return false;
     }
 
@@ -259,7 +260,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
             
             LLResult res;
             res.path = getPath(cameFrom, current.pose);
-            // res.spline = getSplines(cameFrom, usedEdge, current.pose);
+            res.spline = getSplines(cameFrom, usedEdge, current.pose);
             res.interprimitive = getInterPrimitivPositions(cameFrom, usedEdge, current.pose);
 
             res.found_path = true;
@@ -330,9 +331,9 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
     }
     
     // writeVisitedNodesToDisk(start, target, cameFrom);
-    // rlog("ASTAR", LOG_WARNING, "Found no viable path with #open: " + std::to_string(explored_nodes));
-    // rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
-    // rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a));
+    rlog("ASTAR", LOG_WARNING, "Found no viable path with #open: " + std::to_string(explored_nodes));
+    rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
+    rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a));
 
     LLResult res;
     res.found_path = false;
