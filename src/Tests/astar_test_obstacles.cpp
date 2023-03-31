@@ -29,15 +29,18 @@ int main() {
 
 
     dynamics::data::PoseByIndex end = {5,25,7,zero_velocity_level};
-    dynamics::data::PoseByIndex start = {25,2,5,zero_velocity_level};
+    dynamics::data::PoseByIndex start = {25,3,5,zero_velocity_level};
     std::vector<uint32_t> times;
     std::cout << "Start AStar!" << std::endl;
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     std::vector<dynamics::data::PBIConstraint> constraints;
     dynamics::data::PBIConstraint constr = {28,-7,3,0};
     constraints.push_back(constr);
-    dynamics::data::PBIConstraint constr2 = {26,6,6,0};
+    dynamics::data::PBIConstraint constr2 = {26,7,6,0};
     constraints.push_back(constr2);
+    //6:9:4:2 index: 8
+    // dynamics::data::PBIConstraint constr3 = {6,9,4,0};
+    // constraints.push_back(constr3);
 
     auto res = planner.astar(start,end, constraints);
     std::cout << "Completed Astar" << std::endl;

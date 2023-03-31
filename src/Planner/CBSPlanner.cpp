@@ -100,24 +100,25 @@ ReachabilityResult CBSPlanner::checkForReachability(){
 
     // Assumption 1: Every node for a full level is reachable
     uint32_t job_count = 0;
-    for(int32_t v = 0; v < map_size_speed; v ++){
+    for(int32_t v = 2; v < map_size_speed; v ++){
        
             
-            for(int32_t tx = - reachable_node_count; tx < reachable_node_count; tx ++){
+            for(int32_t tx = -reachable_node_count; tx < reachable_node_count; tx ++){
                 rlog("ReachCheck", LOG_INFO, "Checking reachability for speed: " + std::to_string(v) );
-                for(int32_t ty = - reachable_node_count; ty < reachable_node_count; ty ++){
+                for(int32_t ty = -reachable_node_count; ty < reachable_node_count; ty ++){
 
                     for(int32_t ta = 0; ta < map_size_angle; ta ++){
                         for(int32_t sh = 0; sh < map_size_angle; sh ++){
                     
-                            dynamics::data::PoseByIndex start = {0,0,sh,v};
-                            dynamics::data::PoseByIndex target_offset = {tx,ty,ta,v};
-                            auto gTarget = toGlobalIndex(start, target_offset);
+                            dynamics::data::PoseByIndex start = {reachable_node_count,reachable_node_count,sh,v};
+                            dynamics::data::PoseByIndex target = {tx,ty,ta,v};
+                            auto global = toGlobalIndex(start, target);
+                           
             
                             rlog("ReachCheck", LOG_INFO, "Checking reachability for position: " + std::to_string(tx) + ":" + std::to_string(ty) + ":" + std::to_string(ta));
                             
                             constraint_node node;
-                            enqueue_astar( start, gTarget, node, job_count);
+                            enqueue_astar( start, global, node, job_count);
                             job_count += 1;
                         }
                     }
@@ -221,7 +222,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
-
+    static bool col_deb = Config::getInstance().get<bool>({"collision_detect","debug_mode"});
    
     rlog("CBS", LOG_DEBUG, "CBS start");
     uint32_t node_id = 0;
@@ -238,10 +239,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     }
 
     //Wait for all threads to termiante
-   
     rlog("CBS", LOG_DEBUG, "All threads returned");
-    // Compute SIC by hop count
-    
     await_astar_result(start_positions.size());
 
     uint64_t sic = 0;
@@ -258,6 +256,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 
     node.sic = sic;
     node.node_id = node_id;
+    node.father = 0;
     node.avoid.clear();
     for(auto res: m_lowLevelResults){
         node.result[res.car_id] = res;
@@ -278,10 +277,11 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         rlog("CBS", LOG_DEBUG, "Iteration, openSet: " + std::to_string(openSet.size()));
         rlog("CBS", LOG_DEBUG, "SIC: " + std::to_string(node.sic));
         rlog("CBS", LOG_DEBUG, "Current Node ID: " + std::to_string(node.node_id));
-
-        // writeConstraintNodeToDisk(node,"node" + std::to_string(node.node_id) + ".json");
-
-
+        rlog("CBS", LOG_DEBUG, "Conflict count: " + std::to_string(node.avoid.size()));
+        
+        if(col_deb){
+            writeConstraintNodeToDisk(node,"node" + std::to_string(node.node_id) + ".json");
+        }
         auto info = checkCollisionWithinConstraintNode(node);
        
         
@@ -291,7 +291,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             return node;
         }else{
             rlog("CBS", LOG_DEBUG, "CBS found conflict");
-            // CollisionDetectBase::print_collision_info(info);
+            CollisionDetectBase::print_collision_info(info);
         }
 
         // Add new constraints and replan
@@ -305,23 +305,23 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
                 dynamics::data::PBIConstraint constr;
                 constr.id = info.car_index_1;
                 constr = info.pose1bi;
-                constr.t = info.pose1.path_depth_index;
+                constr.t = info.index1;
                 constraint.avoid = node.avoid;
                 constraint.avoid.push_back(constr);
             }else{
                 dynamics::data::PBIConstraint constr2;
                 constr2.id = info.car_index_2;
                 constr2 = info.pose2bi;
-                constr2.t = info.pose2.path_depth_index;
+                constr2.t = info.index2;
                 constraint.avoid = node.avoid;
                 constraint.avoid.push_back(constr2);
             }
 
-            // TODO: maybe restore astar compute from here
-            // Just add path again until conflict with all neighbors as open nodes and recompute scores
-            // potentially also adjust the heuristict to account for new obstacle
-
-            // Enqueu all jobs to astar workers
+            
+            if(col_deb){
+                writeCollisionInfoToDisc(info, node.result[info.car_index_1].interprimitive, node.result[info.car_index_2].interprimitive, node, "collision_in_node" + std::to_string(node.node_id) + ".json" );
+            }
+            // Enqueue all jobs to astar workers
             m_lowLevelResults.clear();
 
             for(uint32_t i = 0; i < start_positions.size(); i ++){
@@ -346,6 +346,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             constraint.sic = sic;
             constraint.result.clear();
             constraint.node_id = node_id;
+            constraint.father = node.node_id;
             node_id ++;
 
             for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
@@ -380,6 +381,7 @@ void CBSPlanner::writeConstraintNodeToDisk(constraint_node cnode, std::string na
 
     node["sic"] = cnode.sic;
     node["node_id"] = cnode.node_id;
+    node["father"] = cnode.father;
 
 
     //Known conflicts to avoid (obstacles in next Conflict based search iteration)

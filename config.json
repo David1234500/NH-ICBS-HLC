@@ -2,19 +2,20 @@
     "map": {
         "angle_steps": 8,
         "speed_steps": 3,
-        "x_cm": 450,
+        "x_cm": 400,
         "y_cm": 400
     },
     "timestep_ms": 500.0,
     "disc": {
-        "dstep": 5.0,
+        "dstep": 7.0,
         "hstep": 0.785
     },
     "collision_detect":{
         "mode":"circle",
         "ov_appr_threshold": 50.0,
         "ov_appr_step": 7,
-        "cl_appr_threshold": 15.0
+        "cl_appr_threshold": 15.0,
+        "debug_mode":true
     },
     "border_detect":{
         "approx_count":4,
@@ -26,12 +27,12 @@
         "vlevels": [-0.3, 0.0, 0.3]
     },
     "MPComputeBruteForce": {
-        "fit_quality_angle": 0.157079633,
-        "fit_quality_position": 0.833333333,
-        "fit_allowed_speed_difference": 0.05
+        "fit_quality_angle": 0.30,
+        "fit_quality_position": 2.5,
+        "fit_allowed_speed_difference": 0.15
     },
     "compute": {
-        "worker_count": 30
+        "worker_count": 28
     },
     
     "mpnl_weights": {
@@ -45,10 +46,10 @@
       "ub": [ 0.39269908169872414,  0.39269908169872414,  60.0,  60.0],
       "lb": [-0.39269908169872414, -0.39269908169872414, -60.0, -60.0],
       "maxt": 1.0,
-      "st_val": 6.0,
-      "a_v": 10.0,
-      "a_p": 1.5,
-      "a_h": 0.1
+      "st_val": 8.0,
+      "a_v": 12.5,
+      "a_p": 1.0,
+      "a_h": 0.15
     },
     "mpnl_debug":false,
 

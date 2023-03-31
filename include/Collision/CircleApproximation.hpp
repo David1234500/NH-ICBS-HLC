@@ -43,12 +43,12 @@ class CircleApproximation: public CollisionDetectBase{
 
                     if (precise_distance <= close_threshold) {
                         collision_info.collision_occurred = true;
-                        collision_info.index1 = idx;
-                        collision_info.index2 = idx;
-                        collision_info.car_index_1 = precise_pose1.path_depth_index;
-                        collision_info.car_index_2 = precise_pose2.path_depth_index;
+                        collision_info.index1 = precise_pose1.path_depth_index;
+                        collision_info.index2 = precise_pose2.path_depth_index;
+                        
                         collision_info.pose1 = precise_pose1;
                         collision_info.pose2 = precise_pose2;
+                        
                         collision_info.pose1bi = precise_pose1.baseNode;
                         collision_info.pose2bi = precise_pose2.baseNode;
 

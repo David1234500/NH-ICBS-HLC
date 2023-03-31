@@ -49,6 +49,7 @@ struct ReachabilityResult{
 struct constraint_node{
     uint64_t sic = 0;
     uint32_t node_id = 0;
+    uint32_t father = 0;
     
     std::vector<dynamics::data::PBIConstraint> avoid;
     
@@ -223,7 +224,7 @@ bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::PoseByIndex
     static int32_t ov_approx = Config::getInstance().get<int32_t>({"border_detect","approx_count"});
 
     if(base.x < 0 || base.x > x_steps ||
-       base.y < 0 || base.x > y_steps){
+       base.y < 0 || base.y > y_steps){
         return false;
     }
 
@@ -283,6 +284,11 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
             return res;
         }
 
+        static bool col_deb = Config::getInstance().get<bool>({"collision_detect","debug_mode"});
+        if(col_deb){
+            rlog("ASTAR", LOG_WARNING, "Current: " + std::to_string(current.pose.x) + ":" + std::to_string(current.pose.y) + ":" + std::to_string(current.pose.a)+ ":" + std::to_string(current.pose.s) + " timestep: " + std::to_string(current.timestep));
+        }
+
         openQueue.pop();
         auto current_pose = indexToPose(current.pose);
         for(auto rel_neighbor: mp_comp.m_mpmap[current.pose.a][current.pose.s]){
@@ -292,10 +298,10 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
             if(!validatePosition(current_pose, gl_neighbor, rel_neighbor.link, rel_neighbor.trajectory)){
                 continue;
             }
-            
+
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
-               if( std::abs(current.timestep - obstacle.t) <= 1 && std::abs(current.pose.x - obstacle.x ) == 0 && std::abs(current.pose.y - obstacle.y) == 0){
+               if( std::abs(current.timestep - obstacle.t) <= 1 && std::abs(gl_neighbor.x - obstacle.x ) == 0 && std::abs(gl_neighbor.y - obstacle.y) == 0){
                     discard_due_to_obstacle = true;
                     break;
                 }
@@ -326,8 +332,8 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
     
     // writeVisitedNodesToDisk(start, target, cameFrom);
     rlog("ASTAR", LOG_WARNING, "Found no viable path with #open: " + std::to_string(explored_nodes));
-    rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
-    rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a));
+    rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a) + ":" + std::to_string(target.s));
+    rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a)+ ":" + std::to_string(start.s));
 
     LLResult res;
     res.found_path = false;
@@ -335,6 +341,104 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
     
     return res;
 }
+
+
+void writeCollisionInfoToDisc(const CollisionInfo& collision_info,
+                                  const std::vector<dynamics::data::Pose2WithTime>& track1,
+                                  const std::vector<dynamics::data::Pose2WithTime>& track2,
+                                  const constraint_node& constraint,
+                                  const std::string& json_file) {
+    // Create a JSON object to store data
+    json j;
+
+    // Store CollisionInfo struct data
+    j["collision_occurred"] = collision_info.collision_occurred;
+    j["index1"] = collision_info.index1;
+    j["index2"] = collision_info.index2;
+    j["car_index_1"] = collision_info.car_index_1;
+    j["car_index_2"] = collision_info.car_index_2;
+    j["pose1"] = {{"pos", {collision_info.pose1.pos[0], collision_info.pose1.pos[1]}},
+                  {"h", collision_info.pose1.h},
+                  {"vel", collision_info.pose1.vel},
+                  {"time_ms", collision_info.pose1.time_ms}};
+    j["pose2"] = {{"pos", {collision_info.pose2.pos[0], collision_info.pose2.pos[1]}},
+                  {"h", collision_info.pose2.h},
+                  {"vel", collision_info.pose2.vel},
+                  {"time_ms", collision_info.pose2.time_ms}};
+    j["pose1bi"] = {{"x", collision_info.pose1bi.x},
+                    {"y", collision_info.pose1bi.y},
+                    {"a", collision_info.pose1bi.a},
+                    {"s", collision_info.pose1bi.s}};
+    j["pose2bi"] = {{"x", collision_info.pose2bi.x},
+                    {"y", collision_info.pose2bi.y},
+                    {"a", collision_info.pose2bi.a},
+                    {"s", collision_info.pose2bi.s}};
+
+    // Store track1 and track2 vectors
+    json track1_json = json::array();
+    json track2_json = json::array();
+
+    for (const auto& pose : track1) {
+        track1_json.push_back({
+            {"pos", {pose.pos[0], pose.pos[1]}},
+            {"h", pose.h},
+            {"vel", pose.vel},
+            {"time_ms", pose.time_ms},
+            {"baseNode", {{"x", pose.baseNode.x},
+                          {"y", pose.baseNode.y},
+                          {"a", pose.baseNode.a},
+                          {"s", pose.baseNode.s}}},
+            {"path_depth_index", pose.path_depth_index}
+        });
+    }
+
+    for (const auto& pose : track2) {
+        track2_json.push_back({
+            {"pos", {pose.pos[0], pose.pos[1]}},
+            {"h", pose.h},
+            {"vel", pose.vel},
+            {"time_ms", pose.time_ms},
+            {"baseNode", {{"x", pose.baseNode.x},
+                          {"y", pose.baseNode.y},
+                          {"a", pose.baseNode.a},
+                          {"s", pose.baseNode.s}}},
+            {"path_depth_index", pose.path_depth_index}
+        });
+    }
+
+    j["track1"] = track1_json;
+    j["track2"] = track2_json;
+
+    // Store constraint_node struct data
+    j["constraint_node"] = {
+        {"sic", constraint.sic},
+        {"node_id", constraint.node_id}
+    };
+
+    // Store PBIConstraint data
+    json avoid_json = json::array();
+    for (const auto& pbi_constraint : constraint.avoid) {
+        avoid_json.push_back({
+            {"x", pbi_constraint.x},
+            {"y", pbi_constraint.y},
+            {"t", pbi_constraint.t},
+            {"id", pbi_constraint.id}
+        });
+    }
+    j["constraint_node"]["avoid"] = avoid_json;
+
+    // json result_json;
+    // for (const auto& [key, value] : constraint.result) {
+    //     result_json[std::to_string(key)] = value; // Assuming LLResult is serializable to JSON
+    // }
+    // j["constraint_node"]["result"] = result_json;
+
+    // Write JSON data to file
+    std::ofstream json_out(json_file);
+    json_out << j.dump(4); // Pretty print with indent of 4 spaces
+    json_out.close();
+}
+
 
 
 std::vector<dynamics::data::Pose2WithTime> getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,MotionPrimitive>& edge_map, dynamics::data::PoseByIndex target){
@@ -413,6 +517,8 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
         dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(i));
         dynamics::data::Pose2D next_pose;
 
+        rlog("GetInterprimitive", LOG_INFO, "P: " + std::to_string(nodes.at(i).x) + ":" + std::to_string(nodes.at(i).y) + ":" + std::to_string(nodes.at(i).a) + ":" + std::to_string(nodes.at(i).s) + " path_depth_index: " + std::to_string(path_depth_index));
+
         for(float ts = 0; ts < timestep_ms; ts += 50.f){    
             next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, ts);
             dynamics::data::Pose2WithTime next_with_time;
@@ -431,7 +537,7 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
             
             next_pose2_with_time = next_pose2;
             
-            next_pose2_with_time.baseNode = nodes.at(i - 1);
+            next_pose2_with_time.baseNode = nodes.at(i - 1); //Potentially the -1 is required!
             next_pose2_with_time.path_depth_index = path_depth_index;
             
             next_pose2_with_time.time_ms = path_depth_index * 2 * timestep_ms + timestep_ms + ts;

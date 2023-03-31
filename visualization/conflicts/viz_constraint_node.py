@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import sys
 from matplotlib.colors import Normalize, ListedColormap, LinearSegmentedColormap
+import glob
+import os
 
 def visualize_constraints(file_name, lower_threshold, time_interval=500):
     # Load the JSON data from file
@@ -82,7 +84,12 @@ def visualize_constraints(file_name, lower_threshold, time_interval=500):
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig("../constraint_node.png")
+    plt.savefig("../"+ str(data["node_id"]) + ".png")
 
-# Use the function to visualize constraints from a JSON file
-visualize_constraints(sys.argv[1], lower_threshold=10)
+
+if __name__ == "__main__":
+    prefix = 'node'
+    files = glob.glob(os.path.join(os.getcwd(), f'{prefix}*'))
+
+    for filename in files:
+        visualize_constraints(filename, lower_threshold=15)
