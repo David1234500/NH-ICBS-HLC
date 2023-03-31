@@ -208,12 +208,23 @@ void MPCompute::computeMPEdges(){
     m_mpMapReachableNodeCount = static_cast<uint32_t>(reachable_distance / dpc);
 
     // Compute for each heading and speed from our original vehicle
-    for(int32_t sv = 0; sv < map_size_speed; sv ++){ //TODO CHANGE THIS BACK
+    for(int32_t sv = 0; sv < map_size_speed; sv ++){ 
         for(int32_t sh = 0; sh < map_size_angle / 4; sh ++){
             for(int32_t ts = std::max(0, sv - 1); ts < std::min(map_size_speed, sv + 2); ts ++){
 
-                //Compute pose of current node/vehicle
-                auto hull_angle_pair = computeConicIntegerHull(sh * api, (ts < zero_velocity_level ? -1 : 1));
+                if(sv == zero_velocity_level && ts == zero_velocity_level){
+                    continue;
+                }
+
+                float factor = 0.f;
+                if(ts <= zero_velocity_level && sv <= zero_velocity_level){
+                    factor = -1.f;
+                }
+                if(ts >=zero_velocity_level && sv >= zero_velocity_level){
+                    factor = 1.f;
+                }
+
+                auto hull_angle_pair = computeConicIntegerHull(sh * api, factor);
 
                 std::set<Eigen::Vector2i, Vector2iComparator> pi_integer_hull;
                 std::vector<Eigen::Vector2i> pi_hull;
@@ -222,11 +233,8 @@ void MPCompute::computeMPEdges(){
                     pi_integer_hull.insert(pbi);
                     pi_hull.push_back(pbi);
                 }
-                writeIntegerHullToDisc(pi_hull, sv, ts, sh * api, "hull_"+std::to_string(sh)+ "_" +std::to_string(sv)+ ".json");
-
-                if(sv == zero_velocity_level && ts == zero_velocity_level){
-                    continue;
-                }
+                writeIntegerHullToDisc(pi_hull, sv, ts, sh * api, "hull_"+std::to_string(sh)+ "_" +std::to_string(sv)+ "_" +std::to_string(ts)+".json");
+                
 
                 rlog("computeConicIntegerHull", LOG_INFO," Creating task for configuration: ["+ std::to_string(hull_angle_pair.first.size()) + ", "+ std::to_string(pi_integer_hull.size()) + ", " + std::to_string(sv) +", "+ std::to_string(sh) + ", "+ std::to_string(ts) + ", " + std::to_string(m_mpMapReachableNodeCount) +  ", " + std::to_string(hull_angle_pair.second) + "]");
 
