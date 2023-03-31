@@ -3,6 +3,7 @@ import json
 import matplotlib.pyplot as plt
 import networkx as nx
 import os
+from matplotlib.patches import Rectangle
 
 def load_nodes(directory):
     nodes = []
@@ -12,16 +13,15 @@ def load_nodes(directory):
                 nodes.append(json.load(f))
     return nodes
 
-def check_duplicates(lst):
-    seen = []
-    for item in lst:
-        item_tuple = tuple(item.items())
-        if item_tuple in seen:
-            return True
-        seen.append(item_tuple)
-    return False
+def unique_constraints(nodes):
+    constraints = set()
+    for node in nodes:
+        if "avoid" in node:
+            for constr in node["avoid"]:
+                constraints.add(tuple(constr.items()))
+    return list(constraints)
 
-def visualize_nodes(nodes):
+def visualize_nodes(nodes, unique_constraints):
     G = nx.DiGraph()
     labels = {}
     for node in nodes:
@@ -30,21 +30,39 @@ def visualize_nodes(nodes):
         father_id = node["father"]
         if father_id >= 0:
             G.add_edge(father_id, node_id)
-        
-        if "avoid" in node:
-            avoid_constraints = ", ".join([f"{constr['x']},{constr['y']},{constr['t']}" for constr in node["avoid"]])
-            labels[node_id] = f"{node_id}:{sic}:{avoid_constraints}"
-
-        if "avoid" in node:
-            if check_duplicates(node["avoid"]):
-                print(f"Node {node_id} contains duplicate avoid constraints.")
+        labels[node_id] = f"{node_id}:{sic}"
 
     pos = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot")
-    plt.figure(figsize=(40, 40))
+    plt.figure(figsize=(120, 90))
     nx.draw(G, pos, with_labels=False, arrows=True, node_size=3000, node_color="lightblue")
-    nx.draw_networkx_labels(G, pos, labels, font_size=10)
+    nx.draw_networkx_labels(G, pos, labels, font_size=13)
+
+    cmap = plt.cm.get_cmap("viridis")
+    constraint_colors = {c: cmap(i / len(unique_constraints)) for i, c in enumerate(unique_constraints)}
+
+    ax = plt.gca()
+    for node in nodes:
+        if "avoid" in node:
+            node_id = node["node_id"]
+            x, y = pos[node_id]
+            for idx, constr in enumerate(node["avoid"]):
+                constr_id = unique_constraints.index(tuple(constr.items()))
+                color = constraint_colors[tuple(constr.items())]
+                rect = Rectangle((x + 10 + 5 * idx, y - 10), 5, 20, facecolor=color)
+                ax.add_patch(rect)
+                ax.annotate(str(constr_id), (x + 12 + 5 * idx, y - 5), color='black', fontsize=15)
+
+    # Add legend
+    legend_elements = []
+    for idx, constr in enumerate(unique_constraints):
+        color = constraint_colors[constr]
+        label = f"{idx}: {dict(constr)['x']}, {dict(constr)['y']}, {dict(constr)['t']}"
+        legend_elements.append(Rectangle((0, 0), 1, 1, facecolor=color, label=label))
+    ax.legend(handles=legend_elements, title="Constraints", loc="best")
+
     plt.title("Node Tree with Associated Avoid Constraints")
     plt.savefig("../cbs_tree.png")
 
 nodes = load_nodes(os.getcwd())
-visualize_nodes(nodes)
+unique_constrs = unique_constraints(nodes)
+visualize_nodes(nodes, unique_constrs)

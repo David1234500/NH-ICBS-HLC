@@ -1,34 +1,31 @@
 import json
 import matplotlib.pyplot as plt
-import math
-import numpy as np
-import sys
 
-f = open("mp_state_graph.json", "r")
-x = f.read() 
-y = json.loads(x)
-  
+with open("mp_state_graph.json", "r") as f:
+    data = json.load(f)
 
-fig = plt.figure(constrained_layout=True)
+fig = plt.figure(figsize=(60, 60), constrained_layout=True)
 fig.suptitle('Motion Primitives Visualisation')
 grid = {}
 
+velocity_combinations = set()
+for edge in data["edges"]:
+    velocity_combinations.add((2 * edge["source"]["s"] + edge["targeti"]["s"], edge["source"]["a"]))
+velocity_combinations = sorted(list(velocity_combinations))
 
-# create 3x1 subfigs
-subfigs = fig.subfigures(nrows=y["info"]["size_s"] * y["info"]["size_s"], ncols=1)
-for row, subfig in enumerate(subfigs):
-    subfig.suptitle(f'Source Velocity Level: {row}')
-    grid[row] = {}
+subfigs = fig.subfigures(nrows=len(velocity_combinations), ncols=1)
+for index, (source_velocity, target_velocity) in enumerate(velocity_combinations):
+    subfig = subfigs[index]
+    subfig.suptitle(f'Source Velocity Level: {source_velocity}')
+    grid[source_velocity] = {}
 
-    # create 1x3 subplots per subfig
-    axs = subfig.subplots(nrows=1, ncols=y["info"]["size_a"])
+    axs = subfig.subplots(nrows=1, ncols=data["info"]["size_a"])
     for col, ax in enumerate(axs):
         ax.plot()
         ax.set_title(f'S Heading: {col}')
-        grid[row][col] = ax
-        
+        grid[source_velocity][col] = ax
 
-for edge in y["edges"]:
+for edge in data["edges"]:
     ex = [0]
     ey = [0]
     for curve_point in edge["curve"]:
@@ -38,13 +35,13 @@ for edge in y["edges"]:
     ex.append(edge["target"]["x"])
     ey.append(edge["target"]["y"])
 
-    grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].set_aspect('equal')
-    grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].plot(ex,ey)
-    grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].set_xlim([-100,100])
-    grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].set_xlabel("cm")
-    grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].set_ylabel("cm")
-    grid[2 * edge["source"]["s"] + edge["targeti"]["s"]][edge["source"]["a"]].set_ylim([-100,100])
+    source_velocity = 2 * edge["source"]["s"] + edge["targeti"]["s"]
+    ax = grid[source_velocity][edge["source"]["a"]]
+    ax.set_aspect('equal')
+    ax.plot(ex, ey)
+    ax.set_xlim([-100, 100])
+    ax.set_xlabel("cm")
+    ax.set_ylabel("cm")
+    ax.set_ylim([-100, 100])
 
-
-plt.savefig("../motion_primitives_by_angle.png", dpi=500)
-
+plt.savefig("../motion_primitives_by_angle_speed.png", dpi=500)

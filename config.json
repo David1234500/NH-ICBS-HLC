@@ -27,8 +27,8 @@
         "vlevels": [-0.3, 0.0, 0.3]
     },
     "MPComputeBruteForce": {
-        "fit_quality_angle": 0.30,
-        "fit_quality_position": 2.5,
+        "fit_quality_angle": 0.20,
+        "fit_quality_position": 1.0,
         "fit_allowed_speed_difference": 0.15
     },
     "compute": {
@@ -46,9 +46,9 @@
       "ub": [ 0.39269908169872414,  0.39269908169872414,  60.0,  60.0],
       "lb": [-0.39269908169872414, -0.39269908169872414, -60.0, -60.0],
       "maxt": 1.0,
-      "st_val": 8.0,
-      "a_v": 12.5,
-      "a_p": 1.0,
+      "st_val": 6.0,
+      "a_v": 10.0,
+      "a_p": 1.5,
       "a_h": 0.15
     },
     "mpnl_debug":false,

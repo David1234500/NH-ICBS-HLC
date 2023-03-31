@@ -291,7 +291,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             return node;
         }else{
             rlog("CBS", LOG_DEBUG, "CBS found conflict");
-            CollisionDetectBase::print_collision_info(info);
+            if(col_deb){
+                CollisionDetectBase::print_collision_info(info);
+            }
         }
 
         // Add new constraints and replan
@@ -316,7 +318,6 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
                 constraint.avoid = node.avoid;
                 constraint.avoid.push_back(constr2);
             }
-
             
             if(col_deb){
                 writeCollisionInfoToDisc(info, node.result[info.car_index_1].interprimitive, node.result[info.car_index_2].interprimitive, node, "collision_in_node" + std::to_string(node.node_id) + ".json" );
@@ -336,7 +337,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             bool found_paths_for_all_vehicles = true;
             for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
                 if(m_lowLevelResults.at(i).found_path){
-                    sic += m_lowLevelResults.at(i).path->size();
+                    sic += m_lowLevelResults.at(i).interprimitive.size();
                 }else{
                     found_paths_for_all_vehicles = false;
                 }
