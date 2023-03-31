@@ -208,9 +208,9 @@ void MPCompute::computeMPEdges(){
     m_mpMapReachableNodeCount = static_cast<uint32_t>(reachable_distance / dpc);
 
     // Compute for each heading and speed from our original vehicle
-    for(int32_t sv = zero_velocity_level; sv < map_size_speed; sv ++){ //TODO CHANGE THIS BACK
+    for(int32_t sv = 0; sv < map_size_speed; sv ++){ //TODO CHANGE THIS BACK
         for(int32_t sh = 0; sh < map_size_angle / 4; sh ++){
-            for(int32_t ts =  std::max(zero_velocity_level, sv - 1); ts < std::min(map_size_speed, sv + 2); ts ++){
+            for(int32_t ts =  std::max(0, sv - 1); ts < std::min(map_size_speed, sv + 2); ts ++){
 
                 //Compute pose of current node/vehicle
                 auto hull_angle_pair = computeConicIntegerHull(sh * api, (sv < zero_velocity_level ? -1 : 1));
