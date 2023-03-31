@@ -186,5 +186,5 @@ float SimpleDynamicsModel::velocity_limit(){
 }
 
 float SimpleDynamicsModel::angle_limit(){
-    return PI / 7; 
+    return PI / 8; 
 }
