@@ -1,14 +1,14 @@
 {
     "map": {
-        "angle_steps": 8,
+        "angle_steps": 12,
         "speed_steps": 3,
-        "x_cm": 400,
+        "x_cm": 450,
         "y_cm": 400
     },
     "timestep_ms": 500.0,
     "disc": {
         "dstep": 7.0,
-        "hstep": 0.785
+        "hstep": 0.5236
     },
     "collision_detect":{
         "mode":"circle",
