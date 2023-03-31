@@ -105,8 +105,15 @@ public:
         args->w.mu_accd = config.get<double>({"mpnl_weights", "mu_vccd"});
         
         args->ts_ms = config.get<double>({"mpnl_args", "ts_ms"});
-        args->ub = config.get<std::vector<double>>({"mpnl_args", "ub"});
-        args->lb = config.get<std::vector<double>>({"mpnl_args", "lb"});
+        
+        if(args->sp.vel < 0.f || args->tp.vel < 0.f){
+            args->ub = config.get<std::vector<double>>({"mpnl_args", "ubr"});
+            args->lb = config.get<std::vector<double>>({"mpnl_args", "lbr"});
+        }else{
+            args->ub = config.get<std::vector<double>>({"mpnl_args", "ubf"});
+            args->lb = config.get<std::vector<double>>({"mpnl_args", "lbf"});
+        }
+        
         args->maxt = config.get<double>({"mpnl_args", "maxt"});
         args->st_val = config.get<double>({"mpnl_args", "st_val"});
         args->a_v = config.get<double>({"mpnl_args", "a_v"});
