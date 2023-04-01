@@ -1,6 +1,5 @@
 #include <MPCompute/MPCompute.hpp>
 #include <nlohmann/json.hpp>
-#include <MPCompute/MPNLOptSingle.hpp>
 #include <vector>
 using json = nlohmann::json;
 

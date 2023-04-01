@@ -1,4 +1,4 @@
-#include <MPCompute/MPNLOpt.hpp>
+#include <MPComputeNL/MPNLOpt.hpp>
 #include <Planner/CBSPlanner.hpp>
 #include <iostream>
 #include <memory>
