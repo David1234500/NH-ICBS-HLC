@@ -25,7 +25,8 @@ if(steering_angle <= 0.05f){
 }
 
 // Compute radius of driven curve
-float radius = 15 / std::sin(steering_angle);  /* TODO: Correct Wheelbase here! */
+static float wheel_dist = Config::getInstance().get<float>({"single_track_model_param","wheel_dist"});
+float radius = wheel_dist / std::sin(steering_angle);  /* TODO: Correct Wheelbase here! */
 
 // Compute circumference of driven circle
 float circ = 2 * PI * radius;
@@ -70,7 +71,8 @@ if(steering_angle <= 0.05f){
 }
 
 // Compute radius of driven curve
-float radius = 20.f / std::sin(steering_angle);  
+static float wheel_dist = Config::getInstance().get<float>({"single_track_model_param","wheel_dist"});
+float radius = wheel_dist / std::sin(steering_angle);  
 
 // Compute circumference of driven circle
 float circ = 2 * PI * radius;
@@ -98,16 +100,19 @@ return Pose2D{new_pos, new_head, current_pose.vel + acceleration * time_sec};
 
 std::vector<dynamics::data::Vector2Df> SimpleDynamicsModel::vector_limits(float h, float max_vel){
     static uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
- 
+    static float c = Config::getInstance().get<float>({"single_track_model_param","max_vel"});
+    static float max_st_angle = Config::getInstance().get<float>({"single_track_model_param","max_st_angle"});
+
     std::vector<dynamics::data::Vector2Df> result;
-    dynamics::data::Pose2D ps = {{0.f,0.f}, h, velocity_limit()};
+
+    dynamics::data::Pose2D ps = {{0.f,0.f}, h, max_vel};
     
-    auto p1p = computeNextPose(ps,  angle_limit() + 0.1f,max_vel, timestep_ms);
-    auto p2p = computeNextPose(p1p, angle_limit() + 0.1f,max_vel, timestep_ms);
+    auto p1p = computeNextPose(ps,  max_st_angle + 0.1f,max_vel, timestep_ms);
+    auto p2p = computeNextPose(p1p, max_st_angle + 0.1f,max_vel, timestep_ms);
     result.push_back(p2p.pos);
 
-    auto p1n = computeNextPose(ps,  -angle_limit() - 0.1f,max_vel, timestep_ms);
-    auto p2n = computeNextPose(p1n, -angle_limit() - 0.1f,max_vel, timestep_ms);
+    auto p1n = computeNextPose(ps,  -max_st_angle - 0.1f,max_vel, timestep_ms);
+    auto p2n = computeNextPose(p1n, -max_st_angle - 0.1f,max_vel, timestep_ms);
     result.push_back(p2n.pos);
 
     return result;
@@ -118,33 +123,36 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::forceBestFit(Pose2D current
     dynamics::data::Pose2DWithError current_best_pose;
     current_best_pose.bi_pose = tpi;
 
-    float current_angle_span = SimpleDynamicsModel::angle_limit();
+    
+    static float rev_st_angle_factor = Config::getInstance().get<float>({"single_track_model_param","rev_st_angle_factor"});
+    static float current_angle_span = Config::getInstance().get<float>({"single_track_model_param","max_st_angle"});
+    static int32_t bf_vel_count = Config::getInstance().get<int32_t>({"MPComputeBruteForce","bf_vel_count"});
+    static int32_t bf_head_count = Config::getInstance().get<int32_t>({"MPComputeBruteForce","bf_head_count"});
+    static float max_vel = Config::getInstance().get<float>({"single_track_model_param","max_vel"});
+
     float center_average_speed = ((current_pose.vel + target_pose.vel) / 2.f);
     
     if(center_average_speed < 0.f){
-        current_angle_span = 0.2f * current_angle_span;
+        current_angle_span = rev_st_angle_factor * current_angle_span;
     }
     
     float current_error = 1000.f;
 
     // Iterate over all possible combinations of speeds and steering angles to find best configuration for reaching the target node
-    float angle_count = 30;
-    float vel_count = 30;
-
-    for(float next_angle = -current_angle_span; next_angle <= current_angle_span; next_angle += (current_angle_span / angle_count)){
+    for(float next_angle = -current_angle_span; next_angle <= current_angle_span; next_angle += (current_angle_span / bf_head_count)){
         
-        for(uint32_t j = 0; j <= vel_count; j ++){ 
-            float allowed_deviation_from_target_speed = (-(allowed_speed_deviation/2.f) + (allowed_speed_deviation/ static_cast<float>(vel_count)) * static_cast<float>(j)) * SimpleDynamicsModel::velocity_limit();
+        for(uint32_t j = 0; j <= bf_vel_count; j ++){ 
+            float allowed_deviation_from_target_speed = (-(allowed_speed_deviation/2.f) + (allowed_speed_deviation/ static_cast<float>(bf_vel_count)) * static_cast<float>(j)) * max_vel;
             float next_speed =  center_average_speed + allowed_deviation_from_target_speed;
 
             // Project Vehicle for one timestep with these settings
             auto next_pose_step_1 = SimpleDynamicsModel::computeNextPose(current_pose, next_angle, next_speed, timestep);
-            for(float next_angle2 = -current_angle_span; next_angle2 <= current_angle_span; next_angle2 += (current_angle_span / angle_count)){
+            for(float next_angle2 = -current_angle_span; next_angle2 <= current_angle_span; next_angle2 += (current_angle_span / bf_head_count)){
                 
-                for(uint32_t j2 = 0; j2 <= vel_count; j2 ++){    
+                for(uint32_t j2 = 0; j2 <= bf_vel_count; j2 ++){    
                     
                     //Compute next speed for second step of planning for the vehicle
-                    float allowed_deviation_from_target_speed2 = (-(allowed_speed_deviation/2.f) + (allowed_speed_deviation/static_cast<float>(vel_count)) * static_cast<float>(j2)) * SimpleDynamicsModel::velocity_limit();
+                    float allowed_deviation_from_target_speed2 = (-(allowed_speed_deviation/2.f) + (allowed_speed_deviation/static_cast<float>(bf_vel_count)) * static_cast<float>(j2)) * max_vel;
                     float next_speed2 =  center_average_speed + allowed_deviation_from_target_speed2;
 
                     // Project Vehicle for one timestep with these settings
@@ -179,12 +187,4 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::forceBestFit(Pose2D current
             
     }
     return current_best_pose;
-}
-
-float SimpleDynamicsModel::velocity_limit(){ 
-    return 200.0; // cm/s
-}
-
-float SimpleDynamicsModel::angle_limit(){
-    return PI / 8; 
 }

@@ -145,8 +145,10 @@ std::vector<Eigen::Vector2i> MPCompute::integerPointsInParallelogram(const Eigen
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
     int32_t xstep = Config::getInstance().getXstep();
     float hstep = Config::getInstance().get<float>({"disc","hstep"});
+    static float max_vel = Config::getInstance().get<float>({"single_track_model_param","max_vel"});
 
-    auto lim_vecs = dynamics::SimpleDynamicsModel::vector_limits(heading, vel_modifier * vlevels[2] * dynamics::SimpleDynamicsModel::velocity_limit());
+
+    auto lim_vecs = dynamics::SimpleDynamicsModel::vector_limits(heading, vel_modifier * vlevels[2] * max_vel);
     dynamics::data::Vector2Df vbase = {1.0f, 0.f};
     auto vvec = Eigen::Rotation2Df(heading) * vbase;
 
@@ -156,7 +158,7 @@ std::vector<Eigen::Vector2i> MPCompute::integerPointsInParallelogram(const Eigen
     double cosTheta = static_cast<double>(dotProduct) / (a_norm * b_norm);
     double angleRadians = std::acos(cosTheta);
 
-    float reach_dist_vel_level = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
+    float reach_dist_vel_level = max_vel * (static_cast<float>(timestep_ms) / 1000.f);
     double base_angle_radians = (M_PI - angleRadians) / 2.0;
     double side_length = reach_dist_vel_level / std::sin(base_angle_radians);
     auto p_integer_hull = integerPointsInParallelogram((lim_vecs[0].cast<double>()/a_norm) * side_length,(lim_vecs[1].cast<double>()/b_norm)* side_length,xstep);
@@ -201,8 +203,9 @@ void MPCompute::computeMPEdges(){
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
+    static float max_vel = Config::getInstance().get<float>({"single_track_model_param","max_vel"});
 
-    float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
+    float reachable_distance = max_vel * (static_cast<float>(timestep_ms) / 1000.f);
     //Compute size of the mp field based on reachable distance at the given speed
     m_mpMapReachableNodeCount = static_cast<uint32_t>(reachable_distance / dpc);
 
@@ -276,7 +279,7 @@ void MPCompute::writeGraphToDisk(std::string name ){
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
-
+    static float max_vel = Config::getInstance().get<float>({"single_track_model_param","max_vel"});
    
     json mp_map_dump;
     mp_map_dump["info"]["m_mpMapReachableNodeCount"] = m_mpMapReachableNodeCount;
@@ -293,7 +296,7 @@ void MPCompute::writeGraphToDisk(std::string name ){
                     node["pose"]["x"] = (dpc*x);
                     node["pose"]["y"] = (dpc*y);
                     node["pose"]["h"] = api * static_cast<float>(a);
-                    node["pose"]["v"] = vlevels[s] * dynamics::SimpleDynamicsModel::velocity_limit();
+                    node["pose"]["v"] = vlevels[s] * max_vel;
 
                     node["pose"]["xi"] = x;
                     node["pose"]["yi"] = y;
@@ -335,7 +338,7 @@ void MPCompute::writeGraphToDisk(std::string name ){
 
                 jedge["target"]["x"] = (dpc * edge.target.x);
                 jedge["target"]["y"] = (dpc * edge.target.y);
-                jedge["target"]["s"] = vlevels[edge.target.s] * dynamics::SimpleDynamicsModel::velocity_limit();
+                jedge["target"]["s"] = vlevels[edge.target.s] * max_vel;
                 jedge["target"]["a"] = api * static_cast<float>(edge.target.a);
 
                 jedge["settings"]["a1"] = edge.link.s_a;

@@ -22,7 +22,7 @@ void MPBruteforce::workerThreadMPEdges(uint32_t index){
     int32_t x_steps = Config::getInstance().getXstep();
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
-
+    static float max_vel = Config::getInstance().get<float>({"single_track_model_param","max_vel"});
 
     uint32_t prune_by_distance = 0;
     float dist_error_avg = 0.f;
@@ -51,7 +51,7 @@ void MPBruteforce::workerThreadMPEdges(uint32_t index){
 
         if(hasTask){
             
-            dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * static_cast<float>(threadTask.cai), vlevels[threadTask.csi] * dynamics::SimpleDynamicsModel::velocity_limit()};
+            dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * static_cast<float>(threadTask.cai), vlevels[threadTask.csi] * max_vel};
            
             int start_angle = (threadTask.cai - threadTask.mhd + map_size_angle) % map_size_angle;
             int end_angle = (threadTask.cai + threadTask.mhd + map_size_angle) % map_size_angle;
@@ -59,7 +59,7 @@ void MPBruteforce::workerThreadMPEdges(uint32_t index){
                 
                     //Compute best fit settings set to get from the current to the target location
                     dynamics::data::PoseByIndex tp_bi = {threadTask.txi,threadTask.tyi, tsh, threadTask.tsi};
-                    dynamics::data::Pose2D target_pose = {{ (dpc*threadTask.txi), (dpc*threadTask.tyi)},  api * static_cast<float>(tsh), vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
+                    dynamics::data::Pose2D target_pose = {{ (dpc*threadTask.txi), (dpc*threadTask.tyi)},  api * static_cast<float>(tsh), vlevels[threadTask.tsi] * max_vel};
 
                     double speed_delta = fit_allowed_speed_difference;
                     auto epose = dynamics::SimpleDynamicsModel::forceBestFit(veh_pose, tp_bi, target_pose, timestep_ms, speed_delta);

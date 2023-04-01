@@ -60,8 +60,8 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, tsh, threadTask.tsi};
                 
                 MPNLOptSingle::mpnl_args_t args;
-                args.sp = {{0.f,0.f}, api * static_cast<float>(threadTask.cai), vlevels[threadTask.csi] * dynamics::SimpleDynamicsModel::velocity_limit()};
-                args.tp = {{(dpc*threadTask.txi), (dpc*threadTask.tyi)},  api * static_cast<float>(tsh), vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit()};
+                args.sp = {{0.f,0.f}, api * static_cast<float>(threadTask.cai), vlevels[threadTask.csi] * max_vel};
+                args.tp = {{(dpc*threadTask.txi), (dpc*threadTask.tyi)},  api * static_cast<float>(tsh), vlevels[threadTask.tsi] * max_vel};
 
                 MPNLOptSingle nl_stm_opt;
                 nl_stm_opt.prepare(&args, true, false);
@@ -73,8 +73,8 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 auto pr = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(p1,      res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_st_a], res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_acc], timestep_ms);
                 
                 if(mpnl_debug){
-                    std::cout << "src" << std::to_string(0) << ", " << std::to_string (0) << ", " << std::to_string(api * static_cast<float>(threadTask.cai)) << ", " << vlevels[threadTask.csi] * dynamics::SimpleDynamicsModel::velocity_limit() << std::endl;
-                    std::cout << "targ" << std::to_string(dpc*threadTask.txi) << ", " << std::to_string (dpc*threadTask.tyi) << ", " << std::to_string(api * static_cast<float>(tsh)) << ", " << vlevels[threadTask.tsi] * dynamics::SimpleDynamicsModel::velocity_limit() << std::endl;
+                    std::cout << "src" << std::to_string(0) << ", " << std::to_string (0) << ", " << std::to_string(api * static_cast<float>(threadTask.cai)) << ", " << vlevels[threadTask.csi] * max_vel << std::endl;
+                    std::cout << "targ" << std::to_string(dpc*threadTask.txi) << ", " << std::to_string (dpc*threadTask.tyi) << ", " << std::to_string(api * static_cast<float>(tsh)) << ", " << vlevels[threadTask.tsi] * max_vel << std::endl;
                     std::cout << "obj " << std::to_string(res.objf_val) << std::endl;
                     std::cout << "retcode " << std::to_string(res.retcode) << std::endl;
                     std::cout << "rt " << std::to_string(res.rt_ms) << std::endl;

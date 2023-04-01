@@ -22,12 +22,12 @@ ReachabilityResult CBSPlanner::checkForReachability(){
     int32_t x_steps = Config::getInstance().getXstep();
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
-
+    static float max_vel = Config::getInstance().get<float>({"single_track_model_param","max_vel"});
     
     ReachabilityResult result;
     result.reachable = true;
 
-    float reachable_distance = dynamics::SimpleDynamicsModel::velocity_limit() * (static_cast<float>(timestep_ms) / 1000.f);
+    float reachable_distance = max_vel * (static_cast<float>(timestep_ms) / 1000.f);
     int32_t reachable_node_count = static_cast<uint32_t>(reachable_distance / dpc);
 
     uint32_t count = 0;

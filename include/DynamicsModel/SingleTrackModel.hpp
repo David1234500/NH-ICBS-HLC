@@ -24,9 +24,6 @@ public:
     static dynamics::data::Pose2DWithError forceBestFitSingleStep(Pose2D current_pose, PoseByIndex tpi, Pose2D target_pose, float timestep);
 
     static std::vector<dynamics::data::Vector2Df> vector_limits(float h, float vm);
-    static float velocity_limit();
-    static float angle_limit();
-
 };
 
 }

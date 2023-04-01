@@ -5,6 +5,11 @@
         "x_cm": 450,
         "y_cm": 400
     },
+    "single_track_model_param":{
+        "max_st_angle":0.3,
+        "max_vel":200.0,
+        "wheel_dist":20.0
+    },
     "timestep_ms": 500.0,
     "disc": {
         "dstep": 7.0,
@@ -30,7 +35,10 @@
     "MPComputeBruteForce": {
         "fit_quality_angle": 0.20,
         "fit_quality_position": 1.0,
-        "fit_allowed_speed_difference": 0.15
+        "fit_allowed_speed_difference": 0.15,
+        "rev_st_angle_factor":0.1,
+        "bf_vel_count":30,
+        "bf_head_count":30
     },
     "compute": {
         "worker_count": 28

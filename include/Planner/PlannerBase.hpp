@@ -123,6 +123,7 @@ dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex global){
     static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    static float max_vel = Config::getInstance().get<float>({"single_track_model_param","max_vel"});
     static int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     static std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
 
@@ -132,7 +133,7 @@ dynamics::data::Pose2D indexToPose(dynamics::data::PoseByIndex global){
     global_pose.pos[0] = (dpc * global.x);
     global_pose.pos[1] = (dpc * global.y);
     global_pose.h = api * static_cast<float>(global.a);
-    global_pose.vel = vlevels[global.s] * dynamics::SimpleDynamicsModel::velocity_limit();
+    global_pose.vel = vlevels[global.s] * max_vel;
     
     return global_pose;
 }
@@ -144,6 +145,7 @@ dynamics::data::Pose2D indexToPose(dynamics::data::PBIConstraint global){
     static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    static float max_vel = Config::getInstance().get<float>({"single_track_model_param","max_vel"});
     static int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     static std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
 
