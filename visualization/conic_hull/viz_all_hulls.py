@@ -31,7 +31,7 @@ def visualize_hulls(json_files):
         axes[i].set_aspect('equal', adjustable='datalim')
 
     # plt.tight_layout()
-    plt.savefig("../conic_hulls.png")
+    plt.savefig("../conic_hulls.svg")
 
 if __name__ == '__main__':
     json_files = load_json_files(".")

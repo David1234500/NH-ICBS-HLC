@@ -70,7 +70,7 @@ if(steering_angle <= 0.05f){
 }
 
 // Compute radius of driven curve
-float radius = 15 / std::sin(steering_angle);  
+float radius = 20.f / std::sin(steering_angle);  
 
 // Compute circumference of driven circle
 float circ = 2 * PI * radius;

@@ -52,7 +52,7 @@ def plot_data(data):
 
         ax.set_facecolor(cmap(norm(d["sic"])))
 
-    plt.savefig("../sic_over_time.png")
+    plt.savefig("../sic_over_time.svg")
 
 
 def main(start_index, end_index):

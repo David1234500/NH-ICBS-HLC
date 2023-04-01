@@ -14,6 +14,7 @@ struct CollisionInfo {
     size_t index2 = 0;
     uint32_t car_index_1 = 0;
     uint32_t car_index_2 = 0;
+    int32_t collision_with_veh_at_track_end = 0;
     dynamics::data::Pose2WithTime pose1;
     dynamics::data::Pose2WithTime pose2;
     dynamics::data::PoseByIndex pose1bi;
@@ -62,6 +63,8 @@ public:
         std::cout << "    y: " << p2bi.y << std::endl;
         std::cout << "    a: " << p2bi.a << std::endl;
         std::cout << "    s: " << p2bi.s << std::endl;
+
+        std::cout << " collision_with_veh_at_track_end: " << ci.collision_with_veh_at_track_end << std::endl;
     }
 
 

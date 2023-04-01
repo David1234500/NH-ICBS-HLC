@@ -24,7 +24,7 @@ def visualize_data(file_name):
     plt.title('Vehicle Trajectories and Map Points')
     plt.legend()
     plt.grid(True)
-    plt.savefig("../parameter_result.png")
+    plt.savefig("../parameter_result.svg")
 
 # Call the function with the file name
 visualize_data('mp_param_res.json')

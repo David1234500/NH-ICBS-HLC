@@ -50,4 +50,4 @@ for edge in y["edges"]:
     grid[edge["source"]["a"]][edge["targeti"]["a"]].set_xlabel("X (cm)")
     grid[edge["source"]["a"]][edge["targeti"]["a"]].set_ylabel("Y (cm)")
 
-plt.savefig(f"../mps_from_{source_velocity}_to_{target_velocity}.png")
+plt.savefig(f"../mps_from_{source_velocity}_to_{target_velocity}.svg")

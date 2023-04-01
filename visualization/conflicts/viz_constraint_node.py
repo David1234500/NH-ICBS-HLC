@@ -17,7 +17,7 @@ def visualize_constraints(file_name, lower_threshold, time_interval=500):
     vehicle_ids = [vehicle["id"] for vehicle in data["multipath"]]
 
     # Plot vehicle trajectories
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(15, 10))
 
     plt.subplot(2, 1, 1)
     
@@ -84,7 +84,7 @@ def visualize_constraints(file_name, lower_threshold, time_interval=500):
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig("../"+ str(data["node_id"]) + ".png")
+    plt.savefig("../"+ str(data["node_id"]) + ".svg")
 
 
 if __name__ == "__main__":

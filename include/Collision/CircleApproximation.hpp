@@ -48,6 +48,13 @@ class CircleApproximation: public CollisionDetectBase{
                         
                         collision_info.pose1 = precise_pose1;
                         collision_info.pose2 = precise_pose2;
+
+                        if(idx >= track1_size){
+                            collision_info.collision_with_veh_at_track_end = 1;
+                        }
+                        if(idx >= track2_size){
+                            collision_info.collision_with_veh_at_track_end = 2;
+                        }
                         
                         collision_info.pose1bi = precise_pose1.baseNode;
                         collision_info.pose2bi = precise_pose2.baseNode;

@@ -45,6 +45,6 @@ for timstep_size in range(300,700,100):
         ax1.set_ylabel('Mean Path Length to reach neighborhood', color='g')
         ax2.set_ylabel('Edge Count', color='b')
 
-        # plt.suptitle("State Space Eval with Q{}.png".format(quality_level), fontsize=7)
-        plt.savefig("f2_quality_timestep_{}_demo_{}.png".format(timstep_size, quality_level))
+        # plt.suptitle("State Space Eval with Q{}.svg".format(quality_level), fontsize=7)
+        plt.savefig("f2_quality_timestep_{}_demo_{}.svg".format(timstep_size, quality_level))
         plt.clf()

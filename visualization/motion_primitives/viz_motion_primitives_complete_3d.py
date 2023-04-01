@@ -28,4 +28,4 @@ for edge in y["edges"]:
 
     ax.plot(ex,ey,ez)
 
-plt.savefig("../motion_primitives_3d.png")
+plt.savefig("../motion_primitives_3d.svg")

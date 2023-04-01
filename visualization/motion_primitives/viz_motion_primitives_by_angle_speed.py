@@ -44,4 +44,4 @@ for edge in data["edges"]:
     ax.set_ylabel("cm")
     ax.set_ylim([-100, 100])
 
-plt.savefig("../motion_primitives_by_angle_speed.png", dpi=500)
+plt.savefig("../motion_primitives_by_angle_speed.svg", dpi=500)

@@ -286,7 +286,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
 
         static bool col_deb = Config::getInstance().get<bool>({"collision_detect","debug_mode"});
         if(col_deb){
-            rlog("ASTAR", LOG_WARNING, "Current: " + std::to_string(current.pose.x) + ":" + std::to_string(current.pose.y) + ":" + std::to_string(current.pose.a)+ ":" + std::to_string(current.pose.s) + " timestep: " + std::to_string(current.timestep));
+            // rlog("ASTAR", LOG_WARNING, "Current: " + std::to_string(current.pose.x) + ":" + std::to_string(current.pose.y) + ":" + std::to_string(current.pose.a)+ ":" + std::to_string(current.pose.s) + " timestep: " + std::to_string(current.timestep));
         }
 
         openQueue.pop();

@@ -13,6 +13,7 @@ public:
         double mu_hd = 0.f;
         double mu_vd = 0.f;
         double mu_accd = 0.f;
+        double mu_sccd = 0.f;
     };
 
     struct mpnl_args_t{
@@ -28,6 +29,7 @@ public:
         double a_v = 0.f;
         double a_p = 0.f;
         double a_h = 0.f;
+        double a_scc = 0.f;
     };
 
     enum mpnl_obj_pv_map{
@@ -64,8 +66,9 @@ public:
         
         double vd =  std::abs(p2.vel - args->tp.vel);
         double accd = std::abs(x[c1_acc]) + std::abs(x[c2_acc]);
+        double sccd = std::abs(x[c1_st_a]) + std::abs(x[c2_st_a]);
 
-        double objv = args->w.mu_hd * hd_n + args->w.mu_pd * pd + args->w.mu_vd * vd + args->w.mu_accd * accd;
+        double objv = args->w.mu_hd * hd_n + args->w.mu_pd * pd + args->w.mu_vd * vd + args->w.mu_accd * accd + args->w.mu_sccd * sccd;
         return objv;
     }
 
@@ -80,20 +83,28 @@ public:
         auto p2 = eval_two(x,args);
         double hd = std::abs(args->tp.h - p2.h);
         double hd_n = hd <= PI ? hd : 2 * PI - hd; 
-        return hd_n- args->a_h;
+        return hd_n - args->a_h;
     }
 
-    static double constraint_velocity_delta(const std::vector <double> &x, std::vector<double> &grad, void* f_data){
+   static double constraint_velocity_delta(const std::vector <double> &x, std::vector<double> &grad, void* f_data){
         mpnl_args_t* args = static_cast<mpnl_args_t*>(f_data);
         auto p2 = eval_two(x,args);
-        return std::abs(p2.vel - args->tp.vel);
+        return std::abs(p2.vel - args->tp.vel) - args->a_v;
     }
+
+    static double constraint_steering_change(const std::vector <double> &x, std::vector<double> &grad, void* f_data){
+        mpnl_args_t* args = static_cast<mpnl_args_t*>(f_data);
+       
+        return std::abs(x[c1_st_a]) + std::abs(x[c2_st_a]) - args->a_scc;
+    }
+
+    
 
 
     MPNLOptSingle(){}
 
 
-    void prepare(mpnl_args_t* args, bool enforce_constraints=false, bool complete_eval=false,nlopt::algorithm alg=nlopt::GN_ISRES){
+    void prepare(mpnl_args_t* args, bool enforce_constraints=false, bool enforce_steering_change_limit=false,nlopt::algorithm alg=nlopt::GN_ISRES){
         m_optimizer = std::make_shared<nlopt::opt>(alg, 4); 
         m_optimizer->set_min_objective(objective, static_cast<void*>(args));
 
@@ -103,6 +114,7 @@ public:
         args->w.mu_hd = config.get<double>({"mpnl_weights", "mu_hd"});
         args->w.mu_vd = config.get<double>({"mpnl_weights", "mu_vd"});
         args->w.mu_accd = config.get<double>({"mpnl_weights", "mu_vccd"});
+        args->w.mu_sccd = config.get<double>({"mpnl_weights", "mu_sccd"});
         
         args->ts_ms = config.get<double>({"mpnl_args", "ts_ms"});
         
@@ -119,6 +131,7 @@ public:
         args->a_v = config.get<double>({"mpnl_args", "a_v"});
         args->a_p = config.get<double>({"mpnl_args", "a_p"});
         args->a_h = config.get<double>({"mpnl_args", "a_h"});
+        args->a_scc = config.get<double>({"mpnl_args", "a_scc"});
 
         m_optimizer->set_lower_bounds(args->lb);
         m_optimizer->set_upper_bounds(args->ub);
@@ -127,6 +140,9 @@ public:
             m_optimizer->add_inequality_constraint(constraint_heading_delta, static_cast<void*>(args), 0.01f);
             m_optimizer->add_inequality_constraint(constraint_position_delta, static_cast<void*>(args), 0.01f);
             m_optimizer->add_inequality_constraint(constraint_velocity_delta, static_cast<void*>(args), 0.01f);
+            if(enforce_steering_change_limit){
+                m_optimizer->add_inequality_constraint(constraint_steering_change, static_cast<void*>(args), 0.01f);
+            }
         }
 
         m_result = {0,0,0,0};

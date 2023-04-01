@@ -13,8 +13,8 @@
     "collision_detect":{
         "mode":"circle",
         "ov_appr_threshold": 50.0,
-        "ov_appr_step": 7,
-        "cl_appr_threshold": 15.0,
+        "ov_appr_step": 5,
+        "cl_appr_threshold": 10.0,
         "debug_mode":true
     },
     "border_detect":{
@@ -39,19 +39,21 @@
         "mu_pd": 1.0,
         "mu_hd": 10.0,
         "mu_vd": 0.5,
-        "mu_vccd": 0.01
+        "mu_vccd": 0.01,
+        "mu_sccd": 1.0
     },
     "mpnl_args":{
       "ts_ms": 500.0,
-      "ubf": [ 0.34,  0.34,   60.0,  60.0],
-      "lbf": [-0.34, -0.34,  -60.0, -60.0],
-      "ubr": [ 0.07,  0.07,   60.0,  60.0],
-      "lbr": [-0.1,  -0.1,   -60.0, -60.0],
+      "ubf": [ 0.30,  0.30,   60.0,  60.0],
+      "lbf": [-0.30, -0.30,  -60.0, -60.0],
+      "ubr": [ 0.05,  0.05,   60.0,  60.0],
+      "lbr": [-0.05, -0.05,   -60.0, -60.0],
       "maxt": 1.0,
       "st_val": 6.0,
-      "a_v": 10.0,
-      "a_p": 1.5,
-      "a_h": 0.15
+      "a_v": 2.0,
+      "a_p": 1.0,
+      "a_scc": 0.4,
+      "a_h": 0.10
     },
     "mpnl_debug":false,
 

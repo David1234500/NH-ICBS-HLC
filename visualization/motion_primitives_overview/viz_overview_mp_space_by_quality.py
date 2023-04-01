@@ -29,6 +29,6 @@ for quality_level in range(2,5):
 
     plt.xlabel("Node Count")
     plt.ylabel("Timestep size")
-    plt.suptitle("State Space Eval with Q{}.png".format(quality_level), fontsize=7)
-    plt.savefig("quality_demo_{}.png".format(quality_level))
+    plt.suptitle("State Space Eval with Q{}.svg".format(quality_level), fontsize=7)
+    plt.savefig("quality_demo_{}.svg".format(quality_level))
     plt.clf()

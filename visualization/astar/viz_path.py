@@ -55,4 +55,4 @@ axs[2].set_title('Path Positions Colored by Index')
 
 # Display the plots
 plt.tight_layout()
-plt.savefig("../curves.png")
+plt.savefig("../curves.svg")

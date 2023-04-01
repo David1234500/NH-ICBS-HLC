@@ -34,7 +34,7 @@ def main(json_file):
     time = [min(t1, t2) for t1, t2 in zip(t1_t, t2_t)]
 
     # Create subplots
-    fig, axes = plt.subplots(4, 1, figsize=(10, 20))
+    fig, axes = plt.subplots(3, 1, figsize=(10, 15))
 
     # First subplot
     for x, y, t in zip(t1_x, t1_y, t1_t):
@@ -91,7 +91,7 @@ def main(json_file):
     
     # Adjust layout and display plot
     plt.tight_layout()
-    plt.savefig("../collision_in_" + str(data["constraint_node"]["node_id"]) + ".png")
+    plt.savefig("../collision_in_" + str(data["constraint_node"]["node_id"]) + ".svg")
     # plt.show()
 
 if __name__ == "__main__":

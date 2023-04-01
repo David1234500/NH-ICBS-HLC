@@ -61,7 +61,7 @@ def visualize_nodes(nodes, unique_constraints):
     ax.legend(handles=legend_elements, title="Constraints", loc="best")
 
     plt.title("Node Tree with Associated Avoid Constraints")
-    plt.savefig("../cbs_tree.png")
+    plt.savefig("../cbs_tree.svg")
 
 nodes = load_nodes(os.getcwd())
 unique_constrs = unique_constraints(nodes)
