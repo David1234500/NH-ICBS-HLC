@@ -84,7 +84,7 @@ def visualize_constraints(file_name, lower_threshold, time_interval=500):
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig("../"+ str(data["node_id"]) + ".svg")
+    plt.savefig("../"+ str(data["node_id"]) + ".png")
 
 
 if __name__ == "__main__":

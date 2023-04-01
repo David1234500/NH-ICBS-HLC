@@ -313,6 +313,11 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
                 constr = info.pose1bi;
                 constr.t = info.index1;
                 constraint.avoid = node.avoid;
+
+                if(info.collision_with_veh_at_track_end == 2){
+                    constr.t = -1;
+                }
+
                 constraint.avoid.push_back(constr);
             }else{
                 //Case Vehicle 2 has reached target, adding a constraint here seconds possibly after arrival makes no sense
@@ -324,7 +329,12 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
                 constr2 = info.pose2bi;
                 constr2.t = info.index2;
                 constraint.avoid = node.avoid;
-                constraint.avoid.push_back(constr2);
+                
+                if(info.collision_with_veh_at_track_end == 1){
+                   constr2.t = -1;
+                } 
+
+                constraint.avoid.push_back(constr2); 
             }
             
             if(col_deb){

@@ -246,7 +246,9 @@ bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::PoseByIndex
 }
 
 LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles){
-    
+    int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    int32_t allowed_rev_counter = Config::getInstance().get<int32_t>({"allowed_reversing"});
+
     std::priority_queue<dynamics::data::LLNode> openQueue;
     std::unordered_set<dynamics::data::PoseByIndex> openSet;
 
@@ -295,15 +297,23 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
             dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(current.pose, rel_neighbor.target);
             auto neigh_pose = indexToPose(gl_neighbor);
 
+            if(rel_neighbor.target.s < zero_velocity_level){
+                if(current.rev_counter >= allowed_rev_counter || current.timestep >= allowed_rev_counter){
+                    continue;
+                }
+            }
+
             if(!validatePosition(current_pose, gl_neighbor, rel_neighbor.link, rel_neighbor.trajectory)){
                 continue;
             }
 
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
-               if( std::abs(current.timestep - obstacle.t) <= 1 && std::abs(gl_neighbor.x - obstacle.x ) == 0 && std::abs(gl_neighbor.y - obstacle.y) == 0){
+               if( current.timestep == obstacle.t || obstacle.t == -1 ){
+                    if(std::abs(gl_neighbor.x - obstacle.x ) == 0 && std::abs(gl_neighbor.y - obstacle.y) == 0){
                     discard_due_to_obstacle = true;
                     break;
+                    }
                 }
             }
 
@@ -321,7 +331,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
                     fScore[gl_neighbor] = tentative_score + h;
                     
                     if(openSet.count(gl_neighbor) == 0){
-                        dynamics::data::LLNode node = {gl_neighbor, fScore[gl_neighbor], current.timestep + 1};
+                        dynamics::data::LLNode node = {gl_neighbor, fScore[gl_neighbor], current.timestep + 1, (rel_neighbor.target.s < zero_velocity_level ? current.rev_counter + 1 : current.rev_counter)};
                         openQueue.push(node);
                         openSet.insert(gl_neighbor);
                     }
@@ -548,13 +558,13 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
         path_depth_index += 1;
     }
     
-    dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(0));
-    dynamics::data::Pose2WithTime next_with_time;
-    next_with_time = veh_pose;
-    next_with_time.baseNode = nodes.at(0);
-    next_with_time.path_depth_index = 0;
-    next_with_time.time_ms = path_depth_index * 2 * timestep_ms;
-    result.push_back(next_with_time);
+    // dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(0));
+    // dynamics::data::Pose2WithTime next_with_time;
+    // next_with_time = veh_pose;
+    // next_with_time.baseNode = nodes.at(0);
+    // next_with_time.path_depth_index = 0;
+    // next_with_time.time_ms = path_depth_index * 2 * timestep_ms;
+    // result.push_back(next_with_time);
 
     return result;
 }

@@ -10,11 +10,12 @@
         "dstep": 7.0,
         "hstep": 0.5236
     },
+    "allowed_reversing":1,
     "collision_detect":{
         "mode":"circle",
-        "ov_appr_threshold": 50.0,
-        "ov_appr_step": 5,
-        "cl_appr_threshold": 10.0,
+        "ov_appr_threshold": 100.0,
+        "ov_appr_step": 10,
+        "cl_appr_threshold": 20.0,
         "debug_mode":true
     },
     "border_detect":{

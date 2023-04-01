@@ -112,6 +112,7 @@ struct LLNode{
     PoseByIndex pose;
     float fScore = 10000000.f;
     int32_t timestep = 0;
+    int32_t rev_counter = 0;
 
     bool operator < (const dynamics::data::LLNode r) const {
         if(fScore < r.fScore){
