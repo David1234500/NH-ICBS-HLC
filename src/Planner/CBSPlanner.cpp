@@ -227,6 +227,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     rlog("CBS", LOG_DEBUG, "CBS start");
     uint32_t node_id = 0;
 
+    m_keepThreadsAlive = true;
     for(uint32_t i = 0; i < worker_count; i ++){
         m_lowLevelWorkers.push_back(std::thread(&CBSPlanner::low_level_astar_worker, this, i));
     }
@@ -288,6 +289,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         // Check if we have just obtained a valid solution -> terminate if yes
         if(!info.collision_occurred){
             rlog("CBS", LOG_DEBUG, "CBS SUCCESSFULL TERMINATION!");
+            node.feasible = true;
             return node;
         }else{
             rlog("CBS", LOG_DEBUG, "CBS found conflict");
@@ -304,44 +306,49 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             constraint.sic = 0;
 
             if(vehicle_index == 0){
-                //Case Vehicle 1 has reached target, adding a constraint here seconds possibly after arrival makes no sense
-                if(info.collision_with_veh_at_track_end == 1){
-                    continue;
-                }   
+                  
+                // if(info.collision_with_veh_at_track_end == 1){
+                //     continue;
+                // }
+
                 dynamics::data::PBIConstraint constr;
                 constr.id = info.car_index_1;
                 constr = info.pose1bi;
                 constr.t = info.index1;
                 constraint.avoid = node.avoid;
 
-                if(info.collision_with_veh_at_track_end == 2){
+                if(info.collision_with_veh_at_track_end == 1){
+                   constr.t = -1;
+                }
+
+                if(std::find(node.avoid.begin(), node.avoid.end(), constr) != node.avoid.end()){
                     constr.t = -1;
                 }
 
                 constraint.avoid.push_back(constr);
             }else{
-                //Case Vehicle 2 has reached target, adding a constraint here seconds possibly after arrival makes no sense
-                if(info.collision_with_veh_at_track_end == 2){
-                    continue;
-                }
+
                 dynamics::data::PBIConstraint constr2;
                 constr2.id = info.car_index_2;
                 constr2 = info.pose2bi;
                 constr2.t = info.index2;
                 constraint.avoid = node.avoid;
                 
-                if(info.collision_with_veh_at_track_end == 1){
-                   constr2.t = -1;
-                } 
+                if(info.collision_with_veh_at_track_end == 2){
+                    constr2.t = -1;
+                }
+
+                if(std::find(node.avoid.begin(), node.avoid.end(), constr2) != node.avoid.end()){
+                    constr2.t = -1;
+                }
 
                 constraint.avoid.push_back(constr2); 
             }
             
-            if(col_deb){
-                writeCollisionInfoToDisc(info, node.result[info.car_index_1].interprimitive, node.result[info.car_index_2].interprimitive, node, "collision_in_node" + std::to_string(node.node_id) + ".json" );
-            }
+            
             // Enqueue all jobs to astar workers
             m_lowLevelResults.clear();
+            m_lowLevelJobs.clear();
 
             for(uint32_t i = 0; i < start_positions.size(); i ++){
                 enqueue_astar(start_positions.at(i), target_positions.at(i), constraint, i);
@@ -371,6 +378,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
                 constraint.result[m_lowLevelResults.at(i).car_id]= m_lowLevelResults.at(i);
             }
+            m_lowLevelResults.clear();
             m_lowLevelJobs.clear();
 
             // Add new constraint node if it is feasible
@@ -380,6 +388,15 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             }else{
                 rlog("CBS", LOG_DEBUG, "CBS Found infeasible node");
             }
+            if(vehicle_index == 0){
+                info.one_feasible = found_paths_for_all_vehicles;
+            }else{
+                info.two_feasible = found_paths_for_all_vehicles;
+            }
+        }
+
+        if(col_deb){
+            writeCollisionInfoToDisc(info, node.result[info.car_index_1].interprimitive, node.result[info.car_index_2].interprimitive, node, "collision_in_node" + std::to_string(node.node_id) + ".json" );
         }
     }
 
@@ -387,6 +404,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     for(uint32_t i = 0; i < worker_count; i ++){
         m_lowLevelWorkers.at(i).join();
     }
+
+    m_lowLevelResults.clear();
+    m_lowLevelJobs.clear();
 
     constraint_node dnode;
     rlog("CBS", LOG_ERROR, "CBS EMPTY OPEN SET... infeasible");

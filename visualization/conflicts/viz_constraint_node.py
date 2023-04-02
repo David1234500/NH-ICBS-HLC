@@ -85,11 +85,11 @@ def visualize_constraints(file_name, lower_threshold, time_interval=500):
 
     plt.tight_layout()
     plt.savefig("../"+ str(data["node_id"]) + ".png")
-
+    plt.close()
 
 if __name__ == "__main__":
     prefix = 'node'
     files = glob.glob(os.path.join(os.getcwd(), f'{prefix}*'))
 
     for filename in files:
-        visualize_constraints(filename, lower_threshold=15)
+        visualize_constraints(filename, lower_threshold=20)

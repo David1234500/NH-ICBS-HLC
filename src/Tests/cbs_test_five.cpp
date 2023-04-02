@@ -11,6 +11,8 @@ using std::chrono::system_clock;
 
 int main() {
 
+    static int32_t driving_velocity_level = Config::getInstance().get<int32_t>({"velocity","driving_velocity_level"});
+
     CBSPlanner planner;
     std::cout << "Loading graph from disk!" << std::endl;
     planner.mp_comp.loadGraphFromDisk();
@@ -19,23 +21,23 @@ int main() {
     std::vector<dynamics::data::PoseByIndex> targets;
     std::vector<dynamics::data::PoseByIndex> starts;
 
-    dynamics::data::PoseByIndex end = { 6,6,6,1};
-    dynamics::data::PoseByIndex start = {23,22,6,1};
+    dynamics::data::PoseByIndex end = { 6,6,6,driving_velocity_level};
+    dynamics::data::PoseByIndex start = {23,22,6,driving_velocity_level};
     targets.push_back(end);
     starts.push_back(start);
 
-    dynamics::data::PoseByIndex end2 = {23,6,6,1};
-    dynamics::data::PoseByIndex start2 = {6,19,6,1};
+    dynamics::data::PoseByIndex end2 = {23,6,6,driving_velocity_level};
+    dynamics::data::PoseByIndex start2 = {6,19,6,driving_velocity_level};
     targets.push_back(end2);
     starts.push_back(start2);
 
-    dynamics::data::PoseByIndex end3 = {26,6,6,1};
-    dynamics::data::PoseByIndex start3 = {3,19,6,1};
+    dynamics::data::PoseByIndex end3 = {26,6,6,driving_velocity_level};
+    dynamics::data::PoseByIndex start3 = {3,19,6,driving_velocity_level};
     targets.push_back(end3);
     starts.push_back(start3);
 
-    dynamics::data::PoseByIndex end4 = {20,6,6,1};
-    dynamics::data::PoseByIndex start4 = {10,19,6,1};
+    dynamics::data::PoseByIndex end4 = {20,6,6,driving_velocity_level};
+    dynamics::data::PoseByIndex start4 = {10,19,6,driving_velocity_level};
     targets.push_back(end4);
     starts.push_back(start4);
 

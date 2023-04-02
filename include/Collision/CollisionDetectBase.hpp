@@ -4,7 +4,6 @@
 #include <iostream>
 #include <cmath>
 #include <Eigen/Dense>
-#include <nlopt.hpp>
 #include <util/Pose.hpp>
 
 
@@ -19,6 +18,10 @@ struct CollisionInfo {
     dynamics::data::Pose2WithTime pose2;
     dynamics::data::PoseByIndex pose1bi;
     dynamics::data::PoseByIndex pose2bi;
+    int32_t car_rem_1 = 0;
+    int32_t car_rem_2 = 0;
+    bool one_feasible = false;
+    bool two_feasible = false;
 };
 
 class CollisionDetectBase{

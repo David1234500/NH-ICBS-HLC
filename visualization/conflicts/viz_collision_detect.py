@@ -92,7 +92,7 @@ def main(json_file):
     # Adjust layout and display plot
     plt.tight_layout()
     plt.savefig("../collision_in_" + str(data["constraint_node"]["node_id"]) + ".png")
-    # plt.show()
+    plt.close()
 
 if __name__ == "__main__":
     prefix = 'collision_in_node'

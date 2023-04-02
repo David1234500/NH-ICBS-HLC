@@ -3,7 +3,7 @@ set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE release)
 cmake_minimum_required(VERSION 3.10)
 
-option(WITH_NLOPT "Inlcude nlopt dependend executables in compile" OFF)
+option(WITH_NLOPT "Inlcude nlopt dependend executables in compile" ON)
 
 ## Compile and include Eigen
 add_subdirectory(thirdparty/eigen)

@@ -148,6 +148,7 @@ struct Pose2WithTime{
 
     PoseByIndex baseNode;
     uint32_t path_depth_index = 0;
+    uint32_t rem_seg_index = 0;
 
     inline void operator=(Pose2D e){
         pos = e.pos;

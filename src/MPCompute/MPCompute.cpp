@@ -146,7 +146,7 @@ std::vector<Eigen::Vector2i> MPCompute::integerPointsInParallelogram(const Eigen
     int32_t xstep = Config::getInstance().getXstep();
     float hstep = Config::getInstance().get<float>({"disc","hstep"});
 
-    auto lim_vecs = dynamics::SimpleDynamicsModel::vector_limits(heading, vel_modifier * vlevels[2] * dynamics::SimpleDynamicsModel::velocity_limit());
+    auto lim_vecs = dynamics::SimpleDynamicsModel::vector_limits(heading, vel_modifier * vlevels[4] * dynamics::SimpleDynamicsModel::velocity_limit());
     dynamics::data::Vector2Df vbase = {1.0f, 0.f};
     auto vvec = Eigen::Rotation2Df(heading) * vbase;
 
@@ -209,7 +209,7 @@ void MPCompute::computeMPEdges(){
     // Compute for each heading and speed from our original vehicle
     for(int32_t sv = 0; sv < map_size_speed; sv ++){ 
         for(int32_t sh = 0; sh < map_size_angle / 4; sh ++){
-            for(int32_t ts = std::max(0, sv - 1); ts < std::min(map_size_speed, sv + 2); ts ++){
+            for(int32_t ts = std::max(0, sv - 1); ts < std::min(map_size_speed, sv + 1); ts ++){
 
                 if(sv == zero_velocity_level && ts == zero_velocity_level){
                     continue;

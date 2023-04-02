@@ -62,6 +62,7 @@ def visualize_nodes(nodes, unique_constraints):
 
     plt.title("Node Tree with Associated Avoid Constraints")
     plt.savefig("../cbs_tree.png")
+    plt.close()
 
 nodes = load_nodes(os.getcwd())
 unique_constrs = unique_constraints(nodes)

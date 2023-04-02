@@ -50,9 +50,9 @@ struct constraint_node{
     uint64_t sic = 0;
     uint32_t node_id = 0;
     uint32_t father = 0;
+    bool feasible = false;
     
     std::vector<dynamics::data::PBIConstraint> avoid;
-    
     std::map<int32_t, LLResult> result;
    
     bool operator < (const constraint_node r) const {
@@ -236,7 +236,7 @@ bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::PoseByIndex
     
     if(base.x < x_lower_thres || base.x > x_upper_thres || base.y < y_lower_thres || base.x > y_upper_thres){
         for(auto pose: mp_trajectory){
-            register auto position = cpose.pos + pose.pos;
+            auto position = cpose.pos + pose.pos;
             if(position[0] > x_cm || position[0] < 0 || position[1] > y_cm || position[1] < 0){
                 return false;
             }
@@ -246,8 +246,8 @@ bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::PoseByIndex
 }
 
 LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles){
-    int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
-    int32_t allowed_rev_counter = Config::getInstance().get<int32_t>({"allowed_reversing"});
+    static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    static int32_t allowed_rev_counter = Config::getInstance().get<int32_t>({"allowed_reversing"});
 
     std::priority_queue<dynamics::data::LLNode> openQueue;
     std::unordered_set<dynamics::data::PoseByIndex> openSet;
@@ -309,7 +309,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
 
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
-               if( current.timestep == obstacle.t || obstacle.t == -1 ){
+               if( std::abs(current.timestep - obstacle.t ) <= 2 || obstacle.t == -1 ){
                     if(std::abs(gl_neighbor.x - obstacle.x ) == 0 && std::abs(gl_neighbor.y - obstacle.y) == 0){
                     discard_due_to_obstacle = true;
                     break;
@@ -363,10 +363,15 @@ void writeCollisionInfoToDisc(const CollisionInfo& collision_info,
 
     // Store CollisionInfo struct data
     j["collision_occurred"] = collision_info.collision_occurred;
+    j["track_end"] = collision_info.collision_with_veh_at_track_end;
     j["index1"] = collision_info.index1;
     j["index2"] = collision_info.index2;
+    j["feasible1"] = collision_info.one_feasible;
+    j["feasible2"] = collision_info.two_feasible;
     j["car_index_1"] = collision_info.car_index_1;
     j["car_index_2"] = collision_info.car_index_2;
+    j["car_rem_index_1"] = collision_info.car_rem_1;
+    j["car_rem_index_2"] = collision_info.car_rem_2;
     j["pose1"] = {{"pos", {collision_info.pose1.pos[0], collision_info.pose1.pos[1]}},
                   {"h", collision_info.pose1.h},
                   {"vel", collision_info.pose1.vel},
@@ -535,6 +540,7 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
             next_with_time.baseNode = nodes.at(i - 1);
             
             next_with_time.path_depth_index = path_depth_index;
+            next_with_time.rem_seg_index = nodes.size() - i;
             next_with_time = next_pose;
 
             next_with_time.time_ms = path_depth_index * 2 * timestep_ms + ts;
@@ -549,6 +555,7 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
             
             next_pose2_with_time.baseNode = nodes.at(i - 1); //Potentially the -1 is required!
             next_pose2_with_time.path_depth_index = path_depth_index;
+            next_pose2_with_time.rem_seg_index = nodes.size() - i;
             
             next_pose2_with_time.time_ms = path_depth_index * 2 * timestep_ms + timestep_ms + ts;
             result.push_back(next_pose2_with_time);

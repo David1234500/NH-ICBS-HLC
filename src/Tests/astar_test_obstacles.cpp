@@ -26,7 +26,7 @@ int main() {
     static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
     static int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     static std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
-
+    static int32_t driving_velocity_level = Config::getInstance().get<int32_t>({"velocity","driving_velocity_level"});
 
     dynamics::data::PoseByIndex end = {5,25,7,zero_velocity_level};
     dynamics::data::PoseByIndex start = {25,3,5,zero_velocity_level};
@@ -34,9 +34,9 @@ int main() {
     std::cout << "Start AStar!" << std::endl;
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     std::vector<dynamics::data::PBIConstraint> constraints;
-    dynamics::data::PBIConstraint constr = {28,-7,3,0};
+    dynamics::data::PBIConstraint constr = {28,-7,3,driving_velocity_level};
     constraints.push_back(constr);
-    dynamics::data::PBIConstraint constr2 = {26,7,6,0};
+    dynamics::data::PBIConstraint constr2 = {26,7,6,driving_velocity_level};
     constraints.push_back(constr2);
     //6:9:4:2 index: 8
     // dynamics::data::PBIConstraint constr3 = {6,9,4,0};

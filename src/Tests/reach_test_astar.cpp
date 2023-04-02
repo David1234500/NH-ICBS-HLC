@@ -11,14 +11,14 @@ using std::chrono::system_clock;
 
 int main() {
 
-
+    static int32_t driving_velocity_level = Config::getInstance().get<int32_t>({"velocity","driving_velocity_level"});
     std::shared_ptr<CBSPlanner> planner = std::make_shared<CBSPlanner>();
     std::cout << "Loading graph from disk!" << std::endl;
     planner->mp_comp.loadGraphFromDisk();
     std::cout << "Finished loading graph from disk!" << std::endl;
     
-    dynamics::data::PoseByIndex start = {30,30,7,2};
-    dynamics::data::PoseByIndex end = {28,12,1,2};
+    dynamics::data::PoseByIndex start = {30,30,7,driving_velocity_level};
+    dynamics::data::PoseByIndex end = {28,12,1,driving_velocity_level};
     std::vector<uint32_t> times;
     
     std::cout << "Start AStar!" << std::endl;

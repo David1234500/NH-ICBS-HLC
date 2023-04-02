@@ -25,7 +25,7 @@ if(steering_angle <= 0.05f){
 }
 
 // Compute radius of driven curve
-float radius = 15 / std::sin(steering_angle);  /* TODO: Correct Wheelbase here! */
+float radius = 20.f / std::sin(steering_angle);  
 
 // Compute circumference of driven circle
 float circ = 2 * PI * radius;
@@ -122,7 +122,7 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::forceBestFit(Pose2D current
     float center_average_speed = ((current_pose.vel + target_pose.vel) / 2.f);
     
     if(center_average_speed < 0.f){
-        current_angle_span = 0.2f * current_angle_span;
+        current_angle_span = 0.1f * current_angle_span;
     }
     
     float current_error = 1000.f;
@@ -186,5 +186,5 @@ float SimpleDynamicsModel::velocity_limit(){
 }
 
 float SimpleDynamicsModel::angle_limit(){
-    return PI / 8; 
+    return PI / 10; 
 }

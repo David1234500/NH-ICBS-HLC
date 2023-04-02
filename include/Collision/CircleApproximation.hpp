@@ -55,6 +55,9 @@ class CircleApproximation: public CollisionDetectBase{
                         if(idx >= track2_size){
                             collision_info.collision_with_veh_at_track_end = 2;
                         }
+
+                        collision_info.car_rem_1 = precise_pose1.rem_seg_index;
+                        collision_info.car_rem_2 = precise_pose2.rem_seg_index;
                         
                         collision_info.pose1bi = precise_pose1.baseNode;
                         collision_info.pose2bi = precise_pose2.baseNode;
