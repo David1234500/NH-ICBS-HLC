@@ -34,9 +34,8 @@
         "fit_allowed_speed_difference": 0.15
     },
     "compute": {
-        "worker_count": 20
+        "worker_count": 28
     },
-    
     "mpnl_weights": {
         "mu_pd": 1.0,
         "mu_hd": 10.0,
@@ -44,16 +43,20 @@
         "mu_vccd": 0.01,
         "mu_sccd": 1.0
     },
+    "mpnl_multi_start_staged":{
+        "uni_sample_count":3,
+        "rand_sample_count":1
+    },
     "mpnl_args":{
       "ts_ms": 500.0,
       "ubf": [ 0.30,  0.30,   60.0,  60.0],
       "lbf": [-0.30, -0.30,  -60.0, -60.0],
       "ubr": [ 0.05,  0.05,   60.0,  60.0],
       "lbr": [-0.05, -0.05,   -60.0, -60.0],
-      "maxt": 1.0,
-      "st_val": 6.0,
+      "maxt": 2.0,
+      "st_val": 5.0,
       "a_v": 2.0,
-      "a_p": 0.5,
+      "a_p": 1.0,
       "a_scc": 0.4,
       "a_h": 0.10
     },
@@ -61,17 +64,19 @@
 
     "mpnl_param_weights": {
         "mu_l": 1.0,
-        "mu_lth": 7.0,
+        "mu_lth": 1.0,
         "mu_vd": 1.0,
         "mu_hth": 10.0
     },
     "mpnl_param_args": {
         "ts_ms": 500.0,
         "obj_lam_target": 40.0,
-        "ub": [70.0, 5.0,  0.35, 0.39269908169872414, 65.0],
-        "lb": [0.0,  0.0, -0.35,-0.39269908169872414, 20.0],
+        "ub": [60.0, 5.0,  0.30, 0.30, 65.0],
+        "lb": [0.0,  0.0, -0.30,-0.30, 0.0],
         "maxt": 20.0,
-        "st_val": 5.0
+        "st_val": 2.0,
+        "uni_sample_count":0,
+        "rand_sample_count":200
     },
     "start_locations":{
         "pose1":[5],

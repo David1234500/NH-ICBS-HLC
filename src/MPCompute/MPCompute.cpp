@@ -209,7 +209,7 @@ void MPCompute::computeMPEdges(){
     // Compute for each heading and speed from our original vehicle
     for(int32_t sv = 0; sv < map_size_speed; sv ++){ 
         for(int32_t sh = 0; sh < map_size_angle / 4; sh ++){
-            for(int32_t ts = std::max(0, sv - 1); ts < std::min(map_size_speed, sv + 1); ts ++){
+            for(int32_t ts = std::max(0, sv - 1); ts <= std::min(map_size_speed, sv + 1); ts ++){
 
                 if(sv == zero_velocity_level && ts == zero_velocity_level){
                     continue;
@@ -389,6 +389,7 @@ void MPCompute::loadGraphFromDisk(std::string path){
     for(auto edge: jf["edges"]){
         MotionPrimitive tedge;
 
+        //Steering inputs for motion primitive
         tedge.link.s_a = edge["settings"]["a1"];
         tedge.link.s_a_2 = edge["settings"]["a2"];
         tedge.link.s_v = edge["settings"]["v1"];
@@ -397,16 +398,19 @@ void MPCompute::loadGraphFromDisk(std::string path){
         tedge.link.a_error = edge["error"]["ae"];
         tedge.link.p_error = edge["error"]["pe"];
 
+        //Real Pose at end of track
         tedge.link.h = edge["target"]["a"];
         tedge.link.pos[1] = edge["target"]["y"];
         tedge.link.pos[0] = edge["target"]["x"];
         tedge.link.vel = edge["target"]["s"];
 
+        //Target index location
         tedge.target.s = edge["targeti"]["s"];
         tedge.target.a = edge["targeti"]["a"];
         tedge.target.x = edge["targeti"]["x"];
         tedge.target.y = edge["targeti"]["y"];
 
+        //Load positions on mp inbetween nodes
         for (int32_t i = 0; i < edge["curve"].size(); i += (edge["curve"].size() / mp_sample_count)) {
             dynamics::data::Pose2D pose;
             pose.pos[0] = edge["curve"].at(i)["x"];
@@ -414,6 +418,87 @@ void MPCompute::loadGraphFromDisk(std::string path){
             tedge.trajectory.push_back(pose);
         }
 
+        //Store under source angle index and source speed index
         m_mpmap[edge["source"]["a"]][edge["source"]["s"]].push_back(tedge);
+    }
+}
+
+void MPCompute::mergeGraphsFromDisk(std::string path1, std::string path2){
+     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    float api = Config::getInstance().get<float>({"disc","hstep"});
+    int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+    int32_t mp_sample_count = Config::getInstance().get<int32_t>({"border_detect","mp_sample_count"});
+    std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
+    
+    loadGraphFromDisk(path1);
+
+    std::map<int, std::map<int, std::vector<MotionPrimitive>>> mpmap2;
+
+    std::ifstream ifs(path2);
+    json jf = json::parse(ifs);
+
+    for(auto edge: jf["edges"]){
+        MotionPrimitive tedge;
+
+        //Steering inputs for motion primitive
+        tedge.link.s_a = edge["settings"]["a1"];
+        tedge.link.s_a_2 = edge["settings"]["a2"];
+        tedge.link.s_v = edge["settings"]["v1"];
+        tedge.link.s_v_2 = edge["settings"]["v2"];
+
+        tedge.link.a_error = edge["error"]["ae"];
+        tedge.link.p_error = edge["error"]["pe"];
+
+        //Real Pose at end of track
+        tedge.link.h = edge["target"]["a"];
+        tedge.link.pos[1] = edge["target"]["y"];
+        tedge.link.pos[0] = edge["target"]["x"];
+        tedge.link.vel = edge["target"]["s"];
+
+        //Target index location
+        tedge.target.s = edge["targeti"]["s"];
+        tedge.target.a = edge["targeti"]["a"];
+        tedge.target.x = edge["targeti"]["x"];
+        tedge.target.y = edge["targeti"]["y"];
+
+        //Load positions on mp inbetween nodes
+        for (int32_t i = 0; i < edge["curve"].size(); i += (edge["curve"].size() / mp_sample_count)) {
+            dynamics::data::Pose2D pose;
+            pose.pos[0] = edge["curve"].at(i)["x"];
+            pose.pos[1] = edge["curve"].at(i)["y"];
+            tedge.trajectory.push_back(pose);
+        }
+
+        int source_a = edge["source"]["a"];
+        int source_s = edge["source"]["s"];
+
+        bool found = false;
+
+        // Check if the motion primitive exists in the first set
+        for(auto& existing_edge : m_mpmap[source_a][source_s]) {
+            if(tedge.target.s == existing_edge.target.s &&
+               tedge.target.a == existing_edge.target.a &&
+               tedge.target.x == existing_edge.target.x &&
+               tedge.target.y == existing_edge.target.y) {
+                found = true;
+                break;
+            }
+        }
+
+        // If the motion primitive is not in the first set, add it to the second set
+        if(!found) {
+            mpmap2[source_a][source_s].push_back(tedge);
+        }
+    }
+
+    // Merge the second set of motion primitives into the first set
+    for(auto& [source_a, inner_map] : mpmap2) {
+        for(auto& [source_s, primitives] : inner_map) {
+            m_mpmap[source_a][source_s].insert(m_mpmap[source_a][source_s].end(), primitives.begin(), primitives.end());
+        }
     }
 }

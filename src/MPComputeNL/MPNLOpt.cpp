@@ -1,7 +1,7 @@
-#include <MPCompute/MPNLOpt.hpp>
+#include <MPComputeNL/MPNLOpt.hpp>
 #include <Planner/CBSPlanner.hpp>
 #include <Planner/Logger.hpp>
-#include <MPCompute/MPNLOptSingle.hpp>
+#include <MPComputeNL/MPNLOptSingle.hpp>
 
 #include <vector>
 #include <set>

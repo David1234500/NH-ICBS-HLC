@@ -7,6 +7,30 @@
 #include <DynamicsModel/SingleTrackModel.hpp>
 
 #include <memory>
+#include <vector>
+#include <algorithm>
+#include <random>
+
+std::vector<std::vector<double>> generateRandomSamples(const std::vector<double>& lowerBound, const std::vector<double>& upperBound, int rand_sample_count) {
+    std::vector<std::vector<double>> randomSamples;
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::vector<std::uniform_real_distribution<double>> dist(21);
+    for (int i = 0; i < 21; i++) {
+        dist[i] = std::uniform_real_distribution<double>(lowerBound[i], upperBound[i]);
+    }
+
+    for (int i = 0; i < rand_sample_count; i++) {
+        std::vector<double> sample(21);
+        for (int dim = 0; dim < 21; dim++) {
+            sample[dim] = dist[dim](gen);
+        }
+        randomSamples.push_back(sample);
+    }
+
+    return randomSamples;
+}
 
 
 class MPNLOptParameters{
@@ -24,6 +48,8 @@ public:
         mpnl_param_weights_t w;
         double ts_ms = 0.f;
         
+        std::vector<double> init_guess = {};
+
         double obj_lam_target = 0.f;
         std::vector<double> ub;
         std::vector<double> lb;
@@ -61,6 +87,8 @@ public:
         dynamics::data::Pose2D tp = {{0,0},0,0};
         dynamics::data::Pose2D sp = {{0,0},0,0};
         
+        std::vector<double> init_guess = {};
+
         std::vector<float> lam_factor = {-1.f,-1.f};
         
         int32_t st_var_id = -1;
@@ -96,9 +124,9 @@ public:
     static double objective(const std::vector <double> &x, std::vector<double> &grad, void* f_data){
         mpnl_param_args_t* args = static_cast<mpnl_param_args_t*>(f_data);
         
-        double objv = args->w.mu_l * std::abs(x[c_lamb] - args->obj_lam_target) + args->w.mu_hth * std::abs(x[c_hth]) + args->w.mu_lth * std::abs(x[c_lamth]);
+        double objv = args->w.mu_hth * std::abs(x[c_hth]) + args->w.mu_lth * std::abs(x[c_lamth]);
 
-        std::cout << "obj: " << std::to_string(objv)  <<" [" << std::to_string( x[c_lamb] - args->obj_lam_target)  << ", " << std::to_string(- std::abs(x[c_st_1]) - std::abs(x[c_st_2] - std::abs(x[c_st_3]))) << ", " << std::to_string(std::abs(x[c_hth])) << ", " <<std::to_string(std::abs(x[c_lamth])) << "]" << std::endl;
+        // std::cout << "obj: " << std::to_string(objv)  <<" [" << std::to_string( x[c_lamb] - args->obj_lam_target)  << ", " << std::to_string(- std::abs(x[c_st_1]) - std::abs(x[c_st_2] - std::abs(x[c_st_3]))) << ", " << std::to_string(std::abs(x[c_hth])) << ", " <<std::to_string(std::abs(x[c_lamth])) << "]" << std::endl;
         return objv;
     }
 
@@ -268,9 +296,6 @@ public:
         m_optimizer->add_inequality_constraint(constraint_position_delta, static_cast<void*>(c5_args), 0.01f);
         m_optimizer->add_inequality_constraint(constraint_heading_delta, static_cast<void*>(c5_args), 0.01f);
 
-
-        //TODO CORRECT THIS, NO ACCEL ALLOWED
-
         // PS -> P4 H0
         mpnl_param_constraint_args* c6_args = new mpnl_param_constraint_args;
         c6_args->args = args;
@@ -376,7 +401,7 @@ public:
         return retval;
     }
 
-    void visualize_results(mpnl_param_return* result){
+    void visualize_results(mpnl_param_return* result, int32_t id, bool success){
         float hsteps =  Config::getInstance().get<float>({"map","angle_steps"});
         float dstep =  Config::getInstance().get<float>({"disc","dstep"});
         float hstep =  Config::getInstance().get<float>({"disc","hstep"});
@@ -453,7 +478,7 @@ public:
         comp["edges"] = res;
         comp["map"] = map;
 
-        std::ofstream o("mp_param_res.json");
+        std::ofstream o("mp_param_res" + std::to_string(id) + "S" +  std::to_string(success) + ".json");
         o << comp << std::endl;
         o.close();
     }

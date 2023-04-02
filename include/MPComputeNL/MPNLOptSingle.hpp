@@ -19,6 +19,9 @@ public:
     struct mpnl_args_t{
         dynamics::data::Pose2D sp = {{0,0},0,0};
         dynamics::data::Pose2D tp = {{0,0},0,0};
+
+        std::vector<double> init_guess = {0,0,0,0};
+
         mpnl_weights_t w;
         double ts_ms = 0.f;
         std::vector<double> ub;
@@ -145,7 +148,7 @@ public:
             }
         }
 
-        m_result = {0,0,0,0};
+        m_result = args->init_guess;
 
         // Set the stopping criteria
         m_optimizer->set_maxtime(args->maxt);

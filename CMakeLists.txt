@@ -17,7 +17,7 @@ add_subdirectory(thirdparty/json)
 include_directories("include")
 
 
-if($WITH_NLOPT)
+if(${WITH_NLOPT})
 
 file(GLOB SRC "src/Planner/*.cpp" "src/MPComputeNL/*.cpp" "src/MPCompute/*.cpp" "src/DynamicsModel/*.cpp" "src/util/*.cpp" "src/*")
 add_library(planner_lib SHARED ${SRC})
@@ -55,7 +55,7 @@ foreach(src_ ${EXEC_SRC})
     target_link_libraries(${target} planner_lib)
 endforeach()
 
-if($WITH_NLOPT)
+if(${WITH_NLOPT})
 
 	file(GLOB EXEC_SRC "src/ExecNL/*.cpp")
 	foreach(src_ ${EXEC_SRC})
