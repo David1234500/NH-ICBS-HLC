@@ -1,5 +1,5 @@
 {
-    "mp_state_graph":"mp_state_graph.json",
+    "mp_file":"../mp_state_graph.json",
     "map": {
         "angle_steps": 8,
         "speed_steps": 3,
@@ -11,7 +11,7 @@
         "dstep": 7.0,
         "hstep": 0.7853
     },
-    "allowed_reversing":3,
+    "allowed_reversing":2,
     "collision_detect":{
         "mode":"circle",
         "ov_appr_threshold": 100.0,
@@ -35,7 +35,7 @@
         "fit_allowed_speed_difference": 0.15
     },
     "compute": {
-        "worker_count": 28
+        "worker_count": 26
     },
     "mpnl_weights": {
         "mu_pd": 1.0,
@@ -45,16 +45,16 @@
         "mu_sccd": 1.0
     },
     "mpnl_multi_start_staged":{
-        "uni_sample_count":2,
-        "rand_sample_count":0
+        "uni_sample_count":4,
+        "rand_sample_count":2
     },
     "mpnl_args":{
       "ts_ms": 500.0,
-      "ubf": [ 0.22,  0.22,   60.0,  60.0],
-      "lbf": [-0.22, -0.22,  -60.0, -60.0],
+      "ubf": [ 0.30,  0.30,   60.0,  60.0],
+      "lbf": [-0.30, -0.30,  -60.0, -60.0],
       "ubr": [ 0.05,  0.05,   60.0,  60.0],
-      "lbr": [-0.05, -0.05,  -60.0, -60.0],
-      "maxt": 1.0,
+      "lbr": [-0.05, -0.05,   -60.0, -60.0],
+      "maxt": 2.0,
       "st_val": 5.0,
       "a_v": 2.0,
       "a_p": 1.0,
@@ -79,8 +79,5 @@
         "uni_sample_count":0,
         "rand_sample_count":200
     },
-    "test_target_locations2":[[32,4,0],[60,28,1],[33,53,3],[5,29,6]],
-    "test_target_locations3":[[44,31,4],[30,40,5],[ 21,26,0],[34,18,1]],
-    "test_target_locations":[[9,5,6],[8,51,4],[ 56,50,3],[60,9,1]],
-    "hlc_main_log_level":1
+    "test_target_locations":[[5,5,3],[5,20,3],[5,10,3],[5,30,3]]
 }
