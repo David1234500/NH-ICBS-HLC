@@ -98,23 +98,24 @@ ReachabilityResult CBSPlanner::checkForReachability(){
         m_lowLevelWorkers.push_back(std::thread(&CBSPlanner::low_level_astar_worker, this, i));
     }
 
+    std::map<uint64_t, std::pair<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>> jobs;
     // Assumption 1: Every node for a full level is reachable
     uint32_t job_count = 0;
     for(int32_t v = 2; v < map_size_speed; v ++){
        
             
-            for(int32_t tx = -reachable_node_count; tx < reachable_node_count; tx ++){
+            for(int32_t tx = -reachable_node_count/2; tx < reachable_node_count/2; tx ++){
                 rlog("ReachCheck", LOG_INFO, "Checking reachability for speed: " + std::to_string(v) );
-                for(int32_t ty = -reachable_node_count; ty < reachable_node_count; ty ++){
+                for(int32_t ty = -reachable_node_count/2; ty < reachable_node_count/2; ty ++){
 
                     for(int32_t ta = 0; ta < map_size_angle; ta ++){
                         for(int32_t sh = 0; sh < map_size_angle; sh ++){
                     
-                            dynamics::data::PoseByIndex start = {reachable_node_count,reachable_node_count,sh,v};
+                            dynamics::data::PoseByIndex start = {30,30,sh,v};
                             dynamics::data::PoseByIndex target = {tx,ty,ta,v};
                             auto global = toGlobalIndex(start, target);
                            
-            
+                            jobs[job_count] = std::make_pair(start,global);
                             rlog("ReachCheck", LOG_INFO, "Checking reachability for position: " + std::to_string(tx) + ":" + std::to_string(ty) + ":" + std::to_string(ta));
                             
                             constraint_node node;
@@ -142,7 +143,7 @@ ReachabilityResult CBSPlanner::checkForReachability(){
         }else{
             rlog("ReachCheck", LOG_INFO, "Failed for a configuration! ");
             result.reachable = false;
-            return result;
+            result.unreachable_configurations.push_back(jobs[res.job_id]);
         }
     }
 

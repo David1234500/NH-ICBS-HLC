@@ -146,7 +146,7 @@ std::vector<Eigen::Vector2i> MPCompute::integerPointsInParallelogram(const Eigen
     int32_t xstep = Config::getInstance().getXstep();
     float hstep = Config::getInstance().get<float>({"disc","hstep"});
 
-    auto lim_vecs = dynamics::SimpleDynamicsModel::vector_limits(heading, vel_modifier * vlevels[4] * dynamics::SimpleDynamicsModel::velocity_limit());
+    auto lim_vecs = dynamics::SimpleDynamicsModel::vector_limits(heading, vel_modifier * vlevels[2] * dynamics::SimpleDynamicsModel::velocity_limit());
     dynamics::data::Vector2Df vbase = {1.0f, 0.f};
     auto vvec = Eigen::Rotation2Df(heading) * vbase;
 
@@ -433,7 +433,7 @@ void MPCompute::mergeGraphsFromDisk(std::string path1, std::string path2){
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     int32_t mp_sample_count = Config::getInstance().get<int32_t>({"border_detect","mp_sample_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
-    
+
     loadGraphFromDisk(path1);
 
     std::map<int, std::map<int, std::vector<MotionPrimitive>>> mpmap2;
@@ -492,6 +492,7 @@ void MPCompute::mergeGraphsFromDisk(std::string path1, std::string path2){
         // If the motion primitive is not in the first set, add it to the second set
         if(!found) {
             mpmap2[source_a][source_s].push_back(tedge);
+            rlog("mergeGraphsFromDisk", LOG_INFO," Found new unqiue configuration: ["+ std::to_string(source_a) + ", " + std::to_string(source_s) + "] ->  [" + std::to_string(tedge.target.x) + ", " + std::to_string(tedge.target.y) + ", " + std::to_string(tedge.target.a) + ", " + std::to_string(tedge.target.s) + "]");
         }
     }
 

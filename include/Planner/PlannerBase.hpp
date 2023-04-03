@@ -159,7 +159,7 @@ dynamics::data::Pose2D indexToPose(dynamics::data::PBIConstraint global){
 
 
 
-void writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target,  std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom){
+void writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target,  std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom, std::string name="visited_nodes.json"){
     json visited_nodes;
     
     visited_nodes["target"]["x"] = target.x;
@@ -188,7 +188,7 @@ void writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dynamics::data::
         visited_nodes["nodes"].push_back(node);
     }
 
-    std::ofstream o("visited_nodes.json");
+    std::ofstream o(name);
     o << visited_nodes << std::endl;
     o.close();
 
@@ -309,7 +309,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
 
             bool discard_due_to_obstacle = false;
             for(auto obstacle : obstacles){
-               if( std::abs(current.timestep - obstacle.t ) <= 2 || obstacle.t == -1 ){
+               if( std::abs(current.timestep - obstacle.t ) <= 1 || obstacle.t == -1 ){
                     if(std::abs(gl_neighbor.x - obstacle.x ) == 0 && std::abs(gl_neighbor.y - obstacle.y) == 0){
                     discard_due_to_obstacle = true;
                     break;
@@ -340,13 +340,122 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
         }
     }
     
-    // writeVisitedNodesToDisk(start, target, cameFrom);
+    writeVisitedNodesToDisk(start, target, cameFrom, "FLLT"+ std::to_string(target.x) + "_" + std::to_string(target.y) + "_" + std::to_string(target.a) + "_" + std::to_string(target.s) +"S"+ std::to_string(start.x) + "_" + std::to_string(start.y) + "_" + std::to_string(start.a)+ "_" + std::to_string(start.s) + ".json");
     rlog("ASTAR", LOG_WARNING, "Found no viable path with #open: " + std::to_string(explored_nodes));
     rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a) + ":" + std::to_string(target.s));
     rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a)+ ":" + std::to_string(start.s));
 
     LLResult res;
     res.found_path = false;
+    res.spline.clear();
+    
+    return res;
+}
+
+
+
+LLResult astar_reversed(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles = {}){
+    static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    static int32_t allowed_rev_counter = Config::getInstance().get<int32_t>({"allowed_reversing"});
+
+    static int32_t x_steps = Config::getInstance().getXstep(); 
+    static int32_t y_steps = Config::getInstance().getYstep();
+    static int32_t dstep = Config::getInstance().get<int32_t>({"disc","dstep"});
+
+    std::priority_queue<dynamics::data::LLNode> openQueue;
+    std::unordered_set<dynamics::data::PoseByIndex> openSet;
+
+    std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
+    std::unordered_map<dynamics::data::PoseByIndex, MotionPrimitive> usedEdge;
+
+    int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+
+    auto current_pose = indexToPose(target);
+    auto target_pose = indexToPose(start);
+
+    std::unordered_map<dynamics::data::PoseByIndex, float> fScore;
+    fScore[target] = (target_pose.pos - current_pose.pos).norm();
+    
+    std::unordered_map<dynamics::data::PoseByIndex, float> gScore;
+    gScore[target] = 0.f;
+
+    dynamics::data::LLNode initial = {target, fScore[target], 0};
+    openQueue.push(initial);
+    openSet.insert(target);
+    uint32_t explored_nodes = 0; 
+
+    dynamics::data::LLNode current;
+
+    while(!openQueue.empty()){
+        
+        current = openQueue.top(); 
+        explored_nodes += 1;
+
+        if(current.pose == start){
+            rlog("ASTAR", LOG_INFO, "Found path for " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
+            
+            LLResult res;
+            res.path = getPath(cameFrom, current.pose);
+            res.spline = getSplines(cameFrom, usedEdge, current.pose);
+            res.interprimitive = getInterPrimitivPositions(cameFrom, usedEdge, current.pose);
+            return res;
+        }
+
+        openQueue.pop();
+        auto current_pose = indexToPose(current.pose);
+         for (int32_t a = 0; a < map_size_angle; a++) {
+            for (int32_t s = 0; s < map_size_speed; s++) {
+                for (auto rel_neighbor : mp_comp.m_mpmap[a][s]) {
+
+                    // Does this MP end at my current state with respect to heading and speed?
+                    if (rel_neighbor.target.a != current.pose.a || rel_neighbor.target.s != current.pose.s) {
+                        continue;
+                    }
+
+                    //MP always start at the origin and end relative to the origin, so subtract MP from current position to get the start
+                    auto gl_neighbor = rel_neighbor.target - current.pose;
+                    gl_neighbor.a = a;
+                    gl_neighbor.s = s;
+
+                    //Check if start of MP is still inside our drivable envelope
+                    if(gl_neighbor.x < 0 || gl_neighbor.x > x_steps || gl_neighbor.y < 0 || gl_neighbor.y > y_steps ){
+                       continue;
+                    }
+
+                    //Update AStar
+                    auto neigh_pose = indexToPose(gl_neighbor);
+                    float dist = (neigh_pose.pos - current_pose.pos).norm();
+
+                    float tentative_score = gScore[current.pose] + dist; 
+                    if(gScore.count(gl_neighbor) == 0 || tentative_score < gScore[gl_neighbor]){
+
+                        cameFrom[gl_neighbor] = current.pose;
+                        usedEdge[gl_neighbor] = rel_neighbor;
+                        gScore[gl_neighbor] = tentative_score;
+                        
+                        float h = (neigh_pose.pos - target_pose.pos).norm();
+                        fScore[gl_neighbor] = tentative_score + h;
+                        
+                        if(openSet.count(gl_neighbor) == 0){
+                            dynamics::data::LLNode node = {gl_neighbor, fScore[gl_neighbor], current.timestep + 1, (rel_neighbor.target.s < zero_velocity_level ? current.rev_counter + 1 : current.rev_counter)};
+                            openQueue.push(node);
+                            openSet.insert(gl_neighbor);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    writeVisitedNodesToDisk(start, target, cameFrom);
+    rlog("ASTAR", LOG_WARNING, "Found no viable path with #open: " + std::to_string(explored_nodes));
+    rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a) + ":" + std::to_string(target.s));
+    rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a)+ ":" + std::to_string(start.s));
+
+    LLResult res;
+    res.path = getPath(cameFrom, current.pose);
     res.spline.clear();
     
     return res;

@@ -123,10 +123,10 @@ void MPNLOptStagedMultiStart::workerThreadMPEdges(uint32_t index){
                 }
 
                 auto uni_samples = generateUniformSamples(args.lb, args.ub, uni_sample_count);
-                // auto rand_samples = generateRandomSamples(args.lb, args.ub, rand_sample_count);
+                auto rand_samples = generateRandomSamples(args.lb, args.ub, rand_sample_count);
                 std::vector<std::vector<double>> samples;
                 samples.insert(samples.end(), uni_samples.begin(), uni_samples.end());
-                // samples.insert(samples.end(), rand_samples.begin(), rand_samples.end());
+                samples.insert(samples.end(), rand_samples.begin(), rand_samples.end());
 
                 // rlog("workerMPEdges", LOG_INFO, std::to_string(m_mpTaskQueue.size()) + "Task: " + std::to_string(threadTask.cai) +":"+ std::to_string(threadTask.csi) +" -> "+ std::to_string(threadTask.txi) +":"+ std::to_string(threadTask.tyi) + ":"+ std::to_string(threadTask.tsi) + ":" + std::to_string(samples.size()));
 
