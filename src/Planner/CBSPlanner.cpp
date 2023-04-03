@@ -213,15 +213,15 @@ CollisionInfo checkCollisionWithinConstraintNode(const constraint_node& constrai
     return CollisionInfo(); // Return an empty CollisionInfo object if no collision occurred
 }
 
-constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions){
+constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions, bool relax){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
     float dpc = Config::getInstance().get<float>({"disc","dstep"});
-    
     float api = Config::getInstance().get<float>({"disc","hstep"});
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+    int32_t driving_velocity_level = Config::getInstance().get<int32_t>({"velocity","driving_velocity_level"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
     static bool col_deb = Config::getInstance().get<bool>({"collision_detect","debug_mode"});
    
@@ -236,8 +236,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     // Enqueu all jobs to astar workers
     std::priority_queue<constraint_node> openSet;
     constraint_node node;
+
     for(uint32_t i = 0; i < start_positions.size(); i ++){
-        enqueue_astar(start_positions.at(i),target_positions.at(i), node, i);
+        enqueue_astar(start_positions.at(i),target_positions.at(i), node, i, relax);
     }
 
     //Wait for all threads to termiante
@@ -248,7 +249,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
         
         if(!m_lowLevelResults.at(i).found_path){
-             rlog("CBS", LOG_ERROR, "CBS INFEASIBLE due to not finding initial path");
+            rlog("CBS", LOG_ERROR, "CBS INFEASIBLE due to not finding initial path");
             return constraint_node();
         }
         sic += m_lowLevelResults.at(i).path->size();

@@ -1,4 +1,5 @@
 {
+    "mp_file":"../mp_state_graph.json",
     "map": {
         "angle_steps": 8,
         "speed_steps": 3,
@@ -78,10 +79,5 @@
         "uni_sample_count":0,
         "rand_sample_count":200
     },
-    "start_locations":{
-        "pose1":[5,5,3],
-        "pose2":[5,20,3],
-        "pose3":[5,10,3],
-        "pose4":[5,30,3]
-    }
+    "test_target_locations":[[5,5,3],[5,20,3],[5,10,3],[5,30,3]]
 }

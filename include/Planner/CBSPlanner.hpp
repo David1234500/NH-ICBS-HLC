@@ -23,7 +23,7 @@ public:
     CBSPlanner(){}
     ~CBSPlanner(){
     }
-    constraint_node cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions);
+    constraint_node cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions, bool relax = false);
 
     ReachabilityResult checkForReachability(); //TODO Remove
     

@@ -19,6 +19,7 @@ struct LLJob{
     dynamics::data::PoseByIndex start_positions; 
     dynamics::data::PoseByIndex target_positions;
     std::vector<dynamics::data::PBIConstraint> avoid;
+    bool relaxed_start = false;
     uint32_t job_id = 0;
     uint16_t car_id = 0;  
 };
@@ -245,9 +246,10 @@ bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::PoseByIndex
     return true;
 }
 
-LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles){
+LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles, bool relaxed = false){
     static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     static int32_t allowed_rev_counter = Config::getInstance().get<int32_t>({"allowed_reversing"});
+    static int32_t driving_velocity_level = Config::getInstance().get<int32_t>({"velocity","driving_velocity_level"});
 
     std::priority_queue<dynamics::data::LLNode> openQueue;
     std::unordered_set<dynamics::data::PoseByIndex> openSet;
@@ -267,6 +269,14 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
     dynamics::data::LLNode initial = {start, fScore[start], 0};
     openQueue.push(initial);
     openSet.insert(start);
+
+    if(relaxed){
+        initial.pose.s = driving_velocity_level;
+        start.s = driving_velocity_level;
+        openQueue.push(initial);
+        openSet.insert(start);
+    }
+
     uint32_t explored_nodes = 0; 
 
     while(!openQueue.empty()){
@@ -284,11 +294,6 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
             res.found_path = true;
 
             return res;
-        }
-
-        static bool col_deb = Config::getInstance().get<bool>({"collision_detect","debug_mode"});
-        if(col_deb){
-            // rlog("ASTAR", LOG_WARNING, "Current: " + std::to_string(current.pose.x) + ":" + std::to_string(current.pose.y) + ":" + std::to_string(current.pose.a)+ ":" + std::to_string(current.pose.s) + " timestep: " + std::to_string(current.timestep));
         }
 
         openQueue.pop();
@@ -705,7 +710,7 @@ void low_level_astar_worker(uint32_t threadid){
             continue;
         }
         
-        LLResult res = astar(job.start_positions, job.target_positions, job.avoid);
+        LLResult res = astar(job.start_positions, job.target_positions, job.avoid, job.relaxed_start);
         res.job_id = job.job_id;
         res.car_id = job.car_id;
         
@@ -715,7 +720,7 @@ void low_level_astar_worker(uint32_t threadid){
     }
 }
 
-void enqueue_astar(dynamics::data::PoseByIndex& start, dynamics::data::PoseByIndex& target, constraint_node& constraint, uint32_t& id){
+void enqueue_astar(dynamics::data::PoseByIndex& start, dynamics::data::PoseByIndex& target, constraint_node& constraint, uint32_t& id, bool relax = false){
     LLJob job;
     
     job.job_id = id;
@@ -727,6 +732,7 @@ void enqueue_astar(dynamics::data::PoseByIndex& start, dynamics::data::PoseByInd
         }
     }
     
+    job.relaxed_start = relax;
     job.start_positions = start;
     job.target_positions = target;
     job.car_id = id;
