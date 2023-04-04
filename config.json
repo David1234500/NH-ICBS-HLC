@@ -1,17 +1,17 @@
 {
     "mp_state_graph":"mp_state_graph.json",
     "map": {
-        "angle_steps": 8,
+        "angle_steps": 12,
         "speed_steps": 3,
         "x_cm": 450,
         "y_cm": 400
     },
     "timestep_ms": 500.0,
     "disc": {
-        "dstep": 7.0,
-        "hstep": 0.7853
+        "dstep": 5.0,
+        "hstep": 0.5236
     },
-    "allowed_reversing":3,
+    "allowed_reversing":2,
     "collision_detect":{
         "mode":"circle",
         "ov_appr_threshold": 100.0,
@@ -35,7 +35,7 @@
         "fit_allowed_speed_difference": 0.15
     },
     "compute": {
-        "worker_count": 28
+        "worker_count": 30
     },
     "mpnl_weights": {
         "mu_pd": 1.0,
@@ -50,8 +50,8 @@
     },
     "mpnl_args":{
       "ts_ms": 500.0,
-      "ubf": [ 0.22,  0.22,   60.0,  60.0],
-      "lbf": [-0.22, -0.22,  -60.0, -60.0],
+      "ubf": [ 0.20,  0.20,   60.0,  60.0],
+      "lbf": [-0.20, -0.20,  -60.0, -60.0],
       "ubr": [ 0.05,  0.05,   60.0,  60.0],
       "lbr": [-0.05, -0.05,  -60.0, -60.0],
       "maxt": 1.0,
