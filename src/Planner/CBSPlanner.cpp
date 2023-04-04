@@ -213,13 +213,15 @@ CollisionInfo checkCollisionWithinConstraintNode(const constraint_node& constrai
     return CollisionInfo(); // Return an empty CollisionInfo object if no collision occurred
 }
 
-constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions, bool relax){
+constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions, bool relax, bool disable_collisions){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
     float dpc = Config::getInstance().get<float>({"disc","dstep"});
     float api = Config::getInstance().get<float>({"disc","hstep"});
     int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    int32_t xsteps = Config::getInstance().getXstep();
+    int32_t ysteps = Config::getInstance().getYstep();
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     int32_t driving_velocity_level = Config::getInstance().get<int32_t>({"velocity","driving_velocity_level"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
@@ -227,6 +229,23 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
    
     rlog("CBS", LOG_DEBUG, "CBS start");
     uint32_t node_id = 0;
+    auto veh_count = std::min(start_positions.size(), target_positions.size());
+
+    for(uint32_t i = 0; i < start_positions.size() && i < target_positions.size(); i ++){
+        if(start_positions.at(i).x > xsteps || start_positions.at(i).y > ysteps || start_positions.at(i).x < 0 || start_positions.at(i).y < 0
+          || start_positions.at(i).a > map_size_angle || start_positions.at(i).a < 0 
+          || start_positions.at(i).s > map_size_speed || start_positions.at(i).s < 0 ){
+            rlog("CBS", LOG_ERROR, "Start position " + std::to_string(i) + "is invalid!");
+            return constraint_node();
+        }
+
+        if(target_positions.at(i).x > xsteps || target_positions.at(i).y > ysteps || target_positions.at(i).x < 0 || target_positions.at(i).y < 0
+          || target_positions.at(i).a > map_size_angle || target_positions.at(i).a < 0 
+          || target_positions.at(i).s > map_size_speed || target_positions.at(i).s < 0 ){
+            rlog("CBS", LOG_ERROR, "Target position " + std::to_string(i) + "is invalid!");
+            return constraint_node();
+        }
+    }
 
     m_keepThreadsAlive = true;
     for(uint32_t i = 0; i < worker_count; i ++){
@@ -237,13 +256,14 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     std::priority_queue<constraint_node> openSet;
     constraint_node node;
 
-    for(uint32_t i = 0; i < start_positions.size(); i ++){
+    for(uint32_t i = 0; i < veh_count; i ++){
         enqueue_astar(start_positions.at(i),target_positions.at(i), node, i, relax);
     }
 
     //Wait for all threads to termiante
     rlog("CBS", LOG_DEBUG, "All threads returned");
-    await_astar_result(start_positions.size());
+   
+    await_astar_result(veh_count);
 
     uint64_t sic = 0;
     for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
@@ -285,8 +305,13 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         if(col_deb){
             writeConstraintNodeToDisk(node,"node" + std::to_string(node.node_id) + ".json");
         }
-        auto info = checkCollisionWithinConstraintNode(node);
-       
+
+        CollisionInfo info;
+        if(!disable_collisions){
+            info = checkCollisionWithinConstraintNode(node);
+        }else{
+            rlog("CBS", LOG_WARNING, "Warning! All collision checks are disabled...");
+        }
         
         // Check if we have just obtained a valid solution -> terminate if yes
         if(!info.collision_occurred){
@@ -352,12 +377,12 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             m_lowLevelResults.clear();
             m_lowLevelJobs.clear();
 
-            for(uint32_t i = 0; i < start_positions.size(); i ++){
+            for(uint32_t i = 0; i < veh_count; i ++){
                 enqueue_astar(start_positions.at(i), target_positions.at(i), constraint, i);
             }
 
             //Wait for all threads to termiante
-            await_astar_result(start_positions.size());
+            await_astar_result(veh_count);
 
             // Compute SIC by hop count
             uint64_t sic = 0;
