@@ -1,5 +1,6 @@
 import json
 import matplotlib.pyplot as plt
+import sys
 
 def visualize_data(file_name):
     with open(file_name, 'r') as f:
@@ -27,4 +28,4 @@ def visualize_data(file_name):
     plt.savefig("../parameter_result.svg")
 
 # Call the function with the file name
-visualize_data('mp_param_res.json')
+visualize_data(sys.argv[1])

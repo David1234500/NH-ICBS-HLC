@@ -69,17 +69,20 @@
         "mu_l": 1.0,
         "mu_lth": 1.0,
         "mu_vd": 1.0,
-        "mu_hth": 10.0
+        "mu_hth": 10.0,
+        "mu_sum_pe":1.0,
+        "mu_sum_he":1.0
     },
     "mpnl_param_args": {
         "ts_ms": 500.0,
         "obj_lam_target": 40.0,
-        "ub": [60.0, 5.0,  0.30, 0.30, 65.0],
-        "lb": [0.0,  0.0, -0.30,-0.30, 0.0],
-        "maxt": 20.0,
-        "st_val": 2.0,
+        "ub": [60.0, 5.0,  0.35, 0.35, 100.0],
+        "lb": [40.0,  0.0, -0.35,-0.35, 20.0],
+        "maxt": 5.0,
+        "st_val": 3.0,
+        "relax_constraints":true,
         "uni_sample_count":0,
-        "rand_sample_count":200
+        "rand_sample_count":1
     },
     
     "test_target_locations":        [[32,4,0],[60,28,1],[33,53,3],[5,29,6]],

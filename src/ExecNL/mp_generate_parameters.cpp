@@ -28,7 +28,7 @@ int main() {
     lower.at(MPNLOptParameters::c_lamb) = lb[0];
     lower.at(MPNLOptParameters::c_lamth) = lb[1];
     lower.at(MPNLOptParameters::c_hth) = lb[2];
-    for(uint32_t i = MPNLOptParameters::c_st_1; i <= MPNLOptParameters::c_st_7; i ++){
+    for(uint32_t i = MPNLOptParameters::c_st_1; i <= MPNLOptParameters::c_st_212; i ++){
         lower.at(i) = lb[3];
     }
     for(uint32_t i = MPNLOptParameters::c_acc_1; i <= MPNLOptParameters::c_acc_12; i ++){
@@ -40,7 +40,7 @@ int main() {
     upper.at(MPNLOptParameters::c_lamb) = ub[0];
     upper.at(MPNLOptParameters::c_lamth) = ub[1];
     upper.at(MPNLOptParameters::c_hth) = ub[2];
-    for(uint32_t i = MPNLOptParameters::c_st_1; i <= MPNLOptParameters::c_st_7; i ++){
+    for(uint32_t i = MPNLOptParameters::c_st_1; i <= MPNLOptParameters::c_st_212; i ++){
         upper.at(i) = ub[3];
     }
     for(uint32_t i = MPNLOptParameters::c_acc_1; i <= MPNLOptParameters::c_acc_12; i ++){
@@ -77,14 +77,14 @@ int main() {
         std::shared_ptr<MPNLOptParameters> param_solver = std::make_shared<MPNLOptParameters>();
 
         MPNLOptParameters::mpnl_param_args_t args;
-        param_solver->prepare(&args);
+        auto obj = param_solver->prepare(&args, nlopt::GN_CRS2_LM);
         args.init_guess = sample;
 
         auto ret = param_solver->optimize();
         
 
         if(ret.retcode > 0 && ret.retcode < 4){
-            param_solver->visualize_results(&ret, id, true);
+            param_solver->visualize_results(&ret,obj, id, true);
             std::cout << "Completed computation with success!" << std::endl;
             std::cout << "Node spacing [cm]: " << std::to_string(ret.result[MPNLOptParameters::c_lamb]) << std::endl;
             std::cout << "Node spacing tolerance [cm]: " << std::to_string(ret.result[MPNLOptParameters::c_lamth]) << std::endl;
@@ -99,9 +99,10 @@ int main() {
             std::cout << std::endl;
             break;
         }else{
-            param_solver->visualize_results(&ret, id, false);
+            param_solver->visualize_results(&ret,obj, id, false);
             std::cout << "Completed computation but failed!" << std::endl;
         }
+        id += 1;
     }
 
 
