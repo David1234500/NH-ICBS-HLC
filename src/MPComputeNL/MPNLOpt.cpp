@@ -25,6 +25,11 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
     bool mpnl_debug = Config::getInstance().get<bool>({"mpnl_debug"});
     
     double solvetime = 0.f;
+    int32_t completedTasks = 0;
+    double totalTime = 0.0;
+    std::chrono::steady_clock::time_point taskStartTime;
+    std::chrono::steady_clock::time_point taskEndTime;
+
     while(!m_terminateMPThreads){
         
         bool hasTask = false;
@@ -32,6 +37,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
        
         m_mpTaskMutex.lock();
         if(!m_mpTaskQueue.empty()){
+            taskStartTime = std::chrono::steady_clock::now();
             threadTask = *m_mpTaskQueue.begin();
             m_mpTaskQueue.erase(m_mpTaskQueue.begin());
             rlog("workerMPEdges", LOG_INFO, std::to_string(m_mpTaskQueue.size()) + " Working now on task: " + std::to_string(threadTask.cai) +":"+ std::to_string(threadTask.csi) +" -> "+ std::to_string(threadTask.txi) +":"+ std::to_string(threadTask.tyi) + ":"+ std::to_string(threadTask.tsi));
@@ -40,14 +46,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
         }else{
             hasTask = false;
         }
-        if(m_mpTaskQueue.size() % 10 == 0){
-            double avg = 0.f;
-            for(auto t: m_solvetimes){
-                avg += (1.f/30.f) * t.second;
-            }
-            rlog("workerMPEdges", LOG_INFO, "Average solve time: " + std::to_string(avg) + "[ms] ESTTC: " + std::to_string(((avg * m_mpTaskQueue.size())/60000.f) / 15.f) + "[m]" );
-        }
-
+        
         m_mpTaskMutex.unlock();
 
         if(hasTask){
@@ -66,8 +65,7 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 MPNLOptSingle nl_stm_opt;
                 nl_stm_opt.prepare(&args, true, false);
                 
-                auto res = nl_stm_opt.optimize(); 
-                solvetime = 0.1 * static_cast<double>(res.rt_ms) + 0.9 * solvetime;
+                auto res = nl_stm_opt.optimize();
 
                 auto p1 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(args.sp, res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_st_a], res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_acc], timestep_ms);
                 auto pr = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(p1,      res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_st_a], res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_acc], timestep_ms);
@@ -184,6 +182,18 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
                 m_mpTaskMutex.unlock();
                 
             }
+
+             taskEndTime = std::chrono::steady_clock::now();
+            double taskDuration = std::chrono::duration_cast<std::chrono::milliseconds>(taskEndTime - taskStartTime).count();
+            completedTasks++;
+            totalTime += taskDuration;
+
+            double avg = totalTime / completedTasks;
+            int32_t remainingTasks = m_mpTaskQueue.size();
+            double estc = (remainingTasks / worker_count) * avg / 60000; // Convert ms to minutes
+
+           
+            rlog("workerMPEdges", LOG_INFO, "Average solve time: " + std::to_string(avg) + "[ms] ESTC: " + std::to_string(estc) + "[m]");
     
         }else{
             return;
