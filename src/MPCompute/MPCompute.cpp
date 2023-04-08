@@ -488,6 +488,10 @@ void MPCompute::mergeGraphsFromDisk(std::string path1, std::string path2){
         tedge.link.pos[0] = edge["target"]["x"];
         tedge.link.vel = edge["target"]["s"];
 
+        tedge.link.s_acc = edge["settings"]["acc1"];
+        tedge.link.s_acc_2 = edge["settings"]["acc2"];
+        tedge.link.is_acc_based = edge["settings"]["acc_based"];
+
         //Target index location
         tedge.target.s = edge["targeti"]["s"];
         tedge.target.a = edge["targeti"]["a"];
