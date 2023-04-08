@@ -48,6 +48,7 @@ void MPCompute::addSymetricMPs(double st1, double st2, double vel1, double vel2,
     epose.s_a_2 = st2;
     epose.s_v = vel1;
     epose.s_v_2 = vel2;
+    epose.is_acc_based = false;
     epose.bi_pose = tp_bi;
     MotionPrimitive mp_q1 = {epose, tp_bi};
 
@@ -64,6 +65,7 @@ void MPCompute::addSymetricMPs(double st1, double st2, double vel1, double vel2,
     epose_q2 = p_q2;
     epose_q2.s_a = st1;
     epose_q2.s_a_2 = st2;
+    epose_q2.is_acc_based = false;
     epose_q2.s_v = vel1;
     epose_q2.s_v_2 = vel2;
     epose_q2.bi_pose = pi_q2;
@@ -83,6 +85,7 @@ void MPCompute::addSymetricMPs(double st1, double st2, double vel1, double vel2,
     epose_q3 = p_q3;
     epose_q3.s_a = st1;
     epose_q3.s_a_2 = st2;
+    epose_q3.is_acc_based = false;
     epose_q3.s_v = vel1;
     epose_q3.s_v_2 = vel2;
     epose_q3.bi_pose = pi_q3;
@@ -102,6 +105,7 @@ void MPCompute::addSymetricMPs(double st1, double st2, double vel1, double vel2,
     epose_q4.s_a = st1;
     epose_q4.s_a_2 = st2;
     epose_q4.s_v = vel1;
+    epose_q4.is_acc_based = false;
     epose_q4.s_v_2 = vel2;
     epose_q4.bi_pose = pi_q4;
     MotionPrimitive mp_q4 = {epose_q4, pi_q4};
@@ -266,7 +270,7 @@ void MPCompute::computeMPEdges(){
 }
 
 
-void MPCompute::writeGraphToDisk(std::string name ){
+void MPCompute::writeGraphToDisk(std::string name, bool acc){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
     float dpc = Config::getInstance().get<float>({"disc","dstep"});
     
@@ -315,22 +319,40 @@ void MPCompute::writeGraphToDisk(std::string name ){
             
                 dynamics::data::Pose2D next_pose;
                 dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
-                for(float ts = 0; ts <= timestep_ms; ts += 50.f){
-                    next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edge.link.s_a, edge.link.s_v, ts);
-                    json point;
-                    point["x"] = next_pose.pos[0];
-                    point["y"] = next_pose.pos[1];
-                    jedge["curve"].push_back(point);
+                if(edge.link.is_acc_based){
+                    for(float ts = 0; ts <= timestep_ms; ts += 50.f){
+                        next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edge.link.s_a, edge.link.s_v, ts);
+                        json point;
+                        point["x"] = next_pose.pos[0];
+                        point["y"] = next_pose.pos[1];
+                        jedge["curve"].push_back(point);
 
-                }
-                
-                // veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
-                for(float ts = 0; ts <= timestep_ms; ts += 50.f){
-                    auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edge.link.s_a_2, edge.link.s_v_2, ts);
-                    json point;
-                    point["x"] = next_pose2.pos[0];
-                    point["y"] = next_pose2.pos[1];
-                    jedge["curve"].push_back(point);
+                    }
+                    
+                    for(float ts = 0; ts <= timestep_ms; ts += 50.f){
+                        auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edge.link.s_a_2, edge.link.s_v_2, ts);
+                        json point;
+                        point["x"] = next_pose2.pos[0];
+                        point["y"] = next_pose2.pos[1];
+                        jedge["curve"].push_back(point);
+                    }
+                }else{
+                    for(float ts = 0; ts <= timestep_ms; ts += 50.f){
+                        next_pose = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(veh_pose, edge.link.s_a, edge.link.s_acc, ts);
+                        json point;
+                        point["x"] = next_pose.pos[0];
+                        point["y"] = next_pose.pos[1];
+                        jedge["curve"].push_back(point);
+
+                    }
+                    
+                    for(float ts = 0; ts <= timestep_ms; ts += 50.f){
+                        auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(next_pose, edge.link.s_a_2, edge.link.s_acc, ts);
+                        json point;
+                        point["x"] = next_pose2.pos[0];
+                        point["y"] = next_pose2.pos[1];
+                        jedge["curve"].push_back(point);
+                    }
                 }
 
                 jedge["target"]["x"] = (dpc * edge.target.x);
@@ -340,6 +362,12 @@ void MPCompute::writeGraphToDisk(std::string name ){
 
                 jedge["settings"]["a1"] = edge.link.s_a;
                 jedge["settings"]["a2"] = edge.link.s_a_2;
+                
+                jedge["settings"]["acc1"] = edge.link.s_acc;
+                jedge["settings"]["acc2"] = edge.link.s_acc_2;
+                jedge["settings"]["acc_based"] = edge.link.is_acc_based;
+                
+
                 jedge["settings"]["v1"] = edge.link.s_v;
                 jedge["settings"]["v2"] = edge.link.s_v_2;
 
@@ -376,6 +404,7 @@ void MPCompute::loadGraphFromDisk(std::string path){
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
     int32_t mp_sample_count = Config::getInstance().get<int32_t>({"border_detect","mp_sample_count"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
+    bool use_acc = Config::getInstance().get<bool>({"use_acc_for_interprimitive_path_compute_override"});
 
 
     std::ifstream ifs(path);
@@ -411,7 +440,7 @@ void MPCompute::loadGraphFromDisk(std::string path){
         tedge.target.y = edge["targeti"]["y"];
 
         //Load positions on mp inbetween nodes
-        for (int32_t i = 0; i < edge["curve"].size(); i += (edge["curve"].size() / mp_sample_count)) {
+        for (int32_t i = 0; i < edge["curve"].size(); i += 1) {
             dynamics::data::Pose2D pose;
             pose.pos[0] = edge["curve"].at(i)["x"];
             pose.pos[1] = edge["curve"].at(i)["y"];

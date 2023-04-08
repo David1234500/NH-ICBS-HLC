@@ -13,6 +13,7 @@
     },
     "allowed_reversing":0,
     "allowed_waiting":2,
+    "use_acc_for_interprimitive_path_compute_override":true,
     "collision_detect":{
         "mode":"circle",
         "ov_appr_threshold": 100.0,

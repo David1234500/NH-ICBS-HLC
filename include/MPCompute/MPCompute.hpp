@@ -63,7 +63,7 @@ virtual void workerThreadMPEdges(uint32_t index) = 0;
 void addSymetricMPs(double st1, double st2, double vel1, double vel2, dynamics::data::PoseByIndex tp_bi, int32_t h_sw_beg, int32_t tht_cai, int32_t tht_csi, int32_t tht_tsi); 
 
 void mergeGraphsFromDisk(std::string path1, std::string path2);
-void writeGraphToDisk(std::string name = "mp_state_graph.json");
+void writeGraphToDisk(std::string name = "mp_state_graph.json", bool acc = false);
 void loadGraphFromDisk();
 void loadGraphFromDisk(std::string path);
 void printPositions();

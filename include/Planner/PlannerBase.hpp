@@ -675,33 +675,62 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
         if(astar_debug){
             rlog("GetInterprimitive", LOG_INFO, "P: " + std::to_string(nodes.at(i).x) + ":" + std::to_string(nodes.at(i).y) + ":" + std::to_string(nodes.at(i).a) + ":" + std::to_string(nodes.at(i).s) + " path_depth_index: " + std::to_string(path_depth_index));
         }
-        for(float ts = 0; ts < timestep_ms; ts += 50.f){    
-            next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, ts);
-            dynamics::data::Pose2WithTime next_with_time;
-            next_with_time.baseNode = nodes.at(i - 1);
-            
-            next_with_time.path_depth_index = path_depth_index;
-            next_with_time.rem_seg_index = nodes.size() - i;
-            next_with_time = next_pose;
+        if(edges.at(i - 1).link.is_acc_based){
+                for(float ts = 0; ts < timestep_ms; ts += 50.f){    
+                next_pose = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_acc, ts);
+                dynamics::data::Pose2WithTime next_with_time;
+                next_with_time.baseNode = nodes.at(i - 1);
+                
+                next_with_time.path_depth_index = path_depth_index;
+                next_with_time.rem_seg_index = nodes.size() - i;
+                next_with_time = next_pose;
 
-            next_with_time.time_ms = path_depth_index * 2 * timestep_ms + ts;
-            result.push_back(next_with_time);
+                next_with_time.time_ms = path_depth_index * 2 * timestep_ms + ts;
+                result.push_back(next_with_time);
+            }
+            
+            for(float ts = 0; ts < timestep_ms; ts += 50.f){
+                auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPoseUnderAcceleration(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_acc_2, ts);
+                dynamics::data::Pose2WithTime next_pose2_with_time;
+                
+                next_pose2_with_time = next_pose2;
+                
+                next_pose2_with_time.baseNode = nodes.at(i - 1); //Potentially the -1 is required!
+                next_pose2_with_time.path_depth_index = path_depth_index;
+                next_pose2_with_time.rem_seg_index = nodes.size() - i;
+                
+                next_pose2_with_time.time_ms = path_depth_index * 2 * timestep_ms + timestep_ms + ts;
+                result.push_back(next_pose2_with_time);
+            }
+        }else{
+            for(float ts = 0; ts < timestep_ms; ts += 50.f){    
+                next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, ts);
+                dynamics::data::Pose2WithTime next_with_time;
+                next_with_time.baseNode = nodes.at(i - 1);
+                
+                next_with_time.path_depth_index = path_depth_index;
+                next_with_time.rem_seg_index = nodes.size() - i;
+                next_with_time = next_pose;
+
+                next_with_time.time_ms = path_depth_index * 2 * timestep_ms + ts;
+                result.push_back(next_with_time);
+            }
+            
+            for(float ts = 0; ts < timestep_ms; ts += 50.f){
+                auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, ts);
+                dynamics::data::Pose2WithTime next_pose2_with_time;
+                
+                next_pose2_with_time = next_pose2;
+                
+                next_pose2_with_time.baseNode = nodes.at(i - 1); //Potentially the -1 is required!
+                next_pose2_with_time.path_depth_index = path_depth_index;
+                next_pose2_with_time.rem_seg_index = nodes.size() - i;
+                
+                next_pose2_with_time.time_ms = path_depth_index * 2 * timestep_ms + timestep_ms + ts;
+                result.push_back(next_pose2_with_time);
+            }
         }
         
-        for(float ts = 0; ts < timestep_ms; ts += 50.f){
-            auto next_pose2 = dynamics::SimpleDynamicsModel::computeNextPose(next_pose, edges.at(i - 1).link.s_a_2, edges.at(i - 1).link.s_v_2, ts);
-            dynamics::data::Pose2WithTime next_pose2_with_time;
-            
-            next_pose2_with_time = next_pose2;
-            
-            next_pose2_with_time.baseNode = nodes.at(i - 1); //Potentially the -1 is required!
-            next_pose2_with_time.path_depth_index = path_depth_index;
-            next_pose2_with_time.rem_seg_index = nodes.size() - i;
-            
-            next_pose2_with_time.time_ms = path_depth_index * 2 * timestep_ms + timestep_ms + ts;
-            result.push_back(next_pose2_with_time);
-        }
-
 
         path_depth_index += 1;
     }

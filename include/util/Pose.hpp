@@ -149,6 +149,10 @@ struct Pose2D{
 
     /* Velocity in m/s */
     float vel = 0.f;
+
+    inline Pose2D operator+(Pose2D e){
+        return {pos + e.pos, e.h, e.vel};
+    }
 };
 
 struct Pose2WithTime{
@@ -192,10 +196,14 @@ struct Pose2DWithError{
 
     /* settings values for the associated fit */
     float s_a = 0.f;
+    float s_acc = 0.f;
     float s_v = 0.f;
 
     float s_a_2 = 0.f;
+    float s_acc_2 = 0.f;
     float s_v_2 = 0.f;
+
+    bool is_acc_based = false;
 
     inline void operator=(const PoseByIndex& e){
        bi_pose.x = e.x; 
