@@ -237,10 +237,12 @@ void CBSPlanner::cbsWorker(int32_t id, std::vector<dynamics::data::PoseByIndex> 
         m_openSetMutex.lock();
         
         if(m_openSet.empty()){
+            
             m_openSetMutex.unlock();
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
             continue;
         }else{
+            currently_working += 1;
             node = m_openSet.top();
             m_openSet.pop();
             m_openSetMutex.unlock();
@@ -253,8 +255,6 @@ void CBSPlanner::cbsWorker(int32_t id, std::vector<dynamics::data::PoseByIndex> 
             writeConstraintNodeToDisk(node,"node" + std::to_string(node.node_id) + ".json");
         }
             
-        
-
         CollisionInfo info;
         if(!disable_collisions){
             info = checkCollisionWithinConstraintNode(node);
@@ -270,6 +270,7 @@ void CBSPlanner::cbsWorker(int32_t id, std::vector<dynamics::data::PoseByIndex> 
             node.feasible = true;
             m_result = node;
             m_resultHasBeenFound = true;
+            m_result_var.notify_one();
             m_resultMutex.unlock();
 
             break;
@@ -368,17 +369,22 @@ void CBSPlanner::cbsWorker(int32_t id, std::vector<dynamics::data::PoseByIndex> 
             }
         }
 
-      
+        currently_working -= 1;
 
-        // m_openSetMutex.lock();
-        // if(m_openSet.empty()){
-        //     rlog("CBS", LOG_DEBUG, "CBS thread terminating #" + std::to_string(id));
-        //     m_openSetMutex.unlock();
-        //     m_resultMutex.lock();
-        //     m_resultHasBeenFound = true;
-        //     m_result.feasible = false;
-        //     m_resultMutex.unlock();
-        // }
+        m_openSetMutex.lock();
+        if(m_openSet.empty() && currently_working == 0){
+            rlog("CBS", LOG_DEBUG, "CBS thread terminating #" + std::to_string(id));
+            m_openSetMutex.unlock();
+            m_resultMutex.lock();
+
+            m_resultHasBeenFound = true;
+            m_result.feasible = false;
+            m_result_var.notify_one();
+            
+            m_resultMutex.unlock();
+        }else{
+            m_openSetMutex.unlock();
+        }
 
         if(col_deb){
             writeCollisionInfoToDisc(info, node.result[info.car_index_1].interprimitive, node.result[info.car_index_2].interprimitive, node, "collision_in_node" + std::to_string(node.node_id) + ".json" );
@@ -471,8 +477,8 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     m_result_var.wait(lock,[&]{ return m_resultHasBeenFound;} ); // TODO Introduce config for this
 
     rlog("cbs", LOG_DEBUG, "Got result, feasiblility: " + std::to_string(m_result.feasible));
-
     writeConstraintNodeToDisk(m_result, "node100000.json");
+    m_resultMutex.unlock();
 
     for(uint32_t i = 0; i < worker_count; i ++){
         m_cbsWorkers.at(i).join();

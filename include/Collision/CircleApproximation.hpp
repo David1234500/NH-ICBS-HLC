@@ -10,15 +10,79 @@ class CircleApproximation: public CollisionDetectBase{
 
     }
 
+    struct CircleApproxDebug {
+        std::vector<std::tuple<size_t, dynamics::data::Pose2WithTime, dynamics::data::Pose2WithTime, float>> coarse_checks;
+        std::vector<std::tuple<size_t, dynamics::data::Pose2WithTime, dynamics::data::Pose2WithTime, float>> precise_checks;
+    };
+
+    void saveDebugInfoToJson(const CircleApproxDebug& debug_info, const CollisionInfo& collision_info,
+                         const std::vector<dynamics::data::Pose2WithTime>& track1,
+                         const std::vector<dynamics::data::Pose2WithTime>& track2) {
+        json j;
+        j["collision_occurred"] = collision_info.collision_occurred;
+        j["index1"] = collision_info.index1;
+        j["index2"] = collision_info.index2;
+
+        auto save_pose = [](const dynamics::data::Pose2WithTime& pose) {
+            json p;
+            p["x"] = pose.pos.x();
+            p["y"] = pose.pos.y();
+            p["a"] = pose.h;
+            p["t"] = pose.time_ms;
+            p["ti"] = pose.path_depth_index;
+            return p;
+        };
+
+        j["coarse_checks"] = json::array();
+        for (const auto& [i, pose1, pose2, distance] : debug_info.coarse_checks) {
+            json c;
+            c["idx"] = i;
+            c["pose1"] = save_pose(pose1);
+            c["pose2"] = save_pose(pose2);
+            c["distance"] = distance;
+            j["coarse_checks"].push_back(c);
+        }
+
+        j["precise_checks"] = json::array();
+        for (const auto& [i, pose1, pose2, distance] : debug_info.precise_checks) {
+            json c;
+            c["idx"] = i;
+                c["pose1"] = save_pose(pose1);
+            c["pose2"] = save_pose(pose2);
+            c["distance"] = distance;
+            j["precise_checks"].push_back(c);
+        }
+
+        // Generate a unique file name based on car indexes and times
+        size_t car1_index = track1.front().path_depth_index;
+        size_t car2_index = track2.front().path_depth_index;
+        uint64_t time1 = track1.front().time_ms;
+        uint64_t time2 = track2.front().time_ms;
+
+        std::stringstream file_name;
+        file_name << "debug_collision_" << car1_index << "_" << car2_index << "_" << time1 << "_" << time2 << ".json";
+
+        // Save JSON to file
+        std::ofstream o(file_name.str());
+        o << j << std::endl;
+        o.close();
+    }
+
+
+   
+
     CollisionInfo checkForCollision(const std::vector<dynamics::data::Pose2WithTime>& track1,
                                     const std::vector<dynamics::data::Pose2WithTime>& track2
                                    ) override {
         CollisionInfo collision_info;
+        CircleApproxDebug debug_info;
 
-       auto& config = Config::getInstance();
-        float over_threshold = config.get<float>({"collision_detect","ov_appr_threshold"});
-        float close_threshold = config.get<float>({"collision_detect","cl_appr_threshold"}); 
-        uint32_t step_overapproximation = config.get<uint32_t>({"collision_detect","ov_appr_step"}); 
+        static auto& config = Config::getInstance();
+        static float over_threshold = config.get<float>({"collision_detect","ov_appr_threshold"});
+        static float close_threshold = config.get<float>({"collision_detect","cl_appr_threshold"}); 
+        static uint32_t step_overapproximation = config.get<uint32_t>({"collision_detect","ov_appr_step"}); 
+
+        static bool collision_to_disc_prec = config.get<float>({"debug_modes","collision_to_disc_prec"}); 
 
         size_t track1_size = track1.size();
         size_t track2_size = track2.size();
@@ -30,6 +94,10 @@ class CircleApproximation: public CollisionDetectBase{
             dynamics::data::Pose2WithTime pose2 = (i < track2_size) ? track2[i] : track2.back();
 
             float distance = (pose1.pos - pose2.pos).norm();
+            
+            if (collision_to_disc_prec) {
+                debug_info.coarse_checks.emplace_back(i, pose1, pose2, distance);
+            }
 
             if (distance <= over_threshold) {
                 // Second step: precise collision check around detected possible collision
@@ -49,6 +117,10 @@ class CircleApproximation: public CollisionDetectBase{
                         collision_info.pose1 = precise_pose1;
                         collision_info.pose2 = precise_pose2;
 
+                        if (collision_to_disc_prec) {
+                            debug_info.precise_checks.emplace_back(idx, precise_pose1, precise_pose2, precise_distance);
+                        }
+
                         if(idx >= track1_size){
                             collision_info.collision_with_veh_at_track_end = 1;
                         }
@@ -66,6 +138,10 @@ class CircleApproximation: public CollisionDetectBase{
                     }
                 }
             }
+        }
+
+        if (collision_to_disc_prec) {
+            saveDebugInfoToJson(debug_info, collision_info, track1, track2);
         }
 
         return collision_info;

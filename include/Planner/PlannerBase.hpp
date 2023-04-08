@@ -57,7 +57,7 @@ struct constraint_node{
     std::map<int32_t, LLResult> result;
    
     bool operator < (const constraint_node r) const {
-        if(sic > r.sic){
+        if(sic < r.sic){
             return false;
         }else{
             return true;
@@ -351,7 +351,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
 
         auto new_pbi = current.pose;
         new_pbi.t += 1;
-        if(openSet.count(new_pbi) == 0 && current.pose.s == zero_velocity_level && current.waiting_counter < allowed_waiting && infront_of_constraint){
+        if(openSet.count(new_pbi) == 0 && current.pose.s == zero_velocity_level && current.waiting_counter < allowed_waiting){
             dynamics::data::LLNode node = {new_pbi, fScore[current.pose], current.timestep + 1,  current.rev_counter, current.waiting_counter + 1};
             
             MotionPrimitive mp;

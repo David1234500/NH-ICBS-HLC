@@ -34,6 +34,7 @@ public:
 
     std::vector<std::thread> m_cbsWorkers;
     bool m_resultHasBeenFound = true;
+    int32_t currently_working = 0;
     std::mutex m_resultMutex;
     std::condition_variable m_result_var;
     constraint_node m_result;
