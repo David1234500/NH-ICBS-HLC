@@ -18,29 +18,38 @@ struct PoseByIndex{
     int32_t y = 0;
     int32_t a = 0;
     int32_t s = 0;
+    int32_t t = 0;
 
     inline PoseByIndex operator+(PoseByIndex e) {
-        PoseByIndex n = {e.x + x, e.y + y, a,s};
+        PoseByIndex n = {e.x + x, e.y + y, a,s, t};
         return n;
     }
 
     inline PoseByIndex operator+(int32_t offset) {
-        PoseByIndex n = {x + offset, y + offset, a,s};
+        PoseByIndex n = {x + offset, y + offset, a,s, t};
         return n;
     }
 
     inline PoseByIndex operator-(PoseByIndex e) {
-        PoseByIndex n = {e.x - x, e.y - y,a,s};
+        PoseByIndex n = {e.x - x, e.y - y,a,s,t };
         return n;
     }
 
      inline PoseByIndex operator-(int32_t offset) {
-        PoseByIndex n = {x - offset, y - offset, a,s};
+        PoseByIndex n = {x - offset, y - offset, a,s, t};
         return n;
     }
 
     bool operator==( const PoseByIndex& e) const {
-        if(e.x==x && e.y == y && e.a == a && e.s== s){
+        if(e.x==x && e.y == y && e.a == a && e.s== s && e.t==t){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    bool operator&=( const PoseByIndex& e) const {
+        if(e.x==x && e.y == y && e.a == a && e.s== s ){
             return true;
         }else{
             return false;
@@ -62,16 +71,23 @@ struct PoseByIndex{
                     return true;
                 }else if(a > r.a){
                     return false;
-                }else{
+                }else{ 
                     if(s < r.s){
                         return true;
-                    }else{
+                    }else if(s < r.s){
                         return false;
+                    }else{
+                        if(t < r.t){
+                            return true;
+                        }else{
+                            return false;
+                        }
                     }
                 }
             }
         }
     }
+    
 };
 
 
@@ -113,6 +129,7 @@ struct LLNode{
     float fScore = 10000000.f;
     int32_t timestep = 0;
     int32_t rev_counter = 0;
+    int32_t waiting_counter = 0;
 
     bool operator < (const dynamics::data::LLNode r) const {
         if(fScore < r.fScore){
@@ -202,13 +219,15 @@ struct Pose2DWithError{
 namespace std {
     template<> struct hash<dynamics::data::PoseByIndex>
     {
-        std::size_t operator()(const dynamics::data::PoseByIndex& p) const noexcept
+       std::size_t operator()(const dynamics::data::PoseByIndex& p) const noexcept
         {
-            
-            // 4,294,967,295
-            // 100000 * 100 < 4294967295
-            // TODO: THROW SOME ASSERTS IN HERE FOR GOOD MEASURE, allowable interval should now be 1000x1000
-            return p.s + p.a * 10 + 1000 * p.y + 1000000 * p.x;
+            std::size_t s_hash = static_cast<std::size_t>(p.s);
+            std::size_t a_hash = static_cast<std::size_t>(p.a) << 3; // Shift by 3 bits (max s value is 7, needs 3 bits)
+            std::size_t y_hash = static_cast<std::size_t>(p.y) << 7; // Shift by 7 bits (max a value is 15, needs 4 bits)
+            std::size_t x_hash = static_cast<std::size_t>(p.x) << 15; // Shift by 15 bits (max y value is 255, needs 8 bits)
+            std::size_t t_hash = static_cast<std::size_t>(p.t) << 23; // Shift by 23 bits (max x value is 255, needs 8 bits)
+
+            return s_hash | a_hash | y_hash | x_hash | t_hash;
         }
     };
 }

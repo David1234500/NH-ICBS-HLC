@@ -20,9 +20,8 @@
 struct MotionPrimitive{
     dynamics::data::Pose2DWithError link;
     dynamics::data::PoseByIndex target;
-
-    //Only four samples from the original path
-    std::vector<dynamics::data::Pose2D> trajectory;
+    bool is_waiting_trajectory = false;
+    std::vector<dynamics::data::Pose2D> trajectory = {};
 };
 
 struct MPNode{

@@ -22,17 +22,17 @@ int main() {
     std::vector<dynamics::data::PoseByIndex> starts;
 
     dynamics::data::PoseByIndex end = { 6,6,6,driving_velocity_level};
-    dynamics::data::PoseByIndex start = {23,22,6,driving_velocity_level};
+    dynamics::data::PoseByIndex start = {50,22,6,driving_velocity_level};
     targets.push_back(end);
     starts.push_back(start);
 
-    dynamics::data::PoseByIndex end2 = {23,6,6,driving_velocity_level};
-    dynamics::data::PoseByIndex start2 = {6,19,6,driving_velocity_level};
+    dynamics::data::PoseByIndex end2 = {23,6,4,driving_velocity_level};
+    dynamics::data::PoseByIndex start2 = {10,40,4,driving_velocity_level};
     targets.push_back(end2);
     starts.push_back(start2);
 
-    dynamics::data::PoseByIndex end3 = {26,6,6,driving_velocity_level};
-    dynamics::data::PoseByIndex start3 = {3,19,6,driving_velocity_level};
+    dynamics::data::PoseByIndex end3 = {26,6,4,driving_velocity_level};
+    dynamics::data::PoseByIndex start3 = {5,40,2,driving_velocity_level};
     targets.push_back(end3);
     starts.push_back(start3);
 

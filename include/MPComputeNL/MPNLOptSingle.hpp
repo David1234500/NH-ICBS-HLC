@@ -69,7 +69,7 @@ public:
         
         double vd =  std::abs(p2.vel - args->tp.vel);
         double accd = std::abs(x[c1_acc]) + std::abs(x[c2_acc]);
-        double sccd = std::abs(x[c1_st_a]) + std::abs(x[c2_st_a]);
+        double sccd = std::abs(x[c1_st_a] - x[c2_st_a]);
 
         double objv = args->w.mu_hd * hd_n + args->w.mu_pd * pd + args->w.mu_vd * vd + args->w.mu_accd * accd + args->w.mu_sccd * sccd;
         return objv;
@@ -98,7 +98,7 @@ public:
     static double constraint_steering_change(const std::vector <double> &x, std::vector<double> &grad, void* f_data){
         mpnl_args_t* args = static_cast<mpnl_args_t*>(f_data);
        
-        return std::abs(x[c1_st_a]) + std::abs(x[c2_st_a]) - args->a_scc;
+        return std::abs(x[c1_st_a] - x[c2_st_a]) - args->a_scc;
     }
 
     

@@ -213,7 +213,275 @@ CollisionInfo checkCollisionWithinConstraintNode(const constraint_node& constrai
     return CollisionInfo(); // Return an empty CollisionInfo object if no collision occurred
 }
 
+void CBSPlanner::cbsWorker(int32_t id, std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions, bool disable_collisions){
+    uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    float api = Config::getInstance().get<float>({"disc","hstep"});
+    int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    int32_t xsteps = Config::getInstance().getXstep();
+    int32_t ysteps = Config::getInstance().getYstep();
+    int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+    int32_t driving_velocity_level = Config::getInstance().get<int32_t>({"velocity","driving_velocity_level"});
+    std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
+    static bool col_deb = Config::getInstance().get<bool>({"collision_detect","debug_mode"});
+
+    static bool cbs_deb = Config::getInstance().get<bool>({"debug_modes","cbs"});
+    static bool cbs_nodes_to_disc = Config::getInstance().get<bool>({"debug_modes","cbs_nodes_to_disc"});
+
+    constraint_node node;
+    std::vector<dynamics::data::PBIConstraint> vehicle_constraints;
+
+    while(!m_resultHasBeenFound){
+        m_openSetMutex.lock();
+        
+        if(m_openSet.empty()){
+            m_openSetMutex.unlock();
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            continue;
+        }else{
+            node = m_openSet.top();
+            m_openSet.pop();
+            m_openSetMutex.unlock();
+        }
+
+        if(cbs_deb){
+            rlog("CBS", LOG_DEBUG, "OpenSet: " + std::to_string(m_openSet.size()) + " SIC: " + std::to_string(node.sic) + " CNodeID: " + std::to_string(node.node_id) +" CCount: " + std::to_string(node.avoid.size()));
+        }
+        if(cbs_nodes_to_disc){
+            writeConstraintNodeToDisk(node,"node" + std::to_string(node.node_id) + ".json");
+        }
+            
+        
+
+        CollisionInfo info;
+        if(!disable_collisions){
+            info = checkCollisionWithinConstraintNode(node);
+        }else{
+            rlog("CBS", LOG_WARNING, "Warning! All collision checks are disabled...");
+        }
+        
+        // Check if we have just obtained a valid solution -> terminate if yes
+        if(!info.collision_occurred){
+            rlog("CBS", LOG_DEBUG, "CBS SUCCESSFULL TERMINATION!");
+            
+            m_resultMutex.lock();
+            node.feasible = true;
+            m_result = node;
+            m_resultHasBeenFound = true;
+            m_resultMutex.unlock();
+
+            break;
+
+        }else{
+            rlog("CBS", LOG_DEBUG, "CBS found conflict");
+            if(col_deb){
+                CollisionDetectBase::print_collision_info(info);
+            }
+        }
+
+        // Add new constraints and replan
+        for(uint32_t vehicle_index = 0; vehicle_index < 2; vehicle_index ++){
+
+            // Enqueue all jobs to astar workers
+            m_lowLevelResults.clear();
+            m_lowLevelJobs.clear();
+
+            // Create new constraint node and copy current results of other vehicles
+            constraint_node constraint;
+            constraint.result = node.result;
+            LLResult res;
+
+            if(vehicle_index == 0){
+
+                dynamics::data::PBIConstraint constr;
+                constr.id = info.car_index_1;
+                constr = info.pose1bi;
+                constr.t = info.index1;
+                constraint.avoid = node.avoid;
+
+                if(info.collision_with_veh_at_track_end == 1){
+                   constr.t = -1;
+                }
+
+                if(std::find(node.avoid.begin(), node.avoid.end(), constr) != node.avoid.end()){
+                    constr.t = -1;
+                }
+                constraint.avoid.push_back(constr);
+                
+                vehicle_constraints.clear();
+                for(auto constr: constraint.avoid){
+                    if(constr.id == info.car_index_1){
+                        vehicle_constraints.push_back(constr);
+                    }
+                }
+
+                res = astar(start_positions.at(info.car_index_1),target_positions.at(info.car_index_1), vehicle_constraints);
+                constraint.result[info.car_index_1] = res;
+            }else{
+
+                dynamics::data::PBIConstraint constr2;
+                constr2.id = info.car_index_2;
+                constr2 = info.pose2bi;
+                constr2.t = info.index2;
+                constraint.avoid = node.avoid;
+                
+                if(info.collision_with_veh_at_track_end == 2){
+                    constr2.t = -1;
+                }
+
+                if(std::find(node.avoid.begin(), node.avoid.end(), constr2) != node.avoid.end()){
+                    constr2.t = -1;
+                }
+
+                constraint.avoid.push_back(constr2); 
+
+                vehicle_constraints.clear();
+                for(auto constr: constraint.avoid){
+                    if(constr.id == info.car_index_2){
+                        vehicle_constraints.push_back(constr);
+                    }
+                }
+
+                res = astar(start_positions.at(info.car_index_2),target_positions.at(info.car_index_2), vehicle_constraints);
+                constraint.result[info.car_index_2] = res;
+            }
+
+            if(res.found_path){
+                
+                // Compute SIC by hop count
+                uint64_t sic = 0;
+                for(uint32_t i = 0; i < constraint.result.size(); i ++){
+                    sic += constraint.result[i].interprimitive.size();
+                }
+
+                // Update constraint node with new information
+                constraint.sic = sic;
+                constraint.father = node.node_id;
+
+                m_openSetMutex.lock();
+                constraint.node_id = m_node_id;
+                m_node_id ++;
+                m_openSet.push(constraint);
+                m_openSetMutex.unlock();
+            }
+        }
+
+      
+
+        // m_openSetMutex.lock();
+        // if(m_openSet.empty()){
+        //     rlog("CBS", LOG_DEBUG, "CBS thread terminating #" + std::to_string(id));
+        //     m_openSetMutex.unlock();
+        //     m_resultMutex.lock();
+        //     m_resultHasBeenFound = true;
+        //     m_result.feasible = false;
+        //     m_resultMutex.unlock();
+        // }
+
+        if(col_deb){
+            writeCollisionInfoToDisc(info, node.result[info.car_index_1].interprimitive, node.result[info.car_index_2].interprimitive, node, "collision_in_node" + std::to_string(node.node_id) + ".json" );
+        }
+    }
+}
+
 constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions, bool relax, bool disable_collisions){
+    uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+    float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    float api = Config::getInstance().get<float>({"disc","hstep"});
+    int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    int32_t xsteps = Config::getInstance().getXstep();
+    int32_t ysteps = Config::getInstance().getYstep();
+    int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+    int32_t driving_velocity_level = Config::getInstance().get<int32_t>({"velocity","driving_velocity_level"});
+    std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
+    static bool col_deb = Config::getInstance().get<bool>({"collision_detect","debug_mode"});
+   
+    rlog("CBS", LOG_DEBUG, "CBS Branched Starting");
+
+    auto veh_count = std::min(start_positions.size(), target_positions.size());
+
+    for(uint32_t i = 0; i < start_positions.size() && i < target_positions.size(); i ++){
+        if(start_positions.at(i).x > xsteps || start_positions.at(i).y > ysteps || start_positions.at(i).x < 0 || start_positions.at(i).y < 0
+          || start_positions.at(i).a > map_size_angle || start_positions.at(i).a < 0 
+          || start_positions.at(i).s > map_size_speed || start_positions.at(i).s < 0 ){
+            rlog("CBS", LOG_ERROR, "Start position " + std::to_string(i) + "is invalid!");
+            return constraint_node();
+        }
+
+        if(target_positions.at(i).x > xsteps || target_positions.at(i).y > ysteps || target_positions.at(i).x < 0 || target_positions.at(i).y < 0
+          || target_positions.at(i).a > map_size_angle || target_positions.at(i).a < 0 
+          || target_positions.at(i).s > map_size_speed || target_positions.at(i).s < 0 ){
+            rlog("CBS", LOG_ERROR, "Target position " + std::to_string(i) + "is invalid!");
+            return constraint_node();
+        }
+    }
+
+    m_resultHasBeenFound = false;
+    
+    m_keepThreadsAlive = true;
+    for(uint32_t i = 0; i < worker_count; i ++){
+        m_lowLevelWorkers.push_back(std::thread(&CBSPlanner::low_level_astar_worker, this, i));
+    }
+
+    constraint_node node;
+    for(uint32_t i = 0; i < veh_count; i ++){
+        enqueue_astar(start_positions.at(i),target_positions.at(i), node, i, relax);
+    }
+    await_astar_result(veh_count);
+    uint64_t sic = 0;
+    for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
+        
+        if(!m_lowLevelResults.at(i).found_path){
+            rlog("CBS", LOG_ERROR, "CBS INFEASIBLE due to not finding initial path");
+            return constraint_node();
+        }
+        sic += m_lowLevelResults.at(i).path->size();
+    }
+
+    rlog("cbs", LOG_DEBUG, "All results feasible, now starting main cbs iterations.");
+
+    node.sic = sic;
+    node.node_id = m_node_id;
+    m_node_id += 1;
+    node.father = 0;
+    node.avoid.clear();
+    for(auto res: m_lowLevelResults){
+        node.result[res.car_id] = res;
+    }
+
+    m_lowLevelResults.clear();
+    m_lowLevelJobs.clear();
+    m_openSet.push(node);
+    rlog("CBS", LOG_DEBUG, "Found initial paths for all vehicles... Now starting Branching");
+
+    m_keepThreadsAlive = false;
+    for(uint32_t i = 0; i < worker_count; i ++){
+        m_lowLevelWorkers.at(i).join();
+    }
+
+    for(uint32_t i = 0; i < worker_count; i ++){
+        m_cbsWorkers.push_back(std::thread(&CBSPlanner::cbsWorker, this, i, start_positions, target_positions, disable_collisions));
+    }
+
+    std::unique_lock<std::mutex> lock(m_resultMutex);
+    m_result_var.wait(lock,[&]{ return m_resultHasBeenFound;} ); // TODO Introduce config for this
+
+    rlog("cbs", LOG_DEBUG, "Got result, feasiblility: " + std::to_string(m_result.feasible));
+
+    writeConstraintNodeToDisk(m_result, "node100000.json");
+
+    for(uint32_t i = 0; i < worker_count; i ++){
+        m_cbsWorkers.at(i).join();
+    }
+
+    return m_result;
+}
+
+constraint_node CBSPlanner::cbs_single(std::vector<dynamics::data::PoseByIndex> start_positions, std::vector<dynamics::data::PoseByIndex> target_positions, bool relax, bool disable_collisions){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
     float dpc = Config::getInstance().get<float>({"disc","dstep"});
     float api = Config::getInstance().get<float>({"disc","hstep"});
@@ -285,6 +553,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         node.result[res.car_id] = res;
     }
 
+
     m_lowLevelResults.clear();
     m_lowLevelJobs.clear();
     
@@ -333,10 +602,6 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             constraint.sic = 0;
 
             if(vehicle_index == 0){
-                  
-                // if(info.collision_with_veh_at_track_end == 1){
-                //     continue;
-                // }
 
                 dynamics::data::PBIConstraint constr;
                 constr.id = info.car_index_1;

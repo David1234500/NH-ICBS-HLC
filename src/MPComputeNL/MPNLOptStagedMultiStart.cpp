@@ -108,7 +108,7 @@ void MPNLOptStagedMultiStart::workerThreadMPEdges(uint32_t index){
                 
                 bool found_primitive = false;
                 
-                MPNLOptSingle::mpnl_return res;
+                
 
                 MPNLOptSingle::mpnl_args_t args;
                 args.sp = {{0.f,0.f}, api * static_cast<float>(threadTask.cai), vlevels[threadTask.csi] * dynamics::SimpleDynamicsModel::velocity_limit()};
@@ -129,39 +129,53 @@ void MPNLOptStagedMultiStart::workerThreadMPEdges(uint32_t index){
                 samples.insert(samples.end(), rand_samples.begin(), rand_samples.end());
 
                 // rlog("workerMPEdges", LOG_INFO, std::to_string(m_mpTaskQueue.size()) + "Task: " + std::to_string(threadTask.cai) +":"+ std::to_string(threadTask.csi) +" -> "+ std::to_string(threadTask.txi) +":"+ std::to_string(threadTask.tyi) + ":"+ std::to_string(threadTask.tsi) + ":" + std::to_string(samples.size()));
+                MPNLOptSingle::mpnl_return res;
+                double best_obj_val = 10.0;
 
                 for(auto sample: samples){
 
                     args.init_guess = sample;
-
+                    
                     MPNLOptSingle nl_stm_opt_isres;
                     nl_stm_opt_isres.prepare(&args, true, false);
                     
-                    res = nl_stm_opt_isres.optimize(); 
+                    auto isres_res = nl_stm_opt_isres.optimize(); 
 
-                    if(res.retcode > 0 && res.retcode < 4){
+                    if(isres_res.retcode > 0 && isres_res.retcode < 4){
                         found_primitive = true;
-                        break;
+                        if(isres_res.objf_val < best_obj_val){
+                            std::cout << "isres best obj " << std::to_string(res.objf_val) << std::endl;
+                            best_obj_val = isres_res.objf_val;
+                            res = isres_res;
+                        }
                     }
 
                     MPNLOptSingle nl_stm_opt_direct;
                     nl_stm_opt_direct.prepare(&args, false, false, nlopt::GN_DIRECT);
                     
-                    res = nl_stm_opt_direct.optimize(); 
+                    auto direct_res = nl_stm_opt_direct.optimize(); 
 
-                    if(res.retcode > 0 && res.retcode < 4){
+                    if(direct_res.retcode > 0 && direct_res.retcode < 4){
                         found_primitive = true;
-                        break;
+                        if(direct_res.objf_val < best_obj_val){
+                            std::cout << "direct best obj " << std::to_string(res.objf_val) << std::endl;
+                            best_obj_val = direct_res.objf_val;
+                            res = direct_res;
+                        }
                     }
 
                     MPNLOptSingle nl_stm_opt_crs2;
                     nl_stm_opt_crs2.prepare(&args, false, false, nlopt::GN_CRS2_LM);
                     
-                    res = nl_stm_opt_crs2.optimize(); 
+                    auto crs2_res = nl_stm_opt_crs2.optimize(); 
 
-                    if(res.retcode > 0 && res.retcode < 4){
+                    if(crs2_res.retcode > 0 && crs2_res.retcode < 4){
                         found_primitive = true;
-                        break;
+                        if(crs2_res.objf_val < best_obj_val){
+                            std::cout << "crs2 best obj " << std::to_string(res.objf_val) << std::endl;
+                            best_obj_val = crs2_res.objf_val;
+                            res = crs2_res;
+                        }
                     }
                 }
 

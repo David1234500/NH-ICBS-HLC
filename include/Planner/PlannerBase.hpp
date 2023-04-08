@@ -52,12 +52,12 @@ struct constraint_node{
     uint32_t node_id = 0;
     uint32_t father = 0;
     bool feasible = false;
-    
+
     std::vector<dynamics::data::PBIConstraint> avoid;
     std::map<int32_t, LLResult> result;
    
     bool operator < (const constraint_node r) const {
-        if(sic < r.sic){
+        if(sic > r.sic){
             return false;
         }else{
             return true;
@@ -72,10 +72,7 @@ PlannerBase(){
 
 
 ~PlannerBase(){
-    m_keepThreadsAlive = false;
-    for(auto& s: m_lowLevelWorkers){
-        s.join();
-    }
+   
 }
 
 std::mutex m_lowLevelSearchJobLock;
@@ -246,10 +243,13 @@ bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::PoseByIndex
     return true;
 }
 
-LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles, bool relaxed = false){
+LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> constraints, bool relaxed = false){
     static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     static int32_t allowed_rev_counter = Config::getInstance().get<int32_t>({"allowed_reversing"});
     static int32_t driving_velocity_level = Config::getInstance().get<int32_t>({"velocity","driving_velocity_level"});
+    static int32_t allowed_waiting = Config::getInstance().get<int32_t>({"allowed_waiting"});
+    static bool astar_debug = Config::getInstance().get<bool>({"debug_modes", "astar"});
+    static bool astar_result = Config::getInstance().get<bool>({"debug_modes", "astar_result"});
 
     std::priority_queue<dynamics::data::LLNode> openQueue;
     std::unordered_set<dynamics::data::PoseByIndex> openSet;
@@ -284,9 +284,11 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
         auto current = openQueue.top(); 
         explored_nodes += 1;
 
-        if(current.pose == target){
-            rlog("ASTAR", LOG_INFO, "Found path for " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
-            
+        if(current.pose &= target){
+            if(astar_result){
+                rlog("ASTAR", LOG_INFO, "Found path for " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
+            }
+
             LLResult res;
             res.path = getPath(cameFrom, current.pose);
             res.spline = getSplines(cameFrom, usedEdge, current.pose);
@@ -297,9 +299,11 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
         }
 
         openQueue.pop();
+        bool infront_of_constraint = false;
         auto current_pose = indexToPose(current.pose);
         for(auto rel_neighbor: mp_comp.m_mpmap[current.pose.a][current.pose.s]){
             dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(current.pose, rel_neighbor.target);
+            gl_neighbor.t = current.waiting_counter;
             auto neigh_pose = indexToPose(gl_neighbor);
 
             if(rel_neighbor.target.s < zero_velocity_level){
@@ -313,10 +317,11 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
             }
 
             bool discard_due_to_obstacle = false;
-            for(auto obstacle : obstacles){
-               if( std::abs(current.timestep - obstacle.t ) <= 1 || obstacle.t == -1 ){
-                    if(std::abs(gl_neighbor.x - obstacle.x ) == 0 && std::abs(gl_neighbor.y - obstacle.y) == 0){
+            for(auto obstacle : constraints){
+               if( std::abs(current.timestep - obstacle.t ) <= 2 || obstacle.t == -1 ){
+                    if(std::abs(gl_neighbor.x - obstacle.x ) <= 1 && std::abs(gl_neighbor.y - obstacle.y) <= 1){
                     discard_due_to_obstacle = true;
+                    infront_of_constraint = true;
                     break;
                     }
                 }
@@ -336,19 +341,39 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
                     fScore[gl_neighbor] = tentative_score + h;
                     
                     if(openSet.count(gl_neighbor) == 0){
-                        dynamics::data::LLNode node = {gl_neighbor, fScore[gl_neighbor], current.timestep + 1, (rel_neighbor.target.s < zero_velocity_level ? current.rev_counter + 1 : current.rev_counter)};
+                        dynamics::data::LLNode node = {gl_neighbor, fScore[gl_neighbor], current.timestep + 1, (rel_neighbor.target.s < zero_velocity_level ? current.rev_counter + 1 : current.rev_counter), current.waiting_counter};
                         openQueue.push(node);
                         openSet.insert(gl_neighbor);
                     }
                 }
             }
         }
+
+        auto new_pbi = current.pose;
+        new_pbi.t += 1;
+        if(openSet.count(new_pbi) == 0 && current.pose.s == zero_velocity_level && current.waiting_counter < allowed_waiting && infront_of_constraint){
+            dynamics::data::LLNode node = {new_pbi, fScore[current.pose], current.timestep + 1,  current.rev_counter, current.waiting_counter + 1};
+            
+            MotionPrimitive mp;
+            mp.is_waiting_trajectory = true;
+            mp.target = new_pbi;
+            
+            cameFrom[new_pbi] = current.pose;
+            usedEdge[new_pbi] = mp;
+            gScore[new_pbi] = gScore[current.pose];
+            
+            openQueue.push(node);
+            openSet.insert(current.pose);
+        }
+
     }
     
-    writeVisitedNodesToDisk(start, target, cameFrom, "FLLT"+ std::to_string(target.x) + "_" + std::to_string(target.y) + "_" + std::to_string(target.a) + "_" + std::to_string(target.s) +"S"+ std::to_string(start.x) + "_" + std::to_string(start.y) + "_" + std::to_string(start.a)+ "_" + std::to_string(start.s) + ".json");
-    rlog("ASTAR", LOG_WARNING, "Found no viable path with #open: " + std::to_string(explored_nodes));
-    rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a) + ":" + std::to_string(target.s));
-    rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a)+ ":" + std::to_string(start.s));
+    if(astar_result){
+        writeVisitedNodesToDisk(start, target, cameFrom, "FLLT"+ std::to_string(target.x) + "_" + std::to_string(target.y) + "_" + std::to_string(target.a) + "_" + std::to_string(target.s) +"S"+ std::to_string(start.x) + "_" + std::to_string(start.y) + "_" + std::to_string(start.a)+ "_" + std::to_string(start.s) + ".json");
+        rlog("ASTAR", LOG_WARNING, "Found no viable path with #open: " + std::to_string(explored_nodes));
+        rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a) + ":" + std::to_string(target.s));
+        rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a)+ ":" + std::to_string(start.s));
+    }
 
     LLResult res;
     res.found_path = false;
@@ -359,7 +384,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
 
 
 
-LLResult astar_reversed(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> obstacles = {}){
+LLResult astar_reversed(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> constraints = {}){
     static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     static int32_t allowed_rev_counter = Config::getInstance().get<int32_t>({"allowed_reversing"});
 
@@ -622,6 +647,7 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
+    static bool astar_debug = Config::getInstance().get<bool>({"debug_modes", "astar"});
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
 
     auto current = target;
@@ -644,10 +670,11 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
     for(int64_t i = nodes.size() - 1; i > 0; i --){
 
         dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(i));
+
         dynamics::data::Pose2D next_pose;
-
-        rlog("GetInterprimitive", LOG_INFO, "P: " + std::to_string(nodes.at(i).x) + ":" + std::to_string(nodes.at(i).y) + ":" + std::to_string(nodes.at(i).a) + ":" + std::to_string(nodes.at(i).s) + " path_depth_index: " + std::to_string(path_depth_index));
-
+        if(astar_debug){
+            rlog("GetInterprimitive", LOG_INFO, "P: " + std::to_string(nodes.at(i).x) + ":" + std::to_string(nodes.at(i).y) + ":" + std::to_string(nodes.at(i).a) + ":" + std::to_string(nodes.at(i).s) + " path_depth_index: " + std::to_string(path_depth_index));
+        }
         for(float ts = 0; ts < timestep_ms; ts += 50.f){    
             next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edges.at(i - 1).link.s_a, edges.at(i - 1).link.s_v, ts);
             dynamics::data::Pose2WithTime next_with_time;
@@ -756,14 +783,16 @@ void await_astar_result(uint32_t count){
 
 std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> getPath(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target){
     auto current = target;
+    static bool astar_debug = Config::getInstance().get<bool>({"debug_modes", "astar"});
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> result = std::make_shared<std::vector<dynamics::data::PoseByIndex>>();
     uint32_t index = 0;
     do{
 
         result->push_back(current);
         current = predecessor[current];
-        rlog("GetPath", LOG_INFO, "P: " + std::to_string(current.x) + ":" + std::to_string(current.y) + ":" + std::to_string(current.a) + ":" + std::to_string(current.s) + " index: " + std::to_string(index));
-
+        if(astar_debug){
+            rlog("GetPath", LOG_INFO, "P: " + std::to_string(current.x) + ":" + std::to_string(current.y) + ":" + std::to_string(current.a) + ":" + std::to_string(current.s) + " index: " + std::to_string(index));
+        }
         index ++;
     } while(predecessor.find(current) != predecessor.end());
     
