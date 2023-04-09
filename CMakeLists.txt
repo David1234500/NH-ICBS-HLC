@@ -1,6 +1,6 @@
 project(planner)
 set (CMAKE_CXX_STANDARD 17)
-set(CMAKE_BUILD_TYPE release)
+set(CMAKE_BUILD_TYPE debug)
 cmake_minimum_required(VERSION 3.10)
 
 option(WITH_NLOPT "Inlcude nlopt dependend executables in compile" ON)
@@ -31,7 +31,7 @@ target_link_libraries(planner_lib pthread)
 
 endif()
 
-file(GLOB EXEC_SRC "src/Exec/*.cpp")
+file(GLOB EXEC_SRC "src/Exec/*.cpp" "src/Experiments/*.cpp")
 foreach(src_ ${EXEC_SRC})
 	get_filename_component(target ${src_} NAME)
     

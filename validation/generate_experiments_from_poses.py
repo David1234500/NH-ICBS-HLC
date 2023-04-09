@@ -1,7 +1,18 @@
 import json
 import random
+import math
 
-def generate_experiments(input_filename, output_filename, experiment_number):
+def distance(point1, point2):
+    return math.sqrt((point1["x"] - point2["x"])**2 + (point1["y"] - point2["y"])**2)
+
+def all_distances_sufficient(points, min_distance):
+    for i in range(len(points)):
+        for j in range(i + 1, len(points)):
+            if distance(points[i], points[j]) < min_distance:
+                return False
+    return True
+
+def generate_experiments(input_filename, output_filename, experiment_number, min_distance=4):
     with open(input_filename) as input_file:
         data = json.load(input_file)
 
@@ -11,7 +22,11 @@ def generate_experiments(input_filename, output_filename, experiment_number):
     experiments = []
 
     for _ in range(experiment_number):
-        selected_positions = random.sample(data, 8)
+        while True:
+            selected_positions = random.sample(data, 8)
+            if all_distances_sufficient(selected_positions, min_distance):
+                break
+
         experiment = {
             "starts": selected_positions[:4],
             "targets": selected_positions[4:]

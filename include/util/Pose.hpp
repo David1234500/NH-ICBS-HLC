@@ -21,7 +21,7 @@ struct PoseByIndex{
     int32_t t = 0;
 
     inline PoseByIndex operator+(PoseByIndex e) {
-        PoseByIndex n = {e.x + x, e.y + y, a,s, t};
+        PoseByIndex n = {e.x + x, e.y + y, a, s, t};
         return n;
     }
 

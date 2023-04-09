@@ -468,14 +468,15 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     for(uint32_t i = 0; i < worker_count; i ++){
         m_lowLevelWorkers.at(i).join();
     }
+    m_lowLevelWorkers.clear();
 
     for(uint32_t i = 0; i < worker_count; i ++){
         m_cbsWorkers.push_back(std::thread(&CBSPlanner::cbsWorker, this, i, start_positions, target_positions, disable_collisions));
     }
 
     std::unique_lock<std::mutex> lock(m_resultMutex);
-    m_result_var.wait(lock,[&]{ return m_resultHasBeenFound;} ); // TODO Introduce config for this
-
+    m_result_var.wait_for(lock, std::chrono::seconds(120), [&]{ return m_resultHasBeenFound;} ); // TODO Introduce config for this
+    m_resultHasBeenFound = true;
     rlog("cbs", LOG_DEBUG, "Got result, feasiblility: " + std::to_string(m_result.feasible));
     writeConstraintNodeToDisk(m_result, "node100000.json");
     m_resultMutex.unlock();
@@ -483,6 +484,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     for(uint32_t i = 0; i < worker_count; i ++){
         m_cbsWorkers.at(i).join();
     }
+    m_cbsWorkers.clear();
 
     return m_result;
 }

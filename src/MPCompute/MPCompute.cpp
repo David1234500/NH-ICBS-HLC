@@ -213,7 +213,7 @@ void MPCompute::computeMPEdges(){
     // Compute for each heading and speed from our original vehicle
     for(int32_t sv = 0; sv < map_size_speed; sv ++){ 
         for(int32_t sh = 0; sh < map_size_angle / 4; sh ++){
-            for(int32_t ts = std::max(0, sv - 1); ts <= std::min(map_size_speed, sv + 1); ts ++){
+            for(int32_t ts = std::max(0, sv - 1); ts < std::min(map_size_speed, sv + 2); ts ++){
 
                 if(sv == zero_velocity_level && ts == zero_velocity_level){
                     continue;

@@ -68,6 +68,39 @@ struct constraint_node{
 class PlannerBase{
 public:
 PlannerBase(){
+    static uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
+    static float dpc = Config::getInstance().get<float>({"disc","dstep"});
+    static float api = Config::getInstance().get<float>({"disc","hstep"});
+    
+    static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+    static int32_t x_steps = Config::getInstance().getXstep();
+    static int32_t y_steps = Config::getInstance().getYstep();
+
+    static int32_t allowed_waiting = Config::getInstance().get<int32_t>({"allowed_waiting"});
+    static std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
+
+    for(int32_t t = 0; t <= allowed_waiting; t++){
+        for(int32_t x = 0; x < x_steps; x++){
+            for(int32_t y = 0; y < y_steps; y ++){
+                for(int32_t a = 0; a < map_size_angle; a ++){
+                    for(int32_t s = 0; s < map_size_speed; s ++){
+                        dynamics::data::PoseByIndex pbi = {x,y,a,s,t};
+
+                        dynamics::data::Pose2D global_pose;
+                        global_pose.pos[0] = (dpc * x);
+                        global_pose.pos[1] = (dpc * y);
+                        global_pose.h = api * static_cast<float>(a);
+                        global_pose.vel = vlevels[s] * dynamics::SimpleDynamicsModel::velocity_limit();
+        
+                        pose_lut[pbi] = global_pose;
+                    }
+                }
+            }
+        }
+    }
+   
 }
 
 
@@ -82,10 +115,11 @@ std::mutex m_lowLevelSearchResultsLock;
 std::vector<LLResult> m_lowLevelResults;
 bool m_keepThreadsAlive = true;
 
+std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::Pose2D> pose_lut;
 MPBruteforce mp_comp;
 
 
-dynamics::data::PoseByIndex toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative){
+inline dynamics::data::PoseByIndex toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative){
     return relative + base;
 }
 
@@ -211,7 +245,7 @@ dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynam
     return global - base;
 }
 
-bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::PoseByIndex& base, dynamics::data::Pose2DWithError& edge, std::vector<dynamics::data::Pose2D>& mp_trajectory){
+inline bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::PoseByIndex& base, dynamics::data::Pose2DWithError& edge, std::vector<dynamics::data::Pose2D>& mp_trajectory){
     static int32_t x_steps = Config::getInstance().getXstep();
     static int32_t y_steps = Config::getInstance().getYstep();
 
@@ -221,25 +255,32 @@ bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::PoseByIndex
     static int32_t dstep = Config::getInstance().get<int32_t>({"disc","dstep"});
     static int32_t ov_approx = Config::getInstance().get<int32_t>({"border_detect","approx_count"});
 
-    if(base.x < 0 || base.x > x_steps ||
-       base.y < 0 || base.y > y_steps){
+    static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+
+    assert(base.s < map_size_speed);
+    assert(base.a < map_size_angle);
+
+    if(base.x < 1 || base.x > x_steps - 1 ||
+       base.y < 1 || base.y > y_steps - 1){
         return false;
     }
 
-    // Overapprox
-    static int32_t x_lower_thres =  (ov_approx);
-    static int32_t x_upper_thres =   (x_steps - ov_approx);
-    static int32_t y_lower_thres =  (ov_approx);
-    static int32_t y_upper_thres =   (y_steps - ov_approx);
+
+    // // Overapprox
+    // static int32_t x_lower_thres =  (ov_approx);
+    // static int32_t x_upper_thres =   (x_steps - ov_approx);
+    // static int32_t y_lower_thres =  (ov_approx);
+    // static int32_t y_upper_thres =   (y_steps - ov_approx);
     
-    if(base.x < x_lower_thres || base.x > x_upper_thres || base.y < y_lower_thres || base.x > y_upper_thres){
-        for(auto pose: mp_trajectory){
-            auto position = cpose.pos + pose.pos;
-            if(position[0] > x_cm || position[0] < 0 || position[1] > y_cm || position[1] < 0){
-                return false;
-            }
-        }   
-    }
+    // if(base.x < x_lower_thres || base.x > x_upper_thres || base.y < y_lower_thres || base.x > y_upper_thres){
+    //     for(auto pose: mp_trajectory){
+    //         auto position = cpose.pos + pose.pos;
+    //         if(position[0] > x_cm || position[0] < 0 || position[1] > y_cm || position[1] < 0){
+    //             return false;
+    //         }
+    //     }   
+    // }
     return true;
 }
 
@@ -251,17 +292,25 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
     static bool astar_debug = Config::getInstance().get<bool>({"debug_modes", "astar"});
     static bool astar_result = Config::getInstance().get<bool>({"debug_modes", "astar_result"});
 
+    static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+
     std::priority_queue<dynamics::data::LLNode> openQueue;
     std::unordered_set<dynamics::data::PoseByIndex> openSet;
 
     std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
     std::unordered_map<dynamics::data::PoseByIndex, MotionPrimitive> usedEdge;
 
-    auto current_pose = indexToPose(start);
-    auto target_pose = indexToPose(target);
+    assert(start.s < map_size_speed);
+    assert(target.s < map_size_speed);
+
+    auto current_pose = pose_lut[start];
+    auto target_pose = pose_lut[target];
 
     std::unordered_map<dynamics::data::PoseByIndex, float> fScore;
-    fScore[start] = (target_pose.pos - current_pose.pos).norm();
+    float manhattan = std::abs(target_pose.pos[0] - current_pose.pos[0]) + std::abs(target_pose.pos[1] - current_pose.pos[1]);
+    fScore[start] = manhattan;
+    // fScore[start] = (target_pose.pos - current_pose.pos).norm();
     
     std::unordered_map<dynamics::data::PoseByIndex, float> gScore;
     gScore[start] = 0.f;
@@ -300,11 +349,12 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
 
         openQueue.pop();
         bool infront_of_constraint = false;
-        auto current_pose = indexToPose(current.pose);
-        for(auto rel_neighbor: mp_comp.m_mpmap[current.pose.a][current.pose.s]){
+        auto current_pose = pose_lut[current.pose];
+        for(auto& rel_neighbor: mp_comp.m_mpmap[current.pose.a][current.pose.s]){
+            assert(rel_neighbor.target.s < map_size_speed);
             dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(current.pose, rel_neighbor.target);
+            assert(gl_neighbor.s < map_size_speed);
             gl_neighbor.t = current.waiting_counter;
-            auto neigh_pose = indexToPose(gl_neighbor);
 
             if(rel_neighbor.target.s < zero_velocity_level){
                 if(current.rev_counter >= allowed_rev_counter || current.timestep >= allowed_rev_counter){
@@ -327,20 +377,26 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
                 }
             }
 
-            if(!discard_due_to_obstacle){
-                float dist = (neigh_pose.pos - current_pose.pos).norm();
 
-                float tentative_score = gScore[current.pose] + dist; 
-                if(gScore.count(gl_neighbor) == 0 || tentative_score < gScore[gl_neighbor]){
+            if(!discard_due_to_obstacle){
+                // float dist = (neigh_pose.pos - current_pose.pos).norm();
+                auto neigh_pose = pose_lut[gl_neighbor];
+                float manhattan = std::abs(neigh_pose.pos[0] - current_pose.pos[0]) + std::abs(neigh_pose.pos[1] - current_pose.pos[1]);
+
+                float tentative_score = gScore[current.pose] + manhattan;
+                auto gScoreIt = gScore.find(gl_neighbor); 
+                if(gScoreIt == gScore.end() || tentative_score < gScoreIt->second){
 
                     cameFrom[gl_neighbor] = current.pose;
                     usedEdge[gl_neighbor] = rel_neighbor;
                     gScore[gl_neighbor] = tentative_score;
                     
-                    float h = (neigh_pose.pos - target_pose.pos).norm();
-                    fScore[gl_neighbor] = tentative_score + h;
+                    float manhattan_h = std::abs(neigh_pose.pos[0] - target_pose.pos[0]) + std::abs(neigh_pose.pos[1] - target_pose.pos[1]);
+                    // float h = (neigh_pose.pos - target_pose.pos).norm();
+                    fScore[gl_neighbor] = tentative_score + manhattan_h;
                     
-                    if(openSet.count(gl_neighbor) == 0){
+                    if(openSet.find(gl_neighbor) == openSet.end()){
+                        //openSet.count(gl_neighbor) == 0){
                         dynamics::data::LLNode node = {gl_neighbor, fScore[gl_neighbor], current.timestep + 1, (rel_neighbor.target.s < zero_velocity_level ? current.rev_counter + 1 : current.rev_counter), current.waiting_counter};
                         openQueue.push(node);
                         openSet.insert(gl_neighbor);
@@ -402,8 +458,8 @@ LLResult astar_reversed(dynamics::data::PoseByIndex start, dynamics::data::PoseB
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
     int32_t worker_count = Config::getInstance().get<int32_t>({"compute","worker_count"});
 
-    auto current_pose = indexToPose(target);
-    auto target_pose = indexToPose(start);
+    auto current_pose = pose_lut[target];
+    auto target_pose = pose_lut[start];
 
     std::unordered_map<dynamics::data::PoseByIndex, float> fScore;
     fScore[target] = (target_pose.pos - current_pose.pos).norm();
@@ -434,7 +490,7 @@ LLResult astar_reversed(dynamics::data::PoseByIndex start, dynamics::data::PoseB
         }
 
         openQueue.pop();
-        auto current_pose = indexToPose(current.pose);
+        auto current_pose = pose_lut[current.pose];
          for (int32_t a = 0; a < map_size_angle; a++) {
             for (int32_t s = 0; s < map_size_speed; s++) {
                 for (auto rel_neighbor : mp_comp.m_mpmap[a][s]) {
@@ -455,7 +511,7 @@ LLResult astar_reversed(dynamics::data::PoseByIndex start, dynamics::data::PoseB
                     }
 
                     //Update AStar
-                    auto neigh_pose = indexToPose(gl_neighbor);
+                    auto neigh_pose = pose_lut[gl_neighbor];
                     float dist = (neigh_pose.pos - current_pose.pos).norm();
 
                     float tentative_score = gScore[current.pose] + dist; 
@@ -623,12 +679,12 @@ std::vector<dynamics::data::Pose2WithTime> getSplines(std::unordered_map<dynamic
     std::vector<dynamics::data::Pose2WithTime> result;
     
     uint32_t path_depth_index = 0;
-    dynamics::data::Pose2D veh_pose = indexToPose(nodes.at( nodes.size() - 1));
+    dynamics::data::Pose2D veh_pose = pose_lut[nodes.at( nodes.size() - 1)];
 
     for(int64_t i = nodes.size() - 1; i >= 0; i --){
 
         dynamics::data::Pose2WithTime next_with_time;
-        next_with_time = indexToPose(nodes.at(i)); 
+        next_with_time = pose_lut[nodes.at(i)]; 
         next_with_time.time_ms = (path_depth_index * 2 * timestep_ms); 
         result.push_back(next_with_time);
 
@@ -669,7 +725,7 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
     
     for(int64_t i = nodes.size() - 1; i > 0; i --){
 
-        dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(i));
+        dynamics::data::Pose2D veh_pose = pose_lut[nodes.at(i)];
 
         dynamics::data::Pose2D next_pose;
         if(astar_debug){
@@ -735,7 +791,7 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unorde
         path_depth_index += 1;
     }
     
-    // dynamics::data::Pose2D veh_pose = indexToPose(nodes.at(0));
+    // dynamics::data::Pose2D veh_pose = pose_lut[pbi](nodes.at(0));
     // dynamics::data::Pose2WithTime next_with_time;
     // next_with_time = veh_pose;
     // next_with_time.baseNode = nodes.at(0);
@@ -855,10 +911,10 @@ void writeCurveToDisk(LLResult res, std::string name){
         pnode["t"] = current.time_ms;
         pnode["ti"] = current.path_depth_index;
 
-        pnode["bnode"]["x"] =  indexToPose(current.baseNode).pos[0];
-        pnode["bnode"]["y"] =  indexToPose(current.baseNode).pos[1];
-        pnode["bnode"]["a"] =  indexToPose(current.baseNode).vel;
-        pnode["bnode"]["s"] =  indexToPose(current.baseNode).h;
+        pnode["bnode"]["x"] =  pose_lut[current.baseNode].pos[0];
+        pnode["bnode"]["y"] =  pose_lut[current.baseNode].pos[1];
+        pnode["bnode"]["a"] =  pose_lut[current.baseNode].vel;
+        pnode["bnode"]["s"] =  pose_lut[current.baseNode].h;
         llres["interprimitive"].push_back(pnode);
     }
     //dump file to disc
