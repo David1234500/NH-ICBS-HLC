@@ -408,6 +408,8 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
    
     rlog("CBS", LOG_DEBUG, "CBS Branched Starting");
 
+    preparePoseLuT();
+
     auto veh_count = std::min(start_positions.size(), target_positions.size());
 
     for(uint32_t i = 0; i < start_positions.size() && i < target_positions.size(); i ++){
@@ -428,6 +430,10 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
 
     m_resultHasBeenFound = false;
     
+    m_lowLevelWorkers.clear();
+    m_lowLevelResults.clear();
+    m_lowLevelJobs.clear();
+
     m_keepThreadsAlive = true;
     for(uint32_t i = 0; i < worker_count; i ++){
         m_lowLevelWorkers.push_back(std::thread(&CBSPlanner::low_level_astar_worker, this, i));
@@ -459,8 +465,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         node.result[res.car_id] = res;
     }
 
-    m_lowLevelResults.clear();
-    m_lowLevelJobs.clear();
+   
     m_openSet.push(node);
     rlog("CBS", LOG_DEBUG, "Found initial paths for all vehicles... Now starting Branching");
 
@@ -468,7 +473,10 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     for(uint32_t i = 0; i < worker_count; i ++){
         m_lowLevelWorkers.at(i).join();
     }
+
     m_lowLevelWorkers.clear();
+    m_lowLevelResults.clear();
+    m_lowLevelJobs.clear();
 
     for(uint32_t i = 0; i < worker_count; i ++){
         m_cbsWorkers.push_back(std::thread(&CBSPlanner::cbsWorker, this, i, start_positions, target_positions, disable_collisions));
@@ -485,6 +493,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         m_cbsWorkers.at(i).join();
     }
     m_cbsWorkers.clear();
+    m_openSet = std::priority_queue<constraint_node>();
 
     return m_result;
 }

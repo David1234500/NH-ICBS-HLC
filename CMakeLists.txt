@@ -9,6 +9,10 @@ option(WITH_NLOPT "Inlcude nlopt dependend executables in compile" ON)
 add_subdirectory(thirdparty/eigen)
 include_directories(thirdparty/eigen)
 
+## Include absl
+include_directories(thirdparty/abseil-cpp)
+add_subdirectory(thirdparty/abseil-cpp)
+
 ## Compile and inlcude nlohmann json
 include_directories(thirdparty/json/include)
 add_subdirectory(thirdparty/json)

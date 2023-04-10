@@ -5,7 +5,9 @@
 #include <unordered_map>
 #include <fstream>
 #include <queue>
+
 #include <nlohmann/json.hpp>
+#include "absl/container/flat_hash_map.h"
 
 #include <util/Pose.hpp>
 #include <DynamicsModel/SingleTrackModel.hpp>
@@ -68,6 +70,26 @@ struct constraint_node{
 class PlannerBase{
 public:
 PlannerBase(){
+    
+}
+
+
+~PlannerBase(){
+   
+}
+
+std::mutex m_lowLevelSearchJobLock;
+std::vector<LLJob> m_lowLevelJobs;
+std::vector<std::thread> m_lowLevelWorkers;
+std::mutex m_lowLevelSearchResultsLock;
+std::vector<LLResult> m_lowLevelResults;
+bool m_keepThreadsAlive = true;
+
+std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::Pose2D> pose_lut;
+MPBruteforce mp_comp;
+
+
+void preparePoseLuT(){
     static uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
     static float dpc = Config::getInstance().get<float>({"disc","dstep"});
     static float api = Config::getInstance().get<float>({"disc","hstep"});
@@ -86,6 +108,7 @@ PlannerBase(){
             for(int32_t y = 0; y < y_steps; y ++){
                 for(int32_t a = 0; a < map_size_angle; a ++){
                     for(int32_t s = 0; s < map_size_speed; s ++){
+                        
                         dynamics::data::PoseByIndex pbi = {x,y,a,s,t};
 
                         dynamics::data::Pose2D global_pose;
@@ -102,22 +125,6 @@ PlannerBase(){
     }
    
 }
-
-
-~PlannerBase(){
-   
-}
-
-std::mutex m_lowLevelSearchJobLock;
-std::vector<LLJob> m_lowLevelJobs;
-std::vector<std::thread> m_lowLevelWorkers;
-std::mutex m_lowLevelSearchResultsLock;
-std::vector<LLResult> m_lowLevelResults;
-bool m_keepThreadsAlive = true;
-
-std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::Pose2D> pose_lut;
-MPBruteforce mp_comp;
-
 
 inline dynamics::data::PoseByIndex toGlobalIndex(dynamics::data::PoseByIndex base, dynamics::data::PoseByIndex relative){
     return relative + base;
@@ -292,6 +299,9 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
     static bool astar_debug = Config::getInstance().get<bool>({"debug_modes", "astar"});
     static bool astar_result = Config::getInstance().get<bool>({"debug_modes", "astar_result"});
 
+    static int32_t x_steps = Config::getInstance().getXstep();
+    static int32_t y_steps = Config::getInstance().getYstep();
+
     static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
 
@@ -353,7 +363,9 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
         for(auto& rel_neighbor: mp_comp.m_mpmap[current.pose.a][current.pose.s]){
             assert(rel_neighbor.target.s < map_size_speed);
             dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(current.pose, rel_neighbor.target);
-            assert(gl_neighbor.s < map_size_speed);
+            
+            
+            
             gl_neighbor.t = current.waiting_counter;
 
             if(rel_neighbor.target.s < zero_velocity_level){
@@ -365,6 +377,11 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
             if(!validatePosition(current_pose, gl_neighbor, rel_neighbor.link, rel_neighbor.trajectory)){
                 continue;
             }
+
+            assert(gl_neighbor.s < map_size_speed);
+            assert(gl_neighbor.x < x_steps);
+            assert(gl_neighbor.y < y_steps);
+            assert(gl_neighbor.a < map_size_angle);
 
             bool discard_due_to_obstacle = false;
             for(auto obstacle : constraints){

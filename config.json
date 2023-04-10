@@ -48,7 +48,7 @@
         "fit_allowed_speed_difference": 0.15
     },
     "compute": {
-        "worker_count": 30
+        "worker_count": 5
     },
 
     "mpnl_weights": {
