@@ -100,9 +100,9 @@ void run_cbs_experiment(const std::string& input_filename, const std::string& ou
     output_file << result_json.dump(4);
 }
 
-int main() {
-    std::string input_filename = "../experiment_set_1/experiments.json";
-    std::string output_filename = "../experiment_set_1/results.json";
+int main(int argc, char** argv) {
+    std::string input_filename = "../" + std::string(argv[1]) +"/experiments.json";
+    std::string output_filename = "../" + std::string(argv[1]) + "/results.json";
     run_cbs_experiment(input_filename, output_filename);
     return 0;
 }

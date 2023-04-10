@@ -2,6 +2,7 @@ project(planner)
 set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE release)
 cmake_minimum_required(VERSION 3.10)
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 option(WITH_NLOPT "Inlcude nlopt dependend executables in compile" ON)
 
@@ -25,13 +26,13 @@ if(${WITH_NLOPT})
 
 file(GLOB SRC "src/Planner/*.cpp" "src/MPComputeNL/*.cpp" "src/MPCompute/*.cpp" "src/DynamicsModel/*.cpp" "src/util/*.cpp" "src/*")
 add_library(planner_lib SHARED ${SRC})
-target_link_libraries(planner_lib pthread nlopt m)
+target_link_libraries(planner_lib pthread nlopt m absl::flat_hash_map absl::node_hash_map absl::flat_hash_set)
 
 else()
 
 file(GLOB SRC "src/Planner/*.cpp"  "src/MPCompute/*.cpp" "src/DynamicsModel/*.cpp" "src/util/*.cpp" "src/*")
 add_library(planner_lib SHARED ${SRC})
-target_link_libraries(planner_lib pthread)
+target_link_libraries(planner_lib pthread absl::flat_hash_map absl::node_hash_map absl::flat_hash_set)
 
 endif()
 
@@ -44,7 +45,7 @@ foreach(src_ ${EXEC_SRC})
     message(STATUS "Found executable : ${target}")
 
 	add_executable(${target} ${src_})
-    target_link_libraries(${target} planner_lib)
+    target_link_libraries(${target} planner_lib absl::flat_hash_map absl::node_hash_map absl::flat_hash_set)
 endforeach()
 
 file(GLOB EXEC_SRC "src/Tests/*.cpp")
@@ -56,7 +57,7 @@ foreach(src_ ${EXEC_SRC})
     message(STATUS "Found executable : ${target}")
 
 	add_executable(${target} ${src_})
-    target_link_libraries(${target} planner_lib)
+    target_link_libraries(${target} planner_lib absl::flat_hash_map absl::node_hash_map absl::flat_hash_set)
 endforeach()
 
 if(${WITH_NLOPT})

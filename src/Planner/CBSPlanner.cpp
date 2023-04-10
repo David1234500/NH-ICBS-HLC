@@ -449,6 +449,16 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         
         if(!m_lowLevelResults.at(i).found_path){
             rlog("CBS", LOG_ERROR, "CBS INFEASIBLE due to not finding initial path");
+            
+            m_keepThreadsAlive = false;
+            for(uint32_t i = 0; i < worker_count; i ++){
+                m_lowLevelWorkers.at(i).join();
+            }
+
+            m_lowLevelWorkers.clear();
+            m_lowLevelResults.clear();
+            m_lowLevelJobs.clear();
+            
             return constraint_node();
         }
         sic += m_lowLevelResults.at(i).path->size();

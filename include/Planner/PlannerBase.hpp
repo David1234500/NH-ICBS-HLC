@@ -8,6 +8,7 @@
 
 #include <nlohmann/json.hpp>
 #include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 
 #include <util/Pose.hpp>
 #include <DynamicsModel/SingleTrackModel.hpp>
@@ -85,7 +86,7 @@ std::mutex m_lowLevelSearchResultsLock;
 std::vector<LLResult> m_lowLevelResults;
 bool m_keepThreadsAlive = true;
 
-std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::Pose2D> pose_lut;
+absl::flat_hash_map<dynamics::data::PoseByIndex, dynamics::data::Pose2D> pose_lut;
 MPBruteforce mp_comp;
 
 
@@ -198,7 +199,7 @@ dynamics::data::Pose2D indexToPose(dynamics::data::PBIConstraint global){
 
 
 
-void writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target,  std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom, std::string name="visited_nodes.json"){
+void writeVisitedNodesToDisk(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target,  absl::flat_hash_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom, std::string name="visited_nodes.json"){
     json visited_nodes;
     
     visited_nodes["target"]["x"] = target.x;
@@ -256,11 +257,11 @@ inline bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::Pose
     static int32_t x_steps = Config::getInstance().getXstep();
     static int32_t y_steps = Config::getInstance().getYstep();
 
-    static int32_t x_cm = Config::getInstance().get<int32_t>({"map","x_cm"});
-    static int32_t y_cm = Config::getInstance().get<int32_t>({"map","y_cm"});
+    // static int32_t x_cm = Config::getInstance().get<int32_t>({"map","x_cm"});
+    // static int32_t y_cm = Config::getInstance().get<int32_t>({"map","y_cm"});
     
-    static int32_t dstep = Config::getInstance().get<int32_t>({"disc","dstep"});
-    static int32_t ov_approx = Config::getInstance().get<int32_t>({"border_detect","approx_count"});
+    // static int32_t dstep = Config::getInstance().get<int32_t>({"disc","dstep"});
+    // static int32_t ov_approx = Config::getInstance().get<int32_t>({"border_detect","approx_count"});
 
     static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
@@ -306,10 +307,10 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
     static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
 
     std::priority_queue<dynamics::data::LLNode> openQueue;
-    std::unordered_set<dynamics::data::PoseByIndex> openSet;
+    absl::flat_hash_set<dynamics::data::PoseByIndex> openSet;
 
-    std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
-    std::unordered_map<dynamics::data::PoseByIndex, MotionPrimitive> usedEdge;
+    absl::flat_hash_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
+    absl::flat_hash_map<dynamics::data::PoseByIndex, MotionPrimitive> usedEdge;
 
     assert(start.s < map_size_speed);
     assert(target.s < map_size_speed);
@@ -317,12 +318,12 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
     auto current_pose = pose_lut[start];
     auto target_pose = pose_lut[target];
 
-    std::unordered_map<dynamics::data::PoseByIndex, float> fScore;
+    absl::flat_hash_map<dynamics::data::PoseByIndex, float> fScore;
     float manhattan = std::abs(target_pose.pos[0] - current_pose.pos[0]) + std::abs(target_pose.pos[1] - current_pose.pos[1]);
     fScore[start] = manhattan;
     // fScore[start] = (target_pose.pos - current_pose.pos).norm();
     
-    std::unordered_map<dynamics::data::PoseByIndex, float> gScore;
+    absl::flat_hash_map<dynamics::data::PoseByIndex, float> gScore;
     gScore[start] = 0.f;
 
     dynamics::data::LLNode initial = {start, fScore[start], 0};
@@ -466,10 +467,10 @@ LLResult astar_reversed(dynamics::data::PoseByIndex start, dynamics::data::PoseB
     static int32_t dstep = Config::getInstance().get<int32_t>({"disc","dstep"});
 
     std::priority_queue<dynamics::data::LLNode> openQueue;
-    std::unordered_set<dynamics::data::PoseByIndex> openSet;
+    absl::flat_hash_set<dynamics::data::PoseByIndex> openSet;
 
-    std::unordered_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
-    std::unordered_map<dynamics::data::PoseByIndex, MotionPrimitive> usedEdge;
+    absl::flat_hash_map<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex> cameFrom;
+    absl::flat_hash_map<dynamics::data::PoseByIndex, MotionPrimitive> usedEdge;
 
     int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
@@ -478,10 +479,10 @@ LLResult astar_reversed(dynamics::data::PoseByIndex start, dynamics::data::PoseB
     auto current_pose = pose_lut[target];
     auto target_pose = pose_lut[start];
 
-    std::unordered_map<dynamics::data::PoseByIndex, float> fScore;
+    absl::flat_hash_map<dynamics::data::PoseByIndex, float> fScore;
     fScore[target] = (target_pose.pos - current_pose.pos).norm();
     
-    std::unordered_map<dynamics::data::PoseByIndex, float> gScore;
+    absl::flat_hash_map<dynamics::data::PoseByIndex, float> gScore;
     gScore[target] = 0.f;
 
     dynamics::data::LLNode initial = {target, fScore[target], 0};
@@ -668,7 +669,7 @@ void writeCollisionInfoToDisc(const CollisionInfo& collision_info,
 
 
 
-std::vector<dynamics::data::Pose2WithTime> getSplines(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,MotionPrimitive>& edge_map, dynamics::data::PoseByIndex target){
+std::vector<dynamics::data::Pose2WithTime> getSplines(absl::flat_hash_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, absl::flat_hash_map<dynamics::data::PoseByIndex,MotionPrimitive>& edge_map, dynamics::data::PoseByIndex target){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
     float dpc = Config::getInstance().get<float>({"disc","dstep"});
     
@@ -711,7 +712,7 @@ std::vector<dynamics::data::Pose2WithTime> getSplines(std::unordered_map<dynamic
     return result;
 }
 
-std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, std::unordered_map<dynamics::data::PoseByIndex,MotionPrimitive>& edge_map, dynamics::data::PoseByIndex target){
+std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(absl::flat_hash_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, absl::flat_hash_map<dynamics::data::PoseByIndex,MotionPrimitive>& edge_map, dynamics::data::PoseByIndex target){
     uint32_t timestep_ms = Config::getInstance().get<uint32_t>({"timestep_ms"});
     float dpc = Config::getInstance().get<float>({"disc","dstep"});
     
@@ -883,7 +884,7 @@ void await_astar_result(uint32_t count){
     }
 }
 
-std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> getPath(std::unordered_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target){
+std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> getPath(absl::flat_hash_map<dynamics::data::PoseByIndex,dynamics::data::PoseByIndex>& predecessor, dynamics::data::PoseByIndex& target){
     auto current = target;
     static bool astar_debug = Config::getInstance().get<bool>({"debug_modes", "astar"});
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> result = std::make_shared<std::vector<dynamics::data::PoseByIndex>>();
