@@ -36,6 +36,7 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<CBSPlanner> planner = std::make_shared<CBSPlanner>();
     std::cout << "Loading graph from disk!" << std::endl;
     planner->mp_comp.loadGraphFromDisk();
+    planner->preparePoseLuT();
     std::cout << "Finished loading graph from disk!" << std::endl;
     
     if (argc != 3) {

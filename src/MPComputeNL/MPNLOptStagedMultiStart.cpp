@@ -207,6 +207,9 @@ void MPNLOptStagedMultiStart::workerThreadMPEdges(uint32_t index){
                 epose.s_a_2 = res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_st_a];
                 double v_end_1 = args.sp.vel + res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_acc] * (timestep_ms / 1000.f);
                 double v_end_2 = v_end_1 + res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_acc] * (timestep_ms / 1000.f);
+                epose.s_acc = res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_acc];
+                epose.s_acc_2 = res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_acc];
+                epose.is_acc_based = true;
 
                 epose.s_v = (args.sp.vel + v_end_1) / 2;
                 epose.s_v_2 = (v_end_1 + v_end_2) / 2;
@@ -236,7 +239,10 @@ void MPNLOptStagedMultiStart::workerThreadMPEdges(uint32_t index){
                 epose_q2.s_v = (args.sp.vel + v_end_1) / 2;
                 epose_q2.s_v_2 = (v_end_1 + v_end_2) / 2;
                 epose_q2.bi_pose = pi_q2;
-                
+                epose_q2.s_acc = res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_acc];
+                epose_q2.s_acc_2 = res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_acc];
+                epose_q2.is_acc_based = true;
+
                 MotionPrimitive mp_q2 = {epose_q2, pi_q2};
                 
                 // Q3 MP
@@ -255,6 +261,9 @@ void MPNLOptStagedMultiStart::workerThreadMPEdges(uint32_t index){
                 epose_q3.s_v = (args.sp.vel + v_end_1) / 2;
                 epose_q3.s_v_2 = (v_end_1 + v_end_2) / 2;
                 epose_q3.bi_pose = pi_q3;
+                epose_q3.s_acc = res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_acc];
+                epose_q3.s_acc_2 = res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_acc];
+                epose_q3.is_acc_based = true;
                 MotionPrimitive mp_q3 = {epose_q3, pi_q3};
 
                 // Q4 MP
@@ -273,6 +282,9 @@ void MPNLOptStagedMultiStart::workerThreadMPEdges(uint32_t index){
                 epose_q4.s_v = (args.sp.vel + v_end_1) / 2;
                 epose_q4.s_v_2 = (v_end_1 + v_end_2) / 2;
                 epose_q4.bi_pose = pi_q4;
+                epose_q4.s_acc = res.result[MPNLOptSingle::mpnl_obj_pv_map::c1_acc];
+                epose_q4.s_acc_2 = res.result[MPNLOptSingle::mpnl_obj_pv_map::c2_acc];
+                epose_q4.is_acc_based = true;
                 MotionPrimitive mp_q4 = {epose_q4, pi_q4};
 
                 m_mpTaskMutex.lock();

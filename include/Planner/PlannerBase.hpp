@@ -347,11 +347,12 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
         if(current.pose &= target){
             if(astar_result){
                 rlog("ASTAR", LOG_INFO, "Found path for " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
+                writeVisitedNodesToDisk(start, target, cameFrom, "FLLT"+ std::to_string(target.x) + "_" + std::to_string(target.y) + "_" + std::to_string(target.a) + "_" + std::to_string(target.s) +"S"+ std::to_string(start.x) + "_" + std::to_string(start.y) + "_" + std::to_string(start.a)+ "_" + std::to_string(start.s) + ".json");
             }
 
             LLResult res;
             res.path = getPath(cameFrom, current.pose);
-            res.spline = getSplines(cameFrom, usedEdge, current.pose);
+            // res.spline = getSplines(cameFrom, usedEdge, current.pose);
             res.interprimitive = getInterPrimitivPositions(cameFrom, usedEdge, current.pose);
             res.found_path = true;
 
@@ -747,7 +748,9 @@ std::vector<dynamics::data::Pose2WithTime> getInterPrimitivPositions(absl::flat_
 
         dynamics::data::Pose2D next_pose;
         if(astar_debug){
-            rlog("GetInterprimitive", LOG_INFO, "P: " + std::to_string(nodes.at(i).x) + ":" + std::to_string(nodes.at(i).y) + ":" + std::to_string(nodes.at(i).a) + ":" + std::to_string(nodes.at(i).s) + " path_depth_index: " + std::to_string(path_depth_index));
+            rlog("GetInterprimitive", LOG_INFO, "P: " + std::to_string(nodes.at(i).x) + ":" + std::to_string(nodes.at(i).y) + ":" + std::to_string(nodes.at(i).a) + ":" + std::to_string(nodes.at(i).s) + " pdi: " + std::to_string(path_depth_index) + " acc:" + std::to_string(edges.at(i - 1).link.is_acc_based));
+            rlog("GetInterprimitive", LOG_INFO, "-> MPACC: " + std::to_string(edges.at(i - 1).link.s_a) + ":" + std::to_string(edges.at(i - 1).link.s_acc) + ":" + std::to_string(edges.at(i - 1).link.s_a_2) + ":" + std::to_string(edges.at(i - 1).link.s_acc_2) );
+            rlog("GetInterprimitive", LOG_INFO, "-> MPV: " + std::to_string(edges.at(i - 1).link.s_a) + ":" + std::to_string(edges.at(i - 1).link.s_v) + ":" + std::to_string(edges.at(i - 1).link.s_a_2) + ":" + std::to_string(edges.at(i - 1).link.s_v_2) );
         }
         if(edges.at(i - 1).link.is_acc_based){
                 for(float ts = 0; ts < timestep_ms; ts += 50.f){    

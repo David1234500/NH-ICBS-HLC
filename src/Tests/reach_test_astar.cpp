@@ -13,6 +13,7 @@ int main() {
 
     static int32_t driving_velocity_level = Config::getInstance().get<int32_t>({"velocity","driving_velocity_level"});
     std::shared_ptr<CBSPlanner> planner = std::make_shared<CBSPlanner>();
+    planner->preparePoseLuT();
     std::cout << "Loading graph from disk!" << std::endl;
     planner->mp_comp.loadGraphFromDisk();
     std::cout << "Finished loading graph from disk!" << std::endl;

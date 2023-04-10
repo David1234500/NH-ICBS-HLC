@@ -84,8 +84,10 @@ int main() {
     std::shared_ptr<CBSPlanner> planner = std::make_shared<CBSPlanner>();
     std::cout << "Loading graph from disk!" << std::endl;
     planner->mp_comp.loadGraphFromDisk();
+    planner->preparePoseLuT();
     std::cout << "Finished loading graph from disk!" << std::endl;
     auto res = planner->checkForReachability();
+
 
     std::vector<std::tuple<dynamics::data::PoseByIndex, dynamics::data::PoseByIndex, std::vector<dynamics::data::PoseByIndex>>> unreachable_configs;
     if(!res.reachable){
