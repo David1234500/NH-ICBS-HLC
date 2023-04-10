@@ -39,7 +39,7 @@ def visualize_path_data(json_file):
     axs[2].set_ylabel('Velocity (m/s)')
 
     # Save the plot
-    fig.savefig('../path_velocities.svg')
+    fig.savefig('../path_velocities.png')
     plt.close(fig)
 
 

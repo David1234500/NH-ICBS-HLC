@@ -23,7 +23,7 @@
     },
     "debug_modes":{
         "astar":true,
-        "astar_result":true,
+        "astar_result":false,
         "cbs":true,
         "cbs_result":false,
         "cbs_nodes_to_disc":false,
@@ -48,7 +48,7 @@
         "fit_allowed_speed_difference": 0.15
     },
     "compute": {
-        "worker_count": 5
+        "worker_count": 30
     },
 
     "mpnl_weights": {

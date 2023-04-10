@@ -424,6 +424,10 @@ void MPCompute::loadGraphFromDisk(std::string path){
         tedge.link.s_v = edge["settings"]["v1"];
         tedge.link.s_v_2 = edge["settings"]["v2"];
 
+        tedge.link.s_acc = edge["settings"]["acc1"];
+        tedge.link.s_acc_2 = edge["settings"]["acc2"];
+        tedge.link.is_acc_based = edge["settings"]["acc_based"];
+
         tedge.link.a_error = edge["error"]["ae"];
         tedge.link.p_error = edge["error"]["pe"];
 
