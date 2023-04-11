@@ -319,12 +319,25 @@ void MPCompute::writeGraphToDisk(std::string name, bool acc){
             
                 dynamics::data::Pose2D next_pose;
                 dynamics::data::Pose2D veh_pose = {{0.f,0.f}, api * i, edge.link.vel};
+
+                
+
+                jedge["source"]["s"] = j;
+                
+                float min_x, min_y, max_x, max_y = 0.f;
+
                 if(edge.link.is_acc_based){
                     for(float ts = 0; ts <= timestep_ms; ts += 50.f){
                         next_pose = dynamics::SimpleDynamicsModel::computeNextPose(veh_pose, edge.link.s_a, edge.link.s_v, ts);
                         json point;
                         point["x"] = next_pose.pos[0];
                         point["y"] = next_pose.pos[1];
+
+                        min_x = std::min(next_pose.pos[0],min_x);
+                        min_y = std::min(next_pose.pos[1],min_y);
+                        max_x = std::max(next_pose.pos[0],min_x);
+                        max_y = std::max(next_pose.pos[1],min_y);
+
                         jedge["curve"].push_back(point);
 
                     }
@@ -334,6 +347,12 @@ void MPCompute::writeGraphToDisk(std::string name, bool acc){
                         json point;
                         point["x"] = next_pose2.pos[0];
                         point["y"] = next_pose2.pos[1];
+
+                        min_x = std::min(next_pose.pos[0],min_x);
+                        min_y = std::min(next_pose.pos[1],min_y);
+                        max_x = std::max(next_pose.pos[0],min_x);
+                        max_y = std::max(next_pose.pos[1],min_y);
+
                         jedge["curve"].push_back(point);
                     }
                 }else{
@@ -342,6 +361,13 @@ void MPCompute::writeGraphToDisk(std::string name, bool acc){
                         json point;
                         point["x"] = next_pose.pos[0];
                         point["y"] = next_pose.pos[1];
+
+                        min_x = std::min(next_pose.pos[0],min_x);
+                        min_y = std::min(next_pose.pos[1],min_y);
+                        max_x = std::max(next_pose.pos[0],min_x);
+                        max_y = std::max(next_pose.pos[1],min_y);
+
+
                         jedge["curve"].push_back(point);
 
                     }
@@ -351,9 +377,20 @@ void MPCompute::writeGraphToDisk(std::string name, bool acc){
                         json point;
                         point["x"] = next_pose2.pos[0];
                         point["y"] = next_pose2.pos[1];
+
+                        min_x = std::min(next_pose.pos[0],min_x);
+                        min_y = std::min(next_pose.pos[1],min_y);
+                        max_x = std::max(next_pose.pos[0],min_x);
+                        max_y = std::max(next_pose.pos[1],min_y);
+
                         jedge["curve"].push_back(point);
                     }
                 }
+
+                jedge["req_dist"]["yp"] = std::ceil(max_y / dpc);
+                jedge["req_dist"]["yn"] = std::floor(min_y / dpc);
+                jedge["req_dist"]["xp"] = std::floor(min_x / dpc);
+                jedge["req_dist"]["yp"] = std::ceil(max_x / dpc);
 
                 jedge["target"]["x"] = (dpc * edge.target.x);
                 jedge["target"]["y"] = (dpc * edge.target.y);
@@ -437,6 +474,11 @@ void MPCompute::loadGraphFromDisk(std::string path){
         tedge.link.pos[0] = edge["target"]["x"];
         tedge.link.vel = edge["target"]["s"];
 
+        tedge.dist_xn = edge["req_dist"]["xn"];
+        tedge.dist_yn = edge["req_dist"]["yn"];
+        tedge.dist_xp = edge["req_dist"]["xp"];
+        tedge.dist_yp = edge["req_dist"]["yp"];
+        
         //Target index location
         tedge.target.s = edge["targeti"]["s"];
         tedge.target.a = edge["targeti"]["a"];
@@ -509,6 +551,8 @@ void MPCompute::mergeGraphsFromDisk(std::string path1, std::string path2){
             pose.pos[1] = edge["curve"].at(i)["y"];
             tedge.trajectory.push_back(pose);
         }
+
+        
 
         int source_a = edge["source"]["a"];
         int source_s = edge["source"]["s"];

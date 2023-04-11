@@ -14,7 +14,7 @@
 #include <DynamicsModel/SingleTrackModel.hpp>
 #include <MPCompute/MPBruteforce.hpp>
 #include <Collision/CollisionDetectBase.hpp>
-
+#include <util/Profiler.hpp>
 
 using json = nlohmann::json;
 
@@ -253,15 +253,9 @@ dynamics::data::PoseByIndex toLocalIndex(dynamics::data::PoseByIndex base, dynam
     return global - base;
 }
 
-inline bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::PoseByIndex& base, dynamics::data::Pose2DWithError& edge, std::vector<dynamics::data::Pose2D>& mp_trajectory){
+inline bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::PoseByIndex& base, MotionPrimitive& mp, std::vector<dynamics::data::Pose2D>& mp_trajectory){
     static int32_t x_steps = Config::getInstance().getXstep();
     static int32_t y_steps = Config::getInstance().getYstep();
-
-    // static int32_t x_cm = Config::getInstance().get<int32_t>({"map","x_cm"});
-    // static int32_t y_cm = Config::getInstance().get<int32_t>({"map","y_cm"});
-    
-    // static int32_t dstep = Config::getInstance().get<int32_t>({"disc","dstep"});
-    // static int32_t ov_approx = Config::getInstance().get<int32_t>({"border_detect","approx_count"});
 
     static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
@@ -274,21 +268,12 @@ inline bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::Pose
         return false;
     }
 
+    if(base.x + mp.dist_xn  < 1 || base.x + mp.dist_xp > x_steps - 1 ||
+       base.y + mp.dist_yn < 1 || base.y + mp.dist_yp > y_steps - 1){
+        return false;
+    }
 
-    // // Overapprox
-    // static int32_t x_lower_thres =  (ov_approx);
-    // static int32_t x_upper_thres =   (x_steps - ov_approx);
-    // static int32_t y_lower_thres =  (ov_approx);
-    // static int32_t y_upper_thres =   (y_steps - ov_approx);
     
-    // if(base.x < x_lower_thres || base.x > x_upper_thres || base.y < y_lower_thres || base.x > y_upper_thres){
-    //     for(auto pose: mp_trajectory){
-    //         auto position = cpose.pos + pose.pos;
-    //         if(position[0] > x_cm || position[0] < 0 || position[1] > y_cm || position[1] < 0){
-    //             return false;
-    //         }
-    //     }   
-    // }
     return true;
 }
 
@@ -305,6 +290,8 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
 
     static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
     static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+
+    uint64_t astar_compl = CBSProfiler::instance().start(AStarComplete);
 
     std::priority_queue<dynamics::data::LLNode> openQueue;
     absl::flat_hash_set<dynamics::data::PoseByIndex> openSet;
@@ -355,6 +342,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
             // res.spline = getSplines(cameFrom, usedEdge, current.pose);
             res.interprimitive = getInterPrimitivPositions(cameFrom, usedEdge, current.pose);
             res.found_path = true;
+            CBSProfiler::instance().stop(AStarComplete,astar_compl);
 
             return res;
         }
@@ -376,7 +364,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
                 }
             }
 
-            if(!validatePosition(current_pose, gl_neighbor, rel_neighbor.link, rel_neighbor.trajectory)){
+            if(!validatePosition(current_pose, gl_neighbor, rel_neighbor, rel_neighbor.trajectory)){
                 continue;
             }
 
@@ -450,6 +438,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
         rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a)+ ":" + std::to_string(start.s));
     }
 
+    CBSProfiler::instance().stop(AStarComplete,astar_compl);
     LLResult res;
     res.found_path = false;
     res.spline.clear();

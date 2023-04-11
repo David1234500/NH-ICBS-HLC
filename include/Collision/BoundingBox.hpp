@@ -72,7 +72,7 @@ public:
 private:
     bool bounding_boxes_overlap(const dynamics::data::Pose2WithTime& pose1, const dynamics::data::Pose2WithTime& pose2, float half_threshold) {
         // Define the bounding boxes for pose1 and pose2
-        Eigen::Vector2f(half_threshold, half_threshold);
+        auto box1_min = pose1.pos - Eigen::Vector2f(half_threshold, half_threshold);
         auto box1_max = pose1.pos + Eigen::Vector2f(half_threshold, half_threshold);
         auto box2_min = pose2.pos - Eigen::Vector2f(half_threshold, half_threshold);
         auto box2_max = pose2.pos + Eigen::Vector2f(half_threshold, half_threshold);
@@ -83,3 +83,6 @@ private:
 
         return overlap_x && overlap_y;
     }
+};
+
+#endif

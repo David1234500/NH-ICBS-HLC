@@ -6,6 +6,8 @@
 #include <DynamicsModel/SingleTrackModel.hpp>
 #include <MPCompute/MPBruteforce.hpp>
 #include <Planner/PlannerBase.hpp>
+#include <util/Profiler.hpp>
+
 #include <unordered_set>
 #include <unordered_map>
 

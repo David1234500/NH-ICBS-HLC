@@ -21,6 +21,10 @@ struct MotionPrimitive{
     dynamics::data::Pose2DWithError link;
     dynamics::data::PoseByIndex target;
     bool is_waiting_trajectory = false;
+    float dist_xp = 0.f;
+    float dist_xn = 0.f;
+    float dist_yp = 0.f;
+    float dist_yn = 0.f;
     std::vector<dynamics::data::Pose2D> trajectory = {};
 };
 

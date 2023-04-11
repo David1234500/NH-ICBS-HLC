@@ -232,10 +232,12 @@ void CBSPlanner::cbsWorker(int32_t id, std::vector<dynamics::data::PoseByIndex> 
 
     constraint_node node;
     std::vector<dynamics::data::PBIConstraint> vehicle_constraints;
+    
 
     while(!m_resultHasBeenFound){
         m_openSetMutex.lock();
         
+
         if(m_openSet.empty()){
             
             m_openSetMutex.unlock();
@@ -248,6 +250,8 @@ void CBSPlanner::cbsWorker(int32_t id, std::vector<dynamics::data::PoseByIndex> 
             m_openSetMutex.unlock();
         }
 
+        uint64_t cbs_wk_id = CBSProfiler::instance().start(CBSWorkerIteration);
+
         if(cbs_deb){
             rlog("CBS", LOG_DEBUG, "OpenSet: " + std::to_string(m_openSet.size()) + " SIC: " + std::to_string(node.sic) + " CNodeID: " + std::to_string(node.node_id) +" CCount: " + std::to_string(node.avoid.size()));
         }
@@ -255,17 +259,20 @@ void CBSPlanner::cbsWorker(int32_t id, std::vector<dynamics::data::PoseByIndex> 
             writeConstraintNodeToDisk(node,"node" + std::to_string(node.node_id) + ".json");
         }
             
+        uint64_t coll_det = CBSProfiler::instance().start(CollisionDetect);
         CollisionInfo info;
         if(!disable_collisions){
             info = checkCollisionWithinConstraintNode(node);
         }else{
             rlog("CBS", LOG_WARNING, "Warning! All collision checks are disabled...");
         }
-        
+        CBSProfiler::instance().stop(CollisionDetect,coll_det);
+
         // Check if we have just obtained a valid solution -> terminate if yes
         if(!info.collision_occurred){
             rlog("CBS", LOG_DEBUG, "CBS SUCCESSFULL TERMINATION!");
-            
+            CBSProfiler::instance().stop(CBSWorkerIteration, cbs_wk_id);
+
             m_resultMutex.lock();
             node.feasible = true;
             m_result = node;
@@ -389,6 +396,7 @@ void CBSPlanner::cbsWorker(int32_t id, std::vector<dynamics::data::PoseByIndex> 
         if(col_deb){
             writeCollisionInfoToDisc(info, node.result[info.car_index_1].interprimitive, node.result[info.car_index_2].interprimitive, node, "collision_in_node" + std::to_string(node.node_id) + ".json" );
         }
+        CBSProfiler::instance().stop(CBSWorkerIteration, cbs_wk_id);
     }
 }
 
@@ -406,6 +414,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     std::vector<float> vlevels = Config::getInstance().get<std::vector<float>>({"velocity","vlevels"});
     static bool col_deb = Config::getInstance().get<bool>({"collision_detect","debug_mode"});
    
+    int32_t cbs_complete_id = CBSProfiler::instance().start(CBSComplete);
+    int32_t cbs_bootstrap_id = CBSProfiler::instance().start(CBSBootstrap);
+    
     rlog("CBS", LOG_DEBUG, "CBS Branched Starting");
 
     preparePoseLuT();
@@ -440,6 +451,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     }
 
     constraint_node node;
+    
     for(uint32_t i = 0; i < veh_count; i ++){
         enqueue_astar(start_positions.at(i),target_positions.at(i), node, i, relax);
     }
@@ -459,6 +471,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             m_lowLevelResults.clear();
             m_lowLevelJobs.clear();
             
+            CBSProfiler::instance().stop(CBSBootstrap, cbs_bootstrap_id);
             return constraint_node();
         }
         sic += m_lowLevelResults.at(i).path->size();
@@ -475,6 +488,8 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
         node.result[res.car_id] = res;
     }
 
+    CBSProfiler::instance().stop(CBSBootstrap, cbs_bootstrap_id);
+    
    
     m_openSet.push(node);
     rlog("CBS", LOG_DEBUG, "Found initial paths for all vehicles... Now starting Branching");
@@ -504,6 +519,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     }
     m_cbsWorkers.clear();
     m_openSet = std::priority_queue<constraint_node>();
+    CBSProfiler::instance().stop(CBSComplete,cbs_complete_id);
+
+    CBSProfiler::instance().export_to_json("performance_rec.json");
 
     return m_result;
 }

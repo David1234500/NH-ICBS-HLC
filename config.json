@@ -11,6 +11,7 @@
         "dstep": 5.0,
         "hstep": 0.5236
     },
+    "profiler":true,
     "allowed_reversing":2,
     "allowed_waiting":2,
     "use_acc_for_interprimitive_path_compute_override":true,
@@ -26,7 +27,7 @@
         "astar_result":false,
         "cbs":true,
         "cbs_result":false,
-        "cbs_nodes_to_disc":false,
+        "cbs_nodes_to_disc":true,
         "collision":false,
         "collision_to_disc":false,
         "collision_to_disc_prec":false
