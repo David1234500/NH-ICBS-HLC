@@ -268,10 +268,10 @@ inline bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::Pose
         return false;
     }
 
-    if(base.x + mp.dist_xn  < 1 || base.x + mp.dist_xp > x_steps - 1 ||
-       base.y + mp.dist_yn < 1 || base.y + mp.dist_yp > y_steps - 1){
-        return false;
-    }
+    // if(base.x + mp.dist_xn < 1 || base.x + mp.dist_xp > x_steps - 1 ||
+    //    base.y + mp.dist_yn < 1 || base.y + mp.dist_yp > y_steps - 1){
+    //     return false;
+    // }
 
     
     return true;
@@ -902,14 +902,14 @@ void writeCurveToDisk(LLResult res, std::string name){
     
     json llres;
 
-   for(auto current: *res.path){
-        json pnode;
-        pnode["x"] = current.x;
-        pnode["y"] = current.y;
-        pnode["s"] = current.s;
-        pnode["a"] = current.a;
-        llres["path"].push_back(pnode);
-    }
+//    for(auto current: *res.path){
+//         json pnode;
+//         pnode["x"] = current.x;
+//         pnode["y"] = current.y;
+//         pnode["s"] = current.s;
+//         pnode["a"] = current.a;
+//         llres["path"].push_back(pnode);
+//     }
 
     //secondly by precise positions
     for(auto current: res.interprimitive){

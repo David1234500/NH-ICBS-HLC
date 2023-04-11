@@ -389,8 +389,8 @@ void MPCompute::writeGraphToDisk(std::string name, bool acc){
 
                 jedge["req_dist"]["yp"] = std::ceil(max_y / dpc);
                 jedge["req_dist"]["yn"] = std::floor(min_y / dpc);
-                jedge["req_dist"]["xp"] = std::floor(min_x / dpc);
-                jedge["req_dist"]["yp"] = std::ceil(max_x / dpc);
+                jedge["req_dist"]["xn"] = std::floor(min_x / dpc);
+                jedge["req_dist"]["xp"] = std::ceil(max_x / dpc);
 
                 jedge["target"]["x"] = (dpc * edge.target.x);
                 jedge["target"]["y"] = (dpc * edge.target.y);
@@ -478,7 +478,7 @@ void MPCompute::loadGraphFromDisk(std::string path){
         tedge.dist_yn = edge["req_dist"]["yn"];
         tedge.dist_xp = edge["req_dist"]["xp"];
         tedge.dist_yp = edge["req_dist"]["yp"];
-        
+
         //Target index location
         tedge.target.s = edge["targeti"]["s"];
         tedge.target.a = edge["targeti"]["a"];

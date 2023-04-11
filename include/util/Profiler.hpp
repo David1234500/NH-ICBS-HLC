@@ -54,7 +54,7 @@ public:
 
         duration<double> elapsed_time = now - start_time;
         m_info[method][id]["end_time"] = duration_cast<milliseconds>(now.time_since_epoch()).count();
-        m_info[method][id]["duration"] = elapsed_time.count();
+        m_info[method][id]["duration"] = duration_cast<milliseconds>(elapsed_time).count();
         m_concurrent_calls[method]--;
     }
 

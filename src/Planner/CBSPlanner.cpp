@@ -470,8 +470,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             m_lowLevelWorkers.clear();
             m_lowLevelResults.clear();
             m_lowLevelJobs.clear();
-            
+
             CBSProfiler::instance().stop(CBSBootstrap, cbs_bootstrap_id);
+            CBSProfiler::instance().stop(CBSComplete,cbs_complete_id);
             return constraint_node();
         }
         sic += m_lowLevelResults.at(i).path->size();
