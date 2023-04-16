@@ -26,13 +26,13 @@ int main() {
     targets.push_back(end);
     starts.push_back(start);
 
-    dynamics::data::PoseByIndex end2 = {16,6,6,driving_velocity_level};
+    dynamics::data::PoseByIndex end2 = {16,12,6,driving_velocity_level};
     dynamics::data::PoseByIndex start2 = {18,2,6,driving_velocity_level};
     targets.push_back(end2);
     starts.push_back(start2);
 
     dynamics::data::PoseByIndex end3 = {26,6,6,driving_velocity_level};
-    dynamics::data::PoseByIndex start3 = {3,19,6,driving_velocity_level};
+    dynamics::data::PoseByIndex start3 = {18,5,2,driving_velocity_level};
     targets.push_back(end3);
     starts.push_back(start3);
 

@@ -12,22 +12,22 @@
         "hstep": 0.5236
     },
     "profiler":true,
-    "allowed_reversing":2,
-    "allowed_waiting":2,
+    "allowed_reversing":0,
+    "allowed_waiting":3,
     "use_acc_for_interprimitive_path_compute_override":true,
     "collision_detect":{
         "mode":"circle",
         "ov_appr_threshold": 100.0,
         "ov_appr_step": 25,
-        "cl_appr_threshold": 10.0,
+        "cl_appr_threshold": 15.0,
         "debug_mode":false
     },
     "debug_modes":{
-        "astar":true,
+        "astar":false,
         "astar_result":false,
-        "cbs":true,
-        "cbs_result":false,
-        "cbs_nodes_to_disc":true,
+        "cbs":false,
+        "cbs_result":true,
+        "cbs_nodes_to_disc":false,
         "collision":false,
         "collision_to_disc":false,
         "collision_to_disc_prec":false
@@ -49,7 +49,7 @@
         "fit_allowed_speed_difference": 0.15
     },
     "compute": {
-        "worker_count": 30
+        "worker_count": 26
     },
 
     "mpnl_weights": {

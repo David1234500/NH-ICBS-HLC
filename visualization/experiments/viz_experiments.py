@@ -25,6 +25,10 @@ def visualize_experiments(experiments_filename, output_filename):
         ax.scatter(start_xs, start_ys, c="blue", marker="o", label="Start")
         ax.scatter(target_xs, target_ys, c="red", marker="^", label="Target")
 
+        # Draw lines between associated start and target positions
+        for start_x, start_y, target_x, target_y in zip(start_xs, start_ys, target_xs, target_ys):
+            ax.plot([start_x, target_x], [start_y, target_y], c="green", linestyle="--")
+
         ax.set_title(f"Experiment {idx + 1}")
         ax.legend()
 

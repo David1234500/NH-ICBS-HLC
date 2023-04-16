@@ -35,8 +35,8 @@ def visualize_experiment_results(json_filename):
     avg_compute_time_feasible = np.mean([compute_times[i] for i, f in enumerate(feasibilities) if f])
     avg_compute_time_infeasible = np.mean([compute_times[i] for i, f in enumerate(feasibilities) if not f])
 
-    ax3.bar(0, avg_node_count_feasible, width, label="Avg Node Count (Feasible)", color="blue")
-    ax3.bar(1, avg_node_count_infeasible, width, label="Avg Node Count (Infeasible)", color="red")
+    bars1 = ax3.bar(0, avg_node_count_feasible, width, label="Avg Node Count (Feasible)", color="blue")
+    bars2 = ax3.bar(1, avg_node_count_infeasible, width, label="Avg Node Count (Infeasible)", color="red")
     ax3.set_xticks([0, 1])
     ax3.set_xticklabels(["Feasible", "Infeasible"])
     ax3.set_ylim([0, 100])
@@ -44,11 +44,23 @@ def visualize_experiment_results(json_filename):
     ax3.legend(loc="upper left")
 
     ax3_2 = ax3.twinx()
+    bars3 = ax3_2.bar(0 + width, avg_compute_time_feasible, width, label="Avg Compute Time (Feasible)", color="green")
+    bars4 = ax3_2.bar(1 + width, avg_compute_time_infeasible, width, label="Avg Compute Time (Infeasible)", color="orange")
+    
     ax3_2.bar(0 + width, avg_compute_time_feasible, width, label="Avg Compute Time (Feasible)", color="green")
     ax3_2.bar(1 + width, avg_compute_time_infeasible, width, label="Avg Compute Time (Infeasible)", color="orange")
     ax3_2.set_ylabel("Avg Compute Time (ms)")
     ax3_2.set_ylim([0, 20000])
     ax3_2.legend(loc="upper right")
+
+    for bars in [bars1, bars2, bars3, bars4]:
+        for bar in bars:
+            height = bar.get_height()
+            ax3_2.annotate(f'{height:.2f}',
+                           xy=(bar.get_x() + bar.get_width() / 2, height),
+                           xytext=(0, 3),  # 3 points vertical offset
+                           textcoords="offset points",
+                           ha='center', va='bottom')
 
     # Plot trajectories
     plotted_labels = set()

@@ -92,4 +92,4 @@ if __name__ == "__main__":
     files = glob.glob(os.path.join(os.getcwd(), f'{prefix}*'))
 
     for filename in files:
-        visualize_constraints(filename, lower_threshold=20)
+        visualize_constraints(filename, lower_threshold=15)

@@ -1,6 +1,7 @@
 import json
 import random
 import math
+import argparse
 
 def distance(point1, point2):
     return math.sqrt((point1["x"] - point2["x"])**2 + (point1["y"] - point2["y"])**2)
@@ -12,32 +13,39 @@ def all_distances_sufficient(points, min_distance):
                 return False
     return True
 
-def generate_experiments(input_filename, output_filename, experiment_number, min_distance=4):
+def generate_experiments(input_filename, output_filename, experiment_number, vehicle_count, min_distance=4):
     with open(input_filename) as input_file:
         data = json.load(input_file)
 
-    if len(data) < 8:
-        raise ValueError("Input file should have at least 8 positions")
+    if len(data) < 2 * vehicle_count:
+        raise ValueError("Input file should have at least 2 * vehicle_count positions")
 
     experiments = []
 
     for _ in range(experiment_number):
         while True:
-            selected_positions = random.sample(data, 8)
+            selected_positions = random.sample(data, 2 * vehicle_count)
             if all_distances_sufficient(selected_positions, min_distance):
                 break
 
         experiment = {
-            "starts": selected_positions[:4],
-            "targets": selected_positions[4:]
+            "starts": selected_positions[:vehicle_count],
+            "targets": selected_positions[vehicle_count:]
         }
         experiments.append(experiment)
 
     with open(output_filename, "w") as output_file:
         json.dump(experiments, output_file, indent=4)
 
-input_filename = "pose_data.json"
-output_filename = "experiments.json"
-experiment_number = 20
+# Set up command-line argument parsing
+parser = argparse.ArgumentParser(description="Generate experiments for vehicle routing.")
+parser.add_argument("input_filename", help="Input file containing pose data")
+parser.add_argument("output_filename", help="Output file to store generated experiments")
+parser.add_argument("experiment_number", type=int, help="Number of experiments to generate")
+parser.add_argument("vehicle_count", type=int, help="Number of vehicles for each experiment")
 
-generate_experiments(input_filename, output_filename, experiment_number)
+# Parse command-line arguments
+args = parser.parse_args()
+
+# Call generate_experiments function with specified arguments
+generate_experiments(args.input_filename, args.output_filename, args.experiment_number, args.vehicle_count)

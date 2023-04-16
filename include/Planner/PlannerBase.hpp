@@ -867,12 +867,13 @@ void enqueue_astar(dynamics::data::PoseByIndex& start, dynamics::data::PoseByInd
 void await_astar_result(uint32_t count){
      while(true){
         m_lowLevelSearchResultsLock.lock();
+        std::cout << "target " << std::to_string(count) << " current " << std::to_string(m_lowLevelResults.size()) << std::endl; 
         if(m_lowLevelResults.size() == count){
             m_lowLevelSearchResultsLock.unlock();
             break;
         }
         m_lowLevelSearchResultsLock.unlock();
-       std::this_thread::sleep_for(std::chrono::milliseconds(10));
+       std::this_thread::sleep_for(std::chrono::milliseconds(3000));
     }
 }
 

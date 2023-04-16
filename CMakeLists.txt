@@ -21,7 +21,6 @@ add_subdirectory(thirdparty/json)
 ## Compile main planner library
 include_directories("include")
 
-
 if(${WITH_NLOPT})
 
 file(GLOB SRC "src/Planner/*.cpp" "src/MPComputeNL/*.cpp" "src/MPCompute/*.cpp" "src/DynamicsModel/*.cpp" "src/util/*.cpp" "src/*")
