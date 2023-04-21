@@ -7,3 +7,6 @@
 [submodule "thirdparty/nlopt"]
 	path = thirdparty/nlopt
 	url = https://github.com/stevengj/nlopt.git
+[submodule "thirdparty/abseil-cpp"]
+	path = thirdparty/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git

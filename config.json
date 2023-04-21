@@ -8,7 +8,7 @@
     },
     "timestep_ms": 500.0,
     "disc": {
-        "dstep": 5.0,
+        "dstep": 6.0,
         "hstep": 0.5236
     },
     "profiler":true,
@@ -19,7 +19,7 @@
         "mode":"circle",
         "ov_appr_threshold": 100.0,
         "ov_appr_step": 25,
-        "cl_appr_threshold": 15.0,
+        "cl_appr_threshold": 20.0,
         "debug_mode":false
     },
     "debug_modes":{
@@ -49,7 +49,7 @@
         "fit_allowed_speed_difference": 0.15
     },
     "compute": {
-        "worker_count": 26
+        "worker_count": 30
     },
 
     "mpnl_weights": {
@@ -57,7 +57,7 @@
         "mu_hd": 10.0,
         "mu_vd": 0.5,
         "mu_vccd": 0.01,
-        "mu_sccd": 1.0
+        "mu_sccd": 10.0
     },
     "mpnl_multi_start_staged":{
         "uni_sample_count":3,
@@ -65,15 +65,15 @@
     },
     "mpnl_args":{
       "ts_ms": 500.0,
-      "ubf": [ 0.28,  0.28,   60.0,  60.0],
-      "lbf": [-0.28, -0.28,  -60.0, -60.0],
+      "ubf": [ 0.4,    0.4,   60.0,  60.0],
+      "lbf": [-0.4,   -0.4,  -60.0, -60.0],
       "ubr": [ 0.05,  0.05,   60.0,  60.0],
       "lbr": [-0.05, -0.05,  -60.0, -60.0],
       "maxt": 1.0,
       "st_val": 3.0,
       "a_v": 2.0,
       "a_p": 1.0,
-      "a_scc": 0.4,
+      "a_scc": 0.5,
       "a_h": 0.10
     },
     "mpnl_debug":false,
