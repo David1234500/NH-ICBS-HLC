@@ -27,6 +27,7 @@ public:
         std::vector<double> ub;
         std::vector<double> lb;
         double maxt = 0.f;
+        uint32_t maxeval = 0;
         double st_val = 0.f;
 
         double a_v = 0.f;
@@ -46,6 +47,7 @@ public:
         std::vector<double> result = {};
         double objf_val = 0.f;
         uint64_t rt_ms = 0;
+        uint32_t ceval = 0;
         nlopt::result retcode;
     };  
 
@@ -130,6 +132,7 @@ public:
         }
         
         args->maxt = config.get<double>({"mpnl_args", "maxt"});
+        args->maxeval =config.get<int32_t>({"mpnl_args", "maxeval"});
         args->st_val = config.get<double>({"mpnl_args", "st_val"});
         args->a_v = config.get<double>({"mpnl_args", "a_v"});
         args->a_p = config.get<double>({"mpnl_args", "a_p"});
@@ -151,7 +154,11 @@ public:
         m_result = args->init_guess;
 
         // Set the stopping criteria
+        
         m_optimizer->set_maxtime(args->maxt);
+        m_optimizer->set_maxeval(args->maxeval);
+        
+        
         m_optimizer->set_stopval(args->st_val);
     }
 
@@ -166,7 +173,7 @@ public:
         retval.retcode = m_optimizer->optimize(m_result, retval.objf_val);
         auto end = std::chrono::system_clock::now();
         retval.rt_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
+        retval.ceval = m_optimizer->get_numevals();
         retval.result = m_result;
 
         return retval;

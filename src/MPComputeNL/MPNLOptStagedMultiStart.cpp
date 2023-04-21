@@ -158,7 +158,7 @@ void MPNLOptStagedMultiStart::workerThreadMPEdges(uint32_t index){
                     if(direct_res.retcode > 0 && direct_res.retcode < 4){
                         found_primitive = true;
                         if(direct_res.objf_val < best_obj_val){
-                            std::cout << "direct best obj " << std::to_string(res.objf_val) << std::endl;
+                            std::cout << "direct best obj " << std::to_string(res.objf_val) << " : " << res.ceval << std::endl;
                             best_obj_val = direct_res.objf_val;
                             res = direct_res;
                         }
