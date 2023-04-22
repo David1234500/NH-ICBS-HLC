@@ -99,16 +99,15 @@ void MPNLOptStagedMultiStart::workerThreadMPEdges(uint32_t index){
 
         if(hasTask){
 
-            int start_angle = (threadTask.cai - threadTask.mhd + map_size_angle) % map_size_angle;
-            int end_angle = (threadTask.cai + threadTask.mhd + map_size_angle) % map_size_angle;
+            int start_angle = (threadTask.cai - threadTask.mhd - 1 + 2 * map_size_angle) % map_size_angle;
+            int end_angle = (threadTask.cai + threadTask.mhd + 1 + 2 * map_size_angle) % map_size_angle;
+            
             for (int tsh = start_angle; tsh != end_angle; tsh = (tsh + 1) % map_size_angle) {
             
                 //Compute best fit settings set to get from the current to the target location
                 dynamics::data::PoseByIndex target_pose_by_index = {threadTask.txi,threadTask.tyi, tsh, threadTask.tsi};
                 
                 bool found_primitive = false;
-                
-                
 
                 MPNLOptSingle::mpnl_args_t args;
                 args.sp = {{0.f,0.f}, api * static_cast<float>(threadTask.cai), vlevels[threadTask.csi] * dynamics::SimpleDynamicsModel::velocity_limit()};

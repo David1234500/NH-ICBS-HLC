@@ -65,7 +65,9 @@ public:
         auto p2 = eval_two(x,args);
 
         double hd = std::abs(args->tp.h - p2.h);
-        double hd_n = hd <= PI ? hd : 2 * PI - hd;
+        double hd_n = fmod(hd, 2 * M_PI); // Wrap around 2*PI
+        double hd_e = (hd_n <= M_PI) ? hd_n : 2 * M_PI - hd_n;
+        
 
         double pd =  (args->tp.pos - p2.pos).norm(); 
         
@@ -73,7 +75,7 @@ public:
         double accd = std::abs(x[c1_acc]) + std::abs(x[c2_acc]);
         double sccd = std::abs(x[c1_st_a] - x[c2_st_a]);
 
-        double objv = args->w.mu_hd * hd_n + args->w.mu_pd * pd + args->w.mu_vd * vd + args->w.mu_accd * accd + args->w.mu_sccd * sccd;
+        double objv = args->w.mu_hd * hd_e + args->w.mu_pd * pd + args->w.mu_vd * vd + args->w.mu_accd * accd + args->w.mu_sccd * sccd;
         return objv;
     }
 
@@ -87,8 +89,9 @@ public:
         mpnl_args_t* args = static_cast<mpnl_args_t*>(f_data);
         auto p2 = eval_two(x,args);
         double hd = std::abs(args->tp.h - p2.h);
-        double hd_n = hd <= PI ? hd : 2 * PI - hd; 
-        return hd_n - args->a_h;
+        double hd_n = fmod(hd, 2 * M_PI); // Wrap around 2*PI
+        double error = (hd_n <= M_PI) ? hd_n : 2 * M_PI - hd_n;
+        return error;
     }
 
    static double constraint_velocity_delta(const std::vector <double> &x, std::vector<double> &grad, void* f_data){

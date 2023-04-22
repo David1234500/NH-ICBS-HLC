@@ -8,7 +8,7 @@ x = f.read()
 y = json.loads(x)
   
 
-fig = plt.figure(constrained_layout=True)
+fig = plt.figure(figsize=(60, 60), constrained_layout=True)
 fig.suptitle('Motion Primitives Visualisation')
 grid = {}
 
@@ -43,10 +43,14 @@ for edge in y["edges"]:
     if edge["targeti"]["s"] != 2:
         continue
     
-    grid[edge["source"]["a"]][edge["targeti"]["a"]].plot(ex,ey)
+    if edge["source"]["a"] == edge["targeti"]["a"]:
+        color = 'red'  # Highlight diagonal plots with red color
+    else:
+        color = 'blue'
+
+    grid[edge["source"]["a"]][edge["targeti"]["a"]].plot(ex, ey, color=color)
     # grid[edge["source"]["a"]][edge["targeti"]["a"]].set_xlabel("cm")
     # grid[edge["source"]["a"]][edge["targeti"]["a"]].set_ylabel("cm")
     
 
-plt.show()
-
+plt.savefig("../mp_by_angle.png")

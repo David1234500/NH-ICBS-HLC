@@ -61,13 +61,13 @@ float dist = current_pose.vel * time_sec + acc_dist;
 steering_angle = fmod(steering_angle + 2*PI , 2*PI);
 
 //Case of no steering angle
-if(steering_angle <= 0.05f){
-    Vector2Df dp = {dist , 0.f};
-    Eigen::Rotation2Df rotation(current_pose.h);
-    auto dph = rotation * dp;
-    auto new_pos = current_pose.pos + dph;
-    return Pose2D{new_pos, current_pose.h, current_pose.vel + acceleration * time_sec};
-}
+// if(steering_angle <= 0.05f){
+//     Vector2Df dp = {dist , 0.f};
+//     Eigen::Rotation2Df rotation(current_pose.h);
+//     auto dph = rotation * dp;
+//     auto new_pos = current_pose.pos + dph;
+//     return Pose2D{new_pos, current_pose.h, current_pose.vel + acceleration * time_sec};
+// }
 
 // Compute radius of driven curve
 float radius = 20.f / std::sin(steering_angle);  

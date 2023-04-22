@@ -38,10 +38,12 @@ int main(){
     MPNLOptSingle opt;
     
     MPNLOptSingle::mpnl_args_t args; 
-    args.sp = {{0.f,0.f},0.f,60.f};
-    args.tp = {{30.f,0.f},0.f,0.f};
+    args.sp = {{0.f,0.f},0.f,100.f};
+    args.tp = {{120.f,160.f},1.5f * PI,150.f};
+    args.maxt = 10;
+    args.maxeval = 0;
 
-    opt.prepare(&args, false, false, nlopt::GN_CRS2_LM); // GN_DIRECT,  GN_ESCH and GN_ISRES, GN_CRS2_LM (best)
+    opt.prepare(&args, true, false, nlopt::GN_ISRES); // GN_DIRECT,  GN_ESCH and GN_ISRES, GN_CRS2_LM (best)
 
     auto res = opt.optimize();
 
@@ -52,7 +54,7 @@ int main(){
     std::cout << "retcode " << std::to_string(res.retcode) << std::endl;
     std::cout << "rt " << std::to_string(res.rt_ms) << std::endl;
     std::cout << "c_st_a " << std::to_string(res.result[0]) << ", "<< std::to_string(res.result[1]) << std::endl;
-    std::cout << "c_acc " << std::to_string(res.result[2]) << ", "<< std::to_string(res.result[3]) << std::endl;
+    std::cout << "c_vcc " << std::to_string(res.result[2]) << ", "<< std::to_string(res.result[3]) << std::endl;
     std::cout << "res_pose ((" << std::to_string(rpose.pos[0]) << ", "<< std::to_string(rpose.pos[1]) << "), " + std::to_string(rpose.h) +", " + std::to_string(rpose.vel) + ")"<< std::endl;
 
     std::vector<dynamics::data::Pose2D> resulting_pose;
@@ -65,6 +67,37 @@ int main(){
         resulting_pose.push_back( dynamics::SimpleDynamicsModel::computeNextPose(sp2, res.result[1],sp2.vel + 0.5f * res.result[3], ts));
     }
 
-    writePosesToDisc(resulting_pose, "mpnlopt_single_test.json");
+    writePosesToDisc(resulting_pose, "mpnlopt_single_test_right.json");
+
+    args.sp = {{0.f,0.f},0.f,100.f};
+    args.tp = {{120.f,-160.f},-1.5f * PI,150.f};
+    args.maxt = 10;
+    args.maxeval = 0;
+
+    opt.prepare(&args, true, false, nlopt::GN_ISRES); // GN_DIRECT,  GN_ESCH and GN_ISRES, GN_CRS2_LM (best)
+
+    res = opt.optimize();
+
+    rpose = MPNLOptSingle::eval_two(res.result, &args);
+
+    std::cout << "result" << std::endl;
+    std::cout << "obj " << std::to_string(res.objf_val) << std::endl;
+    std::cout << "retcode " << std::to_string(res.retcode) << std::endl;
+    std::cout << "rt " << std::to_string(res.rt_ms) << std::endl;
+    std::cout << "c_st_a " << std::to_string(res.result[0]) << ", "<< std::to_string(res.result[1]) << std::endl;
+    std::cout << "c_vcc " << std::to_string(res.result[2]) << ", "<< std::to_string(res.result[3]) << std::endl;
+    std::cout << "res_pose ((" << std::to_string(rpose.pos[0]) << ", "<< std::to_string(rpose.pos[1]) << "), " + std::to_string(rpose.h) +", " + std::to_string(rpose.vel) + ")"<< std::endl;
+
+    resulting_pose.clear();
+    for(float ts = 0; ts < timestep_ms; ts += 50.f){
+        resulting_pose.push_back( dynamics::SimpleDynamicsModel::computeNextPose(args.sp, res.result[0], args.sp.vel + 0.5f * res.result[2], ts));
+    }
+
+    sp2 = resulting_pose.back();
+    for(float ts = 0; ts < timestep_ms; ts += 50.f){
+        resulting_pose.push_back( dynamics::SimpleDynamicsModel::computeNextPose(sp2, res.result[1],sp2.vel + 0.5f * res.result[3], ts));
+    }
+
+    writePosesToDisc(resulting_pose, "mpnlopt_single_test_left.json");
     return 0;
 }

@@ -1,6 +1,6 @@
 
-#include <MPCompute/MPNLOpt.hpp>
-#include <MPCompute/MPNLOptSingle.hpp>
+#include <MPComputeNL/MPNLOpt.hpp>
+#include <MPComputeNL/MPNLOptSingle.hpp>
 #include <Planner/CBSPlanner.hpp>
 #include <iostream>
 #include <nlohmann/json.hpp>
