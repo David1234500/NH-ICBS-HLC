@@ -512,7 +512,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     m_result_var.wait_for(lock, std::chrono::seconds(120), [&]{ return m_resultHasBeenFound;} ); // TODO Introduce config for this
     m_resultHasBeenFound = true;
     rlog("cbs", LOG_DEBUG, "Got result, feasiblility: " + std::to_string(m_result.feasible));
-    writeConstraintNodeToDisk(m_result, "node100000.json");
+    // writeConstraintNodeToDisk(m_result, "node100000.json");
     m_resultMutex.unlock();
 
     for(uint32_t i = 0; i < worker_count; i ++){

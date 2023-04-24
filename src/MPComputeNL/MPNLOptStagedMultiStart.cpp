@@ -99,8 +99,8 @@ void MPNLOptStagedMultiStart::workerThreadMPEdges(uint32_t index){
 
         if(hasTask){
 
-            int start_angle = (threadTask.cai - threadTask.mhd - 1 + 2 * map_size_angle) % map_size_angle;
-            int end_angle = (threadTask.cai + threadTask.mhd + 1 + 2 * map_size_angle) % map_size_angle;
+            int start_angle = (threadTask.cai - threadTask.mhd - 2 +  map_size_angle) % map_size_angle;
+            int end_angle = (threadTask.cai + threadTask.mhd + 3 + map_size_angle) % map_size_angle;
             
             for (int tsh = start_angle; tsh != end_angle; tsh = (tsh + 1) % map_size_angle) {
             
@@ -135,46 +135,94 @@ void MPNLOptStagedMultiStart::workerThreadMPEdges(uint32_t index){
 
                     args.init_guess = sample;
                     
-                    MPNLOptSingle nl_stm_opt_isres;
-                    nl_stm_opt_isres.prepare(&args, true, false);
-                    
-                    auto isres_res = nl_stm_opt_isres.optimize(); 
+                    try {
+        
+                        MPNLOptSingle nl_stm_opt_isres;
+                        nl_stm_opt_isres.prepare(&args, false, false);
+                        
+                        auto isres_res = nl_stm_opt_isres.optimize(); 
 
-                    if(isres_res.retcode > 0 && isres_res.retcode < 4){
-                        found_primitive = true;
-                        if(isres_res.objf_val < best_obj_val){
-                            std::cout << "isres best obj " << std::to_string(res.objf_val) << std::endl;
-                            best_obj_val = isres_res.objf_val;
-                            res = isres_res;
+                        if(isres_res.retcode > 0 && isres_res.retcode < 4){
+                            found_primitive = true;
+                            if(isres_res.objf_val < best_obj_val){
+                                best_obj_val = isres_res.objf_val;
+                                res = isres_res;
+                            }
                         }
+                    } catch (const std::runtime_error& e) {
+                        std::cerr << "Caught runtime_error: " << e.what() << std::endl;
+                    } catch (const std::exception& e) {
+                        std::cerr << "Caught exception: " << e.what() << std::endl;
+                    } catch (...) {
+                        std::cerr << "Caught unknown exception" << std::endl;
                     }
 
-                    MPNLOptSingle nl_stm_opt_direct;
-                    nl_stm_opt_direct.prepare(&args, false, false, nlopt::GN_DIRECT);
-                    
-                    auto direct_res = nl_stm_opt_direct.optimize(); 
+                    try{
 
-                    if(direct_res.retcode > 0 && direct_res.retcode < 4){
-                        found_primitive = true;
-                        if(direct_res.objf_val < best_obj_val){
-                            std::cout << "direct best obj " << std::to_string(res.objf_val) << " : " << res.ceval << std::endl;
-                            best_obj_val = direct_res.objf_val;
-                            res = direct_res;
+                        MPNLOptSingle nl_stm_opt_mlsl;
+                        nl_stm_opt_mlsl.prepare(&args, false, false, nlopt::GN_MLSL_LDS);
+                        
+                        auto mlsl_res = nl_stm_opt_mlsl.optimize(); 
+
+                        if(mlsl_res.retcode > 0 && mlsl_res.retcode < 4){
+                            found_primitive = true;
+                            if(mlsl_res.objf_val < best_obj_val){
+                                best_obj_val = mlsl_res.objf_val;
+                                res = mlsl_res;
+                            }
                         }
+
+                    } catch (const std::runtime_error& e) {
+                        std::cerr << "Caught runtime_error: " << e.what() << std::endl;
+                    } catch (const std::exception& e) {
+                        std::cerr << "Caught exception: " << e.what() << std::endl;
+                    } catch (...) {
+                        std::cerr << "Caught unknown exception" << std::endl;
                     }
 
-                    MPNLOptSingle nl_stm_opt_crs2;
-                    nl_stm_opt_crs2.prepare(&args, false, false, nlopt::GN_CRS2_LM);
-                    
-                    auto crs2_res = nl_stm_opt_crs2.optimize(); 
 
-                    if(crs2_res.retcode > 0 && crs2_res.retcode < 4){
-                        found_primitive = true;
-                        if(crs2_res.objf_val < best_obj_val){
-                            std::cout << "crs2 best obj " << std::to_string(res.objf_val) << std::endl;
-                            best_obj_val = crs2_res.objf_val;
-                            res = crs2_res;
+                    try{
+
+                        MPNLOptSingle nl_stm_opt_direct;
+                        nl_stm_opt_direct.prepare(&args, false, false, nlopt::GN_ORIG_DIRECT_L);
+                        
+                        auto direct_res = nl_stm_opt_direct.optimize(); 
+
+                        if(direct_res.retcode > 0 && direct_res.retcode < 4){
+                            found_primitive = true;
+                            if(direct_res.objf_val < best_obj_val){
+                                best_obj_val = direct_res.objf_val;
+                                res = direct_res;
+                            }
                         }
+
+                    } catch (const std::runtime_error& e) {
+                        std::cerr << "Caught runtime_error: " << e.what() << std::endl;
+                    } catch (const std::exception& e) {
+                        std::cerr << "Caught exception: " << e.what() << std::endl;
+                    } catch (...) {
+                        std::cerr << "Caught unknown exception" << std::endl;
+                    }
+
+                    try{
+                        MPNLOptSingle nl_stm_opt_crs2;
+                        nl_stm_opt_crs2.prepare(&args, false, false, nlopt::GN_CRS2_LM);
+                        
+                        auto crs2_res = nl_stm_opt_crs2.optimize(); 
+
+                        if(crs2_res.retcode > 0 && crs2_res.retcode < 4){
+                            found_primitive = true;
+                            if(crs2_res.objf_val < best_obj_val){
+                                best_obj_val = crs2_res.objf_val;
+                                res = crs2_res;
+                            }
+                        }
+                    } catch (const std::runtime_error& e) {
+                        std::cerr << "Caught runtime_error: " << e.what() << std::endl;
+                    } catch (const std::exception& e) {
+                        std::cerr << "Caught exception: " << e.what() << std::endl;
+                    } catch (...) {
+                        std::cerr << "Caught unknown exception" << std::endl;
                     }
                 }
 

@@ -23,20 +23,62 @@ void writePosesToDisc(std::vector<dynamics::data::Pose2D> path, std::string name
 
 int main() {
 
-    dynamics::data::Pose2D sp = {{100.f,0.f},0.5f * PI,100.f};
+    dynamics::data::Pose2D sp = {{100.f,0.f},1.0 * PI,100.f};
     std::vector<dynamics::data::Pose2D> resulting_poses;
 
     for(float ts = 0; ts < 1000.f; ts += 50.f){
         resulting_poses.push_back( dynamics::SimpleDynamicsModel::computeNextPose(sp, 0.1f, 100.f, ts));
+         
     }
+    std::cout << "p1 " << std::to_string(resulting_poses.back().pos[0]) << ":"
+                          << std::to_string(resulting_poses.back().pos[1]) << ":"
+                          << std::to_string(resulting_poses.back().vel)    << ":"
+                          << std::to_string(resulting_poses.back().h)     << std::endl;
 
     for(float ts = 0; ts < 1000.f; ts += 50.f){
         resulting_poses.push_back( dynamics::SimpleDynamicsModel::computeNextPose(sp, -0.1f, 100.f, ts));
+         
     }
+    std::cout << "p2 " << std::to_string(resulting_poses.back().pos[0]) << ":"
+                          << std::to_string(resulting_poses.back().pos[1]) << ":"
+                          << std::to_string(resulting_poses.back().vel)    << ":"
+                          << std::to_string(resulting_poses.back().h)     << std::endl;
 
     for(float ts = 0; ts < 1000.f; ts += 50.f){
         resulting_poses.push_back( dynamics::SimpleDynamicsModel::computeNextPose(sp, 2.f * PI - 0.2f, 100.f, ts));
+         
     }
+    std::cout << "p3 " << std::to_string(resulting_poses.back().pos[0]) << ":"
+                          << std::to_string(resulting_poses.back().pos[1]) << ":"
+                          << std::to_string(resulting_poses.back().vel)    << ":"
+                          << std::to_string(resulting_poses.back().h)     << std::endl;
+
+    for(float ts = 0; ts < 1000.f; ts += 50.f){
+        resulting_poses.push_back( dynamics::SimpleDynamicsModel::computeNextPose(sp, + 0.2f, 100.f, ts));
+        
+    }
+    std::cout << "p4 " << std::to_string(resulting_poses.back().pos[0]) << ":"
+                          << std::to_string(resulting_poses.back().pos[1]) << ":"
+                          << std::to_string(resulting_poses.back().vel)    << ":"
+                          << std::to_string(resulting_poses.back().h)     << std::endl;
+    
+    for(float ts = 0; ts < 1000.f; ts += 50.f){
+        resulting_poses.push_back( dynamics::SimpleDynamicsModel::computeNextPose(sp, 0.4f, 100.f, ts));
+        
+    }
+    std::cout << "p5 " << std::to_string(resulting_poses.back().pos[0]) << ":"
+                          << std::to_string(resulting_poses.back().pos[1]) << ":"
+                          << std::to_string(resulting_poses.back().vel)    << ":"
+                          << std::to_string(resulting_poses.back().h)     << std::endl;
+
+    for(float ts = 0; ts < 1000.f; ts += 50.f){
+        resulting_poses.push_back( dynamics::SimpleDynamicsModel::computeNextPose(sp, -0.4f, 100.f, ts));
+        
+    }
+    std::cout << "p6 " << std::to_string(resulting_poses.back().pos[0]) << ":"
+                          << std::to_string(resulting_poses.back().pos[1]) << ":"
+                          << std::to_string(resulting_poses.back().vel)    << ":"
+                          << std::to_string(resulting_poses.back().h)     << std::endl;
 
     writePosesToDisc(resulting_poses, "stm_test.json");
 

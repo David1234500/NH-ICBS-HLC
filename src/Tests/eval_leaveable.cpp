@@ -99,7 +99,7 @@ int main() {
 
     // Save the unreachable configurations to a JSON file
     if (!unreachable_configs.empty()) {
-        std::ofstream unreachable_configs_file("unreachable_configs.json");
+        std::ofstream unreachable_configs_file("leaveable.json");
         unreachable_configs_file << unreachable_configs.dump(4); // 4 spaces for indentation
         unreachable_configs_file.close();
     }

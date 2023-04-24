@@ -376,7 +376,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
             bool discard_due_to_obstacle = false;
             for(auto obstacle : constraints){
                if( std::abs(current.timestep - obstacle.t ) <= 2 || obstacle.t == -1 ){
-                    if(std::abs(gl_neighbor.x - obstacle.x ) <= 1 && std::abs(gl_neighbor.y - obstacle.y) <= 1){
+                    if(std::abs(gl_neighbor.x - obstacle.x ) <= 2 && std::abs(gl_neighbor.y - obstacle.y) <= 2){
                     discard_due_to_obstacle = true;
                     infront_of_constraint = true;
                     break;
@@ -867,7 +867,7 @@ void enqueue_astar(dynamics::data::PoseByIndex& start, dynamics::data::PoseByInd
 void await_astar_result(uint32_t count){
      while(true){
         m_lowLevelSearchResultsLock.lock();
-        std::cout << "target " << std::to_string(count) << " current " << std::to_string(m_lowLevelResults.size()) << std::endl; 
+        // std::cout << "target " << std::to_string(count) << " current " << std::to_string(m_lowLevelResults.size()) << std::endl; 
         if(m_lowLevelResults.size() == count){
             m_lowLevelSearchResultsLock.unlock();
             break;

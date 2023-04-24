@@ -26,6 +26,6 @@ def plot_paths(paths):
     plt.savefig("../simple_path.png")
 
 if __name__ == "__main__":
-    prefix = "mpnlopt_single_test_"  
+    prefix = "stm_test"  
     paths = load_json_files(prefix)
     plot_paths(paths)

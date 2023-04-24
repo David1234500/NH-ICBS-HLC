@@ -16,7 +16,7 @@ float dist = velocity * time_sec;
 steering_angle = fmod(steering_angle + 2*PI , 2*PI);
 
 //Case of no steering angle
-if(steering_angle <= 0.05f){
+if(steering_angle <= 0.02f || steering_angle >= (2 * PI) - 0.02f){
     Vector2Df dp = {dist , 0.f};
     Eigen::Rotation2Df rotation(current_pose.h);
     auto dph = rotation * dp;
@@ -61,13 +61,13 @@ float dist = current_pose.vel * time_sec + acc_dist;
 steering_angle = fmod(steering_angle + 2*PI , 2*PI);
 
 //Case of no steering angle
-// if(steering_angle <= 0.05f){
-//     Vector2Df dp = {dist , 0.f};
-//     Eigen::Rotation2Df rotation(current_pose.h);
-//     auto dph = rotation * dp;
-//     auto new_pos = current_pose.pos + dph;
-//     return Pose2D{new_pos, current_pose.h, current_pose.vel + acceleration * time_sec};
-// }
+if(steering_angle <= 0.02f || steering_angle >= (2 * PI) - 0.02f){
+    Vector2Df dp = {dist , 0.f};
+    Eigen::Rotation2Df rotation(current_pose.h);
+    auto dph = rotation * dp;
+    auto new_pos = current_pose.pos + dph;
+    return Pose2D{new_pos, current_pose.h, current_pose.vel + acceleration * time_sec};
+}
 
 // Compute radius of driven curve
 float radius = 20.f / std::sin(steering_angle);  
@@ -128,8 +128,8 @@ dynamics::data::Pose2DWithError SimpleDynamicsModel::forceBestFit(Pose2D current
     float current_error = 1000.f;
 
     // Iterate over all possible combinations of speeds and steering angles to find best configuration for reaching the target node
-    float angle_count = 30;
-    float vel_count = 30;
+    float angle_count = 50;
+    float vel_count = 50;
 
     for(float next_angle = -current_angle_span; next_angle <= current_angle_span; next_angle += (current_angle_span / angle_count)){
         

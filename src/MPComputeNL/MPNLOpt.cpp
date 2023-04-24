@@ -51,8 +51,8 @@ void MPNLOpt::workerThreadMPEdges(uint32_t index){
 
         if(hasTask){
 
-            int start_angle = (threadTask.cai - threadTask.mhd + map_size_angle) % map_size_angle;
-            int end_angle = (threadTask.cai + threadTask.mhd + map_size_angle) % map_size_angle;
+            int start_angle = (threadTask.cai - threadTask.mhd - 2 + map_size_angle) % map_size_angle;
+            int end_angle = (threadTask.cai + threadTask.mhd + 3 + map_size_angle) % map_size_angle;
             for (int tsh = start_angle; tsh != end_angle; tsh = (tsh + 1) % map_size_angle) {
             
                 //Compute best fit settings set to get from the current to the target location

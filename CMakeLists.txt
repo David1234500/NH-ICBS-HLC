@@ -59,31 +59,29 @@ foreach(src_ ${EXEC_SRC})
     target_link_libraries(${target} planner_lib absl::flat_hash_map absl::node_hash_map absl::flat_hash_set)
 endforeach()
 
-if(${WITH_NLOPT})
+file(GLOB EXEC_NL_SRC "src/ExecNL/*.cpp")
+foreach(src_ ${EXEC_NL_SRC})
+	get_filename_component(target ${src_} NAME)
+	
+	string(REPLACE ".cpp" "" target ${target})
+	string(REPLACE "/" "_" target ${target})
+	message(STATUS "Found executable : ${target}")
 
-	file(GLOB EXEC_SRC "src/ExecNL/*.cpp")
-	foreach(src_ ${EXEC_SRC})
-		get_filename_component(target ${src_} NAME)
-		
-		string(REPLACE ".cpp" "" target ${target})
-		string(REPLACE "/" "_" target ${target})
-		message(STATUS "Found executable : ${target}")
+	add_executable(${target} ${src_})
+	target_link_libraries(${target} planner_lib)
+endforeach()
 
-		add_executable(${target} ${src_})
-		target_link_libraries(${target} planner_lib)
-	endforeach()
+file(GLOB TEST_NL_SRC "src/TestNL/*.cpp")
+foreach(src_ ${TEST_NL_SRC})
+	get_filename_component(target ${src_} NAME)
+	
+	string(REPLACE ".cpp" "" target ${target})
+	string(REPLACE "/" "_" target ${target})
+	message(STATUS "Found executable : ${target}")
 
-	file(GLOB EXEC_SRC "src/TestsNL/*.cpp")
-	foreach(src_ ${EXEC_SRC})
-		get_filename_component(target ${src_} NAME)
-		
-		string(REPLACE ".cpp" "" target ${target})
-		string(REPLACE "/" "_" target ${target})
-		message(STATUS "Found executable : ${target}")
+	add_executable(${target} ${src_})
+	target_link_libraries(${target} planner_lib)
+endforeach()
 
-		add_executable(${target} ${src_})
-		target_link_libraries(${target} planner_lib)
-	endforeach()
-endif()
 
 
