@@ -69,6 +69,8 @@ void worker_thread(nlohmann::json &infeasible_configs, std::vector<Task> &tasks,
                 break;
             }
 
+            std::cout << std::to_string(tasks.size()) << std::endl;
+
             task = tasks.back();
             tasks.pop_back();
         }
@@ -81,6 +83,8 @@ void worker_thread(nlohmann::json &infeasible_configs, std::vector<Task> &tasks,
 
         targets.push_back(targetv2);
         targets.push_back(task.end2);
+
+        
 
         auto result = planner.cbs(starts, targets);
 

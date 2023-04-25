@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     int vehicle_one_start_h = std::atoi(argv[5]);
     int vehicle_one_target_h = std::atoi(argv[6]);
 
-    // 25 25 50 50 2 2
+    // x
 
     CBSPlanner planner;
     planner.preparePoseLuT();
@@ -107,11 +107,16 @@ int main(int argc, char* argv[]) {
     infeasible_configs["v1"] = config2;
 
     // Iterate through all possible start configurations for the second vehicle
-    for (int32_t tx = 0; tx < step_x; tx++) {
-        for (int32_t ty = 0; ty < step_y; ty++) {
-            for (int32_t ta = 0; ta < map_size_angle; ta++) {
+    for (int32_t tx = step_x / 3; tx < step_x * 2 / 3; tx++) {
+        for (int32_t ty = step_y / 3; ty < step_y * 2 / 3; ty++) {
+            for (int32_t ta = 0; ta < map_size_angle; ta += 3) {
                 
-                dynamics::data::PoseByIndex end2 = {step_x/2, step_y/2, 6, zero_velocity_level};
+                std::cout << "tx " << std::to_string(tx)
+                        << "ty " << std::to_string(ty)
+                        << "ta " << std::to_string(ta)
+                        << "xstep " << std::to_string(step_x)
+                        << std::endl;
+                dynamics::data::PoseByIndex end2 = {step_x/2, step_y/2, 0, zero_velocity_level};
                 dynamics::data::PoseByIndex start2 = {tx, ty, ta, zero_velocity_level};
                 targets.push_back(end2);
                 starts.push_back(start2);
