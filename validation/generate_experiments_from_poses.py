@@ -13,7 +13,7 @@ def all_distances_sufficient(points, min_distance):
                 return False
     return True
 
-def generate_experiments(input_filename, output_filename, experiment_number, vehicle_count, min_distance=4):
+def generate_experiments(input_filename, output_filename, experiment_number, vehicle_count, min_distance=10):
     with open(input_filename) as input_file:
         data = json.load(input_file)
 
