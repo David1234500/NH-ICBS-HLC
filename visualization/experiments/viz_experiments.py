@@ -1,5 +1,6 @@
 import json
 import matplotlib.pyplot as plt
+import math
 
 def visualize_experiments(experiments_filename, output_filename):
     with open(experiments_filename) as experiments_file:
@@ -26,8 +27,14 @@ def visualize_experiments(experiments_filename, output_filename):
         ax.scatter(target_xs, target_ys, c="red", marker="^", label="Target")
 
         # Draw lines between associated start and target positions
-        for start_x, start_y, target_x, target_y in zip(start_xs, start_ys, target_xs, target_ys):
+        for start_x, start_y, target_x, target_y, start, target in zip(start_xs, start_ys, target_xs, target_ys, starts, targets):
             ax.plot([start_x, target_x], [start_y, target_y], c="green", linestyle="--")
+
+            start_heading_rad = (start["a"] / 12) * 2 * math.pi
+            target_heading_rad = (target["a"] / 12) * 2 * math.pi
+
+            ax.arrow(start_x, start_y, math.cos(start_heading_rad), math.sin(start_heading_rad), width=0.5, color="blue")
+            ax.arrow(target_x, target_y, math.cos(target_heading_rad), math.sin(target_heading_rad), width=0.5, color="red")
 
         ax.set_title(f"Experiment {idx + 1}")
         ax.legend()

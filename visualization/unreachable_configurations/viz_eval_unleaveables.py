@@ -1,9 +1,10 @@
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
 # Read unreachable configurations from JSON file
-with open("unreachable_configs.json", "r") as file:
+with open(sys.argv[1], "r") as file:
     unreachable_configs = json.load(file)
 
 # Determine the grid size from the unreachable configurations

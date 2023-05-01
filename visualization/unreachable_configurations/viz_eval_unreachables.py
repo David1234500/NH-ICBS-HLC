@@ -1,24 +1,25 @@
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+import sys 
 
 # Read unreachable configurations from JSON file
-with open("unreachable_configs.json", "r") as file:
+with open(sys.argv[1], "r") as file:
     unreachable_configs = json.load(file)
 
 # Determine the grid size from the unreachable configurations
-max_x = max(config["start_pose"]["x"] for config in unreachable_configs)
-max_y = max(config["start_pose"]["y"] for config in unreachable_configs)
-max_a = max(config["start_pose"]["a"] for config in unreachable_configs)
+max_x = max(config["target_pose"]["x"] for config in unreachable_configs)
+max_y = max(config["target_pose"]["y"] for config in unreachable_configs)
+max_a = max(config["target_pose"]["a"] for config in unreachable_configs)
 
 # Create the entire node grid
 grid = np.zeros((max_x + 1, max_y + 1, max_a + 1))
 
 # Highlight unreachable configurations in red
 for config in unreachable_configs:
-    x = config["start_pose"]["x"]
-    y = config["start_pose"]["y"]
-    a = config["start_pose"]["a"]
+    x = config["target_pose"]["x"]
+    y = config["target_pose"]["y"]
+    a = config["target_pose"]["a"]
     grid[x, y, a] = 1
 
 # Visualize the grid using matplotlib
@@ -40,4 +41,4 @@ for a in range(max_a + 1):
     axes[a].arrow(center_x, center_y, dx, dy, head_width=2, head_length=2, fc='black', ec='black')
 
 plt.tight_layout()
-plt.savefig("../unleaveables.png")
+plt.savefig("../unreachables.png")

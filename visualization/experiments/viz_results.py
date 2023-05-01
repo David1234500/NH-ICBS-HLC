@@ -14,7 +14,7 @@ def visualize_experiment_results(json_filename):
     feasibilities = [result["feasible"] for result in results]
 
     # Create bar graphs
-    fig, (ax1, ax3, ax2) = plt.subplots(nrows=3, figsize=(10, 20), gridspec_kw={"height_ratios": [1, 1, 3]})
+    fig, (ax1, ax3) = plt.subplots(nrows=2, figsize=(30, 12), gridspec_kw={"height_ratios": [1, 1]})
     x = np.arange(n_experiments)
     width = 0.3
 
@@ -39,47 +39,42 @@ def visualize_experiment_results(json_filename):
     bars2 = ax3.bar(1, avg_node_count_infeasible, width, label="Avg Node Count (Infeasible)", color="red")
     ax3.set_xticks([0, 1])
     ax3.set_xticklabels(["Feasible", "Infeasible"])
-    ax3.set_ylim([0, 100])
+    # ax3.set_ylim([0, 300])
     ax3.set_ylabel("Avg Node Count")
     ax3.legend(loc="upper left")
 
     ax3_2 = ax3.twinx()
     bars3 = ax3_2.bar(0 + width, avg_compute_time_feasible, width, label="Avg Compute Time (Feasible)", color="green")
     bars4 = ax3_2.bar(1 + width, avg_compute_time_infeasible, width, label="Avg Compute Time (Infeasible)", color="orange")
-    
-    ax3_2.bar(0 + width, avg_compute_time_feasible, width, label="Avg Compute Time (Feasible)", color="green")
-    ax3_2.bar(1 + width, avg_compute_time_infeasible, width, label="Avg Compute Time (Infeasible)", color="orange")
     ax3_2.set_ylabel("Avg Compute Time (ms)")
-    ax3_2.set_ylim([0, 20000])
+    # ax3_2.set_ylim([0, 80000])
     ax3_2.legend(loc="upper right")
 
     for bars in [bars1, bars2, bars3, bars4]:
         for bar in bars:
             height = bar.get_height()
+
             ax3_2.annotate(f'{height:.2f}',
                            xy=(bar.get_x() + bar.get_width() / 2, height),
                            xytext=(0, 3),  # 3 points vertical offset
                            textcoords="offset points",
                            ha='center', va='bottom')
 
-    # Plot trajectories
-    plotted_labels = set()
+    plt.savefig("experiments_summary.png")
+
+    # Plot trajectories separately
     for i, result in enumerate(results):
+        fig, ax = plt.subplots(figsize=(10, 10))
         if result["feasible"]:
             for _, traj in result["interprimitives"].items():
                 x_traj = [p["posx"] for p in traj]
                 y_traj = [p["posy"] for p in traj]
-                label = f"Exp {i}" if f"Exp {i}" not in plotted_labels else None
-                ax2.plot(x_traj, y_traj, label=label)
-                if label:
-                    plotted_labels.add(label)
+                ax.plot(x_traj, y_traj)
 
-    ax2.set_xlabel("x")
-    ax2.set_ylabel("y")
-    ax2.legend()
-
-    # Save the figure
-    plt.savefig("experiments_visualization.png")
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_title(f"Experiment {i + 1}")
+        plt.savefig(f"experiment_{i + 1}_trajectory.png")
 
 if __name__ == "__main__":
     visualize_experiment_results("results.json")

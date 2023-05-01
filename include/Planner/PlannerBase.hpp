@@ -334,7 +334,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
         if(current.pose &= target){
             if(astar_result){
                 rlog("ASTAR", LOG_INFO, "Found path for " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a));
-                writeVisitedNodesToDisk(start, target, cameFrom, "FLLT"+ std::to_string(target.x) + "_" + std::to_string(target.y) + "_" + std::to_string(target.a) + "_" + std::to_string(target.s) +"S"+ std::to_string(start.x) + "_" + std::to_string(start.y) + "_" + std::to_string(start.a)+ "_" + std::to_string(start.s) + ".json");
+                // writeVisitedNodesToDisk(start, target, cameFrom, "FLLT"+ std::to_string(target.x) + "_" + std::to_string(target.y) + "_" + std::to_string(target.a) + "_" + std::to_string(target.s) +"S"+ std::to_string(start.x) + "_" + std::to_string(start.y) + "_" + std::to_string(start.a)+ "_" + std::to_string(start.s) + ".json");
             }
 
             LLResult res;
@@ -342,7 +342,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
             // res.spline = getSplines(cameFrom, usedEdge, current.pose);
             res.interprimitive = getInterPrimitivPositions(cameFrom, usedEdge, current.pose);
             res.found_path = true;
-            CBSProfiler::instance().stop(AStarComplete,astar_compl);
+            // CBSProfiler::instance().stop(AStarComplete,astar_compl);
 
             return res;
         }
@@ -432,7 +432,7 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
     }
     
     if(astar_result){
-        writeVisitedNodesToDisk(start, target, cameFrom, "FLLT"+ std::to_string(target.x) + "_" + std::to_string(target.y) + "_" + std::to_string(target.a) + "_" + std::to_string(target.s) +"S"+ std::to_string(start.x) + "_" + std::to_string(start.y) + "_" + std::to_string(start.a)+ "_" + std::to_string(start.s) + ".json");
+        // writeVisitedNodesToDisk(start, target, cameFrom, "FLLT"+ std::to_string(target.x) + "_" + std::to_string(target.y) + "_" + std::to_string(target.a) + "_" + std::to_string(target.s) +"S"+ std::to_string(start.x) + "_" + std::to_string(start.y) + "_" + std::to_string(start.a)+ "_" + std::to_string(start.s) + ".json");
         rlog("ASTAR", LOG_WARNING, "Found no viable path with #open: " + std::to_string(explored_nodes));
         rlog("ASTAR", LOG_WARNING, "Target: " + std::to_string(target.x) + ":" + std::to_string(target.y) + ":" + std::to_string(target.a) + ":" + std::to_string(target.s));
         rlog("ASTAR", LOG_WARNING, "Start: " + std::to_string(start.x) + ":" + std::to_string(start.y) + ":" + std::to_string(start.a)+ ":" + std::to_string(start.s));
