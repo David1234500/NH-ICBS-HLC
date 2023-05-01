@@ -461,10 +461,12 @@ void MPCompute::loadGraphFromDisk(std::string path){
         tedge.link.s_v = edge["settings"]["v1"];
         tedge.link.s_v_2 = edge["settings"]["v2"];
 
-        tedge.link.s_acc = edge["settings"]["acc1"];
-        tedge.link.s_acc_2 = edge["settings"]["acc2"];
-        tedge.link.is_acc_based = edge["settings"]["acc_based"];
-
+        if(edge["settings"].find("acc_based") != edge["settings"].end()){
+            tedge.link.s_acc = edge["settings"]["acc1"];
+            tedge.link.s_acc_2 = edge["settings"]["acc2"];
+            tedge.link.is_acc_based = edge["settings"]["acc_based"];
+        }
+        
         tedge.link.a_error = edge["error"]["ae"];
         tedge.link.p_error = edge["error"]["pe"];
 
@@ -474,10 +476,12 @@ void MPCompute::loadGraphFromDisk(std::string path){
         tedge.link.pos[0] = edge["target"]["x"];
         tedge.link.vel = edge["target"]["s"];
 
-        tedge.dist_xn = edge["req_dist"]["xn"];
-        tedge.dist_yn = edge["req_dist"]["yn"];
-        tedge.dist_xp = edge["req_dist"]["xp"];
-        tedge.dist_yp = edge["req_dist"]["yp"];
+        if( edge["req_dist"].find("xn") != edge["req_dist"].end()){
+            tedge.dist_xn = edge["req_dist"]["xn"];
+            tedge.dist_yn = edge["req_dist"]["yn"];
+            tedge.dist_xp = edge["req_dist"]["xp"];
+            tedge.dist_yp = edge["req_dist"]["yp"];
+        }
 
         //Target index location
         tedge.target.s = edge["targeti"]["s"];
