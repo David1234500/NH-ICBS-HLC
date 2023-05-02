@@ -1,0 +1,2420 @@
+{
+    "v1": {
+        "start_pose": {
+            "a": 4,
+            "s": 1,
+            "t": 0,
+            "x": 20,
+            "y": 20
+        },
+        "target_pose": {
+            "a": 4,
+            "s": 1,
+            "t": 0,
+            "x": 45,
+            "y": 45
+        }
+    },
+    "v2": [
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 18,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 19,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 20,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 21,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 18
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 19
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 20
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 21
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 3,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 6,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        },
+        {
+            "car_id": 1,
+            "cbs_result": {
+                "avoid": [],
+                "father": 0,
+                "feasible": false,
+                "node_id": 0,
+                "sic": 0
+            },
+            "start_pose": {
+                "a": 9,
+                "s": 1,
+                "t": 0,
+                "x": 22,
+                "y": 22
+            },
+            "target_pose": {
+                "a": 0,
+                "s": 1,
+                "t": 0,
+                "x": 45,
+                "y": 40
+            }
+        }
+    ]
+}
