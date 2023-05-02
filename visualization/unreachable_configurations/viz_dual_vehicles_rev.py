@@ -43,7 +43,7 @@ def visualize_grid(data, timestamp, heading_a):
     plt.close()
 
 # Find all infeasible_configs_... JSON files in the current directory
-for json_file in glob.glob("infeasible_configs_*.json"):
+for json_file in glob.glob("infeasible_*.json"):
     # Load the JSON data
     with open(json_file, "r") as file:
         data = json.load(file)

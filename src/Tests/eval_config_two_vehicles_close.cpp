@@ -106,8 +106,8 @@ int main(int argc, char* argv[]) {
     infeasible_configs["v1"] = config2;
 
     // Iterate through all possible start configurations for the second vehicle
-    for (int32_t tx = vehicle_one_start_x - 5; tx <= vehicle_one_start_x + 5; ++tx) {
-        for (int32_t ty = vehicle_one_start_y - 5; ty <= vehicle_one_start_y + 5; ++ty) {
+    for (int32_t tx = vehicle_one_start_x - 10; tx <= vehicle_one_start_x + 10; ++tx) {
+        for (int32_t ty = vehicle_one_start_y - 10; ty <= vehicle_one_start_y + 10; ++ty) {
             for (int32_t ta = 0; ta < map_size_angle; ta += 1) {
                 
                 std::cout << "tx " << std::to_string(tx)
