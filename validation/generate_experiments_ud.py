@@ -20,7 +20,7 @@ def generate_random_point(rectangle):
     velocity = 2
     return {"x": x, "y": y, "a": heading, "s": velocity, "t":0}
 
-def generate_experiments(rectangle, output_filename, experiment_number, vehicle_count, min_distance=3):
+def generate_experiments(rectangle, output_filename, experiment_number, vehicle_count, min_distance=7):
     experiments = []
 
     for _ in range(experiment_number):

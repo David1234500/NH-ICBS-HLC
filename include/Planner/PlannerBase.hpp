@@ -897,20 +897,77 @@ std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> getPath(absl::flat_has
     return result;
 }
 
+void writeCurveToDiskWithMPs(LLResult res, std::string name){
+    
+    json llres;
+
+    for(auto current: *res.path){
+        json pnode;
+        pnode["x"] = current.x;
+        pnode["y"] = current.y;
+        pnode["s"] = current.s;
+        pnode["a"] = current.a;
+        llres["path"].push_back(pnode);
+    }
+
+    for(auto current: res.interprimitive){
+        json pnode;
+        pnode["x"] = current.pos[0];
+        pnode["y"] = current.pos[1];
+        pnode["s"] = current.vel;
+        pnode["a"] = current.h;
+        pnode["t"] = current.time_ms;
+        pnode["ti"] = current.path_depth_index;
+
+        pnode["bnode"]["x"] = pose_lut[current.baseNode].pos[0];
+        pnode["bnode"]["y"] = pose_lut[current.baseNode].pos[1];
+        pnode["bnode"]["a"] = pose_lut[current.baseNode].vel;
+        pnode["bnode"]["s"] = pose_lut[current.baseNode].h;
+
+        // Add unused motion primitives for each base node
+        auto primitives_iter = mp_comp.m_mpmap[current.baseNode.a].find(current.baseNode.s);
+        if (primitives_iter != mp_comp.m_mpmap[current.baseNode.a].end()) {
+            std::vector<MotionPrimitive> &unused_primitives = primitives_iter->second;
+            json unused_primitives_json;
+
+            for (const auto &primitive : unused_primitives) {
+                json primitive_json;
+
+                for(const auto& position: primitive.trajectory){
+                    json point;
+                    point["x"] = position.pos[0] + indexToPose(current.baseNode).pos[0];
+                    point["y"] = position.pos[1] + indexToPose(current.baseNode).pos[1];
+                    primitive_json["mp_path"].push_back(point);
+                }
+                
+                unused_primitives_json.push_back(primitive_json);
+            }
+
+            pnode["bnode"]["unused_primitives"] = unused_primitives_json;
+        }
+
+        llres["interprimitive"].push_back(pnode);
+    }
+
+    std::ofstream o(name);
+    o << llres << std::endl;
+    o.close();
+}
+
 
 void writeCurveToDisk(LLResult res, std::string name){
     
     
     json llres;
 
-//    for(auto current: *res.path){
-//         json pnode;
-//         pnode["x"] = current.x;
-//         pnode["y"] = current.y;
-//         pnode["s"] = current.s;
-//         pnode["a"] = current.a;
-//         llres["path"].push_back(pnode);
-//     }
+   for(auto current: *res.path){
+        json pnode;
+        pnode["x"] = current.x;
+        pnode["y"] = current.y;
+        pnode["s"] = current.s;
+        pnode["a"] = current.a;
+        llres["path"].push_back(pnode);
+    }
 
     //secondly by precise positions
     for(auto current: res.interprimitive){

@@ -20,14 +20,14 @@ grid = {}
 # create subfigures
 subfigs = fig.subfigures(nrows=y["info"]["size_a"], ncols=1)
 for row, subfig in enumerate(subfigs):
-    subfig.suptitle(f'Source Heading: {row}')
+    subfig.suptitle(f'Source Heading: {row} degrees')
     grid[row] = {}
 
     # create subplots per subfig
     axs = subfig.subplots(nrows=1, ncols=y["info"]["size_a"])
     for col, ax in enumerate(axs):
         ax.plot()
-        ax.set_title(f'Target Heading: {col}')
+        ax.set_title(f'Target Heading: {col} degrees')
         grid[row][col] = ax
         ax.set_aspect('equal')
         ax.set_xlim([-100, 100])
@@ -47,7 +47,7 @@ for edge in y["edges"]:
         continue
 
     grid[edge["source"]["a"]][edge["targeti"]["a"]].plot(ex, ey)
-    grid[edge["source"]["a"]][edge["targeti"]["a"]].set_xlabel("X (cm)")
-    grid[edge["source"]["a"]][edge["targeti"]["a"]].set_ylabel("Y (cm)")
+    grid[edge["source"]["a"]][edge["targeti"]["a"]].set_xlabel("X position (cm)")
+    grid[edge["source"]["a"]][edge["targeti"]["a"]].set_ylabel("Y position (cm)")
 
-plt.savefig(f"../mps_from_{source_velocity}_to_{target_velocity}.svg")
+plt.savefig(f"../mps_from_{source_velocity}_to_{target_velocity}.png")

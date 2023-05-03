@@ -30,13 +30,22 @@ def main():
     convex_hull = ConvexHull(nodes)
     polygon = Polygon(convex_hull.points[convex_hull.vertices], fill=None, edgecolor='black', alpha=0.5)
     ax2.add_patch(polygon)
-    ax2.plot(*zip(*nodes), marker='o', markersize=5, linestyle='None', color='black')
+    ax2.plot(*zip(*nodes), marker='o', markersize=1, linestyle='None', color='black')
 
     for edge in data['edges']:
         if edge['source']['a'] == a and edge['source']['s'] == s:
             curve_points = [(point['x'] + x * dpc, point['y'] + y * dpc) for point in edge['curve']]
             if any([not polygon.contains_point(point) for point in curve_points]):
                 ax2.plot(*zip(*curve_points), linewidth=1, color='red', linestyle='--')
+
+    ax1.set_title('All Motion Primitives')  # Added title for ax1
+    ax1.set_xlabel('X Position (a-index)')  # Added x-axis label for ax1
+    ax1.set_ylabel('Y Position (a-index)')  # Added y-axis label for ax1
+
+    ax2.set_title('Motion Primitives Outside Convex Hull')  # Added title for ax2
+    ax2.set_xlabel('X Position (a-index)')  # Added x-axis label for ax2
+    ax2.set_ylabel('Y Position (a-index)')  # Added y-axis label for ax2
+
 
     plt.savefig("../single_mp.png")
     plt.close()

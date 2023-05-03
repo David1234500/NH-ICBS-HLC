@@ -33,8 +33,8 @@ def visualize_nodes(nodes, unique_constraints):
         labels[node_id] = f"{node_id}:{sic}"
 
     pos = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot")
-    plt.figure(figsize=(120, 90))
-    nx.draw(G, pos, with_labels=False, arrows=True, node_size=3000, node_color="lightblue")
+    plt.figure(figsize=(30, 20))
+    nx.draw(G, pos, with_labels=False, arrows=True, node_size=400, node_color="lightblue")
     nx.draw_networkx_labels(G, pos, labels, font_size=13)
 
     cmap = plt.cm.get_cmap("viridis")

@@ -12,6 +12,8 @@ using std::chrono::seconds;
 using std::chrono::system_clock;
 
 void run_cbs_experiment(const std::string& input_filename, const std::string& output_filename) {
+    auto& config = Config::getInstance("config.json");
+    
     std::ifstream input_file(input_filename);
     json experiments_json;
     input_file >> experiments_json;
