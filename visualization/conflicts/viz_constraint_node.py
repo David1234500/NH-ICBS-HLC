@@ -25,6 +25,8 @@ def visualize_constraints(file_name, lower_threshold, time_interval=500):
     plt.figure(figsize=(20, 12))
 
     ax1 = plt.subplot(2, 1, 1)
+    ax1.set_xlim([0,250])
+    ax1.set_ylim([0,250])
     
     # Find the maximum time across all vehicles
     max_time = max(point["t"] for interprimitive in interprimitives for point in interprimitive)
@@ -92,6 +94,7 @@ def visualize_constraints(file_name, lower_threshold, time_interval=500):
             below_threshold = [t for t, d in zip(smoothed_times, smoothed_distances) if d <= lower_threshold]
             for t in below_threshold:
                 ax2.axvline(x=t, linestyle="--", color="red", alpha=0.5)
+                break
 
     ax2.set_title("Inter-vehicle Distance Over Time")
     ax2.set_xlabel("Time [ms]")

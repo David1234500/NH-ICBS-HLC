@@ -46,15 +46,15 @@ int main() {
     planner->preparePoseLuT();
 
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    dynamics::data::PoseByIndex end = {10,25,0,driving_velocity_level};
-    dynamics::data::PoseByIndex start = {10,10,3,driving_velocity_level};
+    dynamics::data::PoseByIndex end = {40,15,6,driving_velocity_level};
+    dynamics::data::PoseByIndex start = {10,70,11,driving_velocity_level};
     std::cout << "Start AStar!" << std::endl;
     auto res = planner->astar(start,end, std::vector<dynamics::data::PBIConstraint>());
     std::cout << "Completed Astar" << std::endl;
     
     if(res.found_path){ 
         std::cout << res.path->size() << std::endl;
-        planner->writeCurveToDisk(res, "path2.json");
+        planner->writeCurveToDiskWithMPs(res, "pathwithMPs.json");
     }else{
         std::cout << "No viable solution found" << std::endl;
     }

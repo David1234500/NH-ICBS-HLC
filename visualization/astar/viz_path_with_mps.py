@@ -31,7 +31,7 @@ def visualize_json(filename):
     # Add legend for grey and blue MPs
     legend_elements = [
         Line2D([0], [0], color='blue', lw=2, label='Used Motion Primitives'),
-        Line2D([0], [0], color='grey', lw=0.5, alpha=0.5, label='Unused but accessible Motion Primitives'),
+        Line2D([0], [0], color='grey', lw=0.5, alpha=0.5, label='Unused Motion Primitives'),
     ]
     ax.legend(handles=legend_elements, loc='best')
 

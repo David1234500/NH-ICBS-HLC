@@ -29,29 +29,33 @@ def point_in_restrictions(point, restrictions, restriction_key):
             point["s"] == restricted_point["s"]):
             return True
     return False
-
-def generate_experiments(rectangle, output_filename, experiment_number, vehicle_count, unleaveable, unenterable, min_distance=3):
+def generate_experiments(rectangle, output_filename, experiment_number, vehicle_count, unleaveable, unenterable, min_distance_starts, min_distance_targets, min_distance_start_target):
     experiments = []
 
     for _ in range(experiment_number):
         while True:
-            selected_positions = [generate_random_point(rectangle) for _ in range(2 * vehicle_count)]
+            starts = [generate_random_point(rectangle) for _ in range(vehicle_count)]
+            targets = [generate_random_point(rectangle) for _ in range(vehicle_count)]
 
-            starts_valid = all([not point_in_restrictions(pos, unleaveable, "start_pose") for pos in selected_positions[:vehicle_count]])
-            targets_valid = all([not point_in_restrictions(pos, unenterable, "target_pose") for pos in selected_positions[vehicle_count:]])
+            starts_valid = all([not point_in_restrictions(pos, unleaveable, "start_pose") for pos in starts])
+            targets_valid = all([not point_in_restrictions(pos, unenterable, "target_pose") for pos in targets])
 
-            if all_distances_sufficient(selected_positions, min_distance) and starts_valid and targets_valid:
+            starts_distances_sufficient = all_distances_sufficient(starts, min_distance_starts)
+            targets_distances_sufficient = all_distances_sufficient(targets, min_distance_targets)
+
+            start_target_distances_sufficient = all([distance(starts[i], targets[i]) >= min_distance_start_target for i in range(vehicle_count)])
+
+            if starts_valid and targets_valid and starts_distances_sufficient and targets_distances_sufficient and start_target_distances_sufficient:
                 break
 
         experiment = {
-            "starts": selected_positions[:vehicle_count],
-            "targets": selected_positions[vehicle_count:]
+            "starts": starts,
+            "targets": targets
         }
         experiments.append(experiment)
 
     with open(output_filename, "w") as output_file:
         json.dump(experiments, output_file, indent=4)
-
 
 # Set up command-line argument parsing
 parser = argparse.ArgumentParser(description="Generate experiments for vehicle routing.")
@@ -60,6 +64,9 @@ parser.add_argument("output_filename", help="Output file to store generated expe
 parser.add_argument("restrictions_directory", help="Directory containing unleaveable.json and unenterable.json files")
 parser.add_argument("experiment_number", type=int, help="Number of experiments to generate")
 parser.add_argument("vehicle_count", type=int, help="Number of vehicles for each experiment")
+parser.add_argument("min_distance_starts", type=int, help="Grid points between start positions")
+parser.add_argument("min_distance_targets", type=int, help="Grid points between target positions")
+parser.add_argument("min_distance_start_target", type=int, help="Minimum grid points between a start position and its corresponding target position")
 
 # Parse command-line arguments
 args = parser.parse_args()
@@ -75,4 +82,4 @@ with open(f"{args.restrictions_directory}/unenterable.json", "r") as unenterable
     unenterable = json.load(unenterable_file)
 
 # Call generate_experiments function with specified arguments
-generate_experiments(rectangle, args.output_filename, args.experiment_number, args.vehicle_count, unleaveable, unenterable)
+generate_experiments(rectangle, args.output_filename, args.experiment_number, args.vehicle_count, unleaveable, unenterable, args.min_distance_starts, args.min_distance_targets, args.min_distance_start_target)

@@ -20,6 +20,7 @@ for edge in y["edges"]:
     for curve_point in edge["curve"]:
         ex.append(curve_point["x"])
         ey.append(curve_point["y"])
+        ez.append(curve_point["a"])
 
     ex.append(edge["target"]["x"])
     ey.append(edge["target"]["y"])
