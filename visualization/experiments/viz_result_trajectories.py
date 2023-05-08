@@ -45,6 +45,7 @@ def visualize_experiment_results(json_filename):
         
         plt.tight_layout()
         plt.savefig(f"experiment_{i + 1}_trajectory.png")
+        plt.close()
 
 if __name__ == "__main__":
     visualize_experiment_results("results.json")

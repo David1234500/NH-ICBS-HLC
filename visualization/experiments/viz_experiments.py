@@ -41,7 +41,8 @@ def visualize_experiments(experiments_filename, output_folder):
         ax.set_xlabel('X Position [cm]')
         ax.set_ylabel('Y Position [cm]')
 
-        ax.set_x
+        ax.set_xlim([0,450])
+        ax.set_ylim([0,400])
 
         plt.tight_layout()
         plt.savefig(os.path.join(output_folder, f"experiment_{idx + 1}.png"))

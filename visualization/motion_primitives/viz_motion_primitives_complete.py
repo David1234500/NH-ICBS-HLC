@@ -5,7 +5,7 @@ import math
 f = open("mp_state_graph.json", "r")
 x = f.read() 
 y = json.loads(x)
-  
+# fig, ax = plt.figure()
 # for node in y["map"]:
 #     plt.plot(node["pose"]["x"],node["pose"]["y"], marker="o")
 #     heading = float(node["pose"]["h"])
@@ -27,5 +27,8 @@ for edge in y["edges"]:
     # ey.append(edge["target"]["y"])
     plt.plot(ex,ey)
 
-plt.plot(0,0, marker="x")
+plt.suptitle('Motion Primitives Leaving Central State')  # Added title for ax2
+plt.xlabel('X Position [cm]')  # Added x-axis label for ax2
+plt.ylabel('Y Position [cm]')  # Added y-axis label for ax2
+
 plt.savefig("../motion_primitives_complete.png")

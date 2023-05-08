@@ -3,19 +3,19 @@ import matplotlib.pyplot as plt
 import math
 from mpl_toolkits.mplot3d import Axes3D
 
-
-fig = plt.figure(figsize=(8,8))
+fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot(111, projection='3d')
 
 f = open("mp_state_graph.json", "r")
-x = f.read() 
+x = f.read()
 y = json.loads(x)
-  
+
 print("edges cnt: {}".format(len(y["edges"])))
 
 for edge in y["edges"]:
     ex = [0]
     ey = [0]
+    ez = [0]
 
     for curve_point in edge["curve"]:
         ex.append(curve_point["x"])
@@ -24,9 +24,8 @@ for edge in y["edges"]:
 
     ex.append(edge["target"]["x"])
     ey.append(edge["target"]["y"])
-    
-    ez = [edge["source"]["s"] + edge["targeti"]["s"] for x in ey]
+    ez.append(edge["target"]["a"])
 
-    ax.plot(ex,ey,ez)
+    ax.plot(ex, ey, ez)
 
 plt.savefig("../motion_primitives_3d.svg")
