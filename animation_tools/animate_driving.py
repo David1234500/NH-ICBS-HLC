@@ -119,9 +119,28 @@ def generate_frames(cnode_data, output_folder, vehicle_img_path):
             plt.close()
 
 if __name__ == "__main__":
+    filename = f"node100000.json"
+    if not os.path.exists(filename):
+        exit()
 
-    # mpl.rcParams.update({'font.size': 50})
-
-    cnode_data = load_cnode_data('node3.json')
+    print(f"Processing {filename}...")
+    cnode_data = load_cnode_data(filename)
     interpolate_positions(cnode_data, num_interpolations=8)
-    generate_frames(cnode_data, 'video_frames', 'vehicle.png')
+    output_folder = f"video_frames_100000"
+    generate_frames(cnode_data, output_folder, 'vehicle.png')
+
+    x = 0
+    while True:
+        filename = f"node{x}.json"
+        if not os.path.exists(filename):
+            break
+
+        print(f"Processing {filename}...")
+        cnode_data = load_cnode_data(filename)
+        interpolate_positions(cnode_data, num_interpolations=8)
+        output_folder = f"video_frames_{x}"
+        generate_frames(cnode_data, output_folder, 'vehicle.png')
+        
+        x += 1
+
+   

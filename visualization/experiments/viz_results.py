@@ -63,18 +63,18 @@ def visualize_experiment_results(json_filename):
     plt.savefig("experiments_summary.png")
 
     # Plot trajectories separately
-    # for i, result in enumerate(results):
-    #     fig, ax = plt.subplots(figsize=(10, 10))
-    #     if result["feasible"]:
-    #         for _, traj in result["interprimitives"].items():
-    #             x_traj = [p["posx"] for p in traj]
-    #             y_traj = [p["posy"] for p in traj]
-    #             ax.plot(x_traj, y_traj)
+    for i, result in enumerate(results):
+        fig, ax = plt.subplots(figsize=(10, 10))
+        if result["feasible"]:
+            for _, traj in result["interprimitives"].items():
+                x_traj = [p["posx"] for p in traj]
+                y_traj = [p["posy"] for p in traj]
+                ax.plot(x_traj, y_traj)
 
-    #     ax.set_xlabel("x")
-    #     ax.set_ylabel("y")
-    #     ax.set_title(f"Experiment {i + 1}")
-    #     plt.savefig(f"experiment_{i + 1}_trajectory.png")
+        ax.set_xlabel("X Position [cm]")
+        ax.set_ylabel("Y Position [cm]")
+        ax.set_title(f"Experiment {i + 1}")
+        plt.savefig(f"experiment_{i + 1}_trajectory.png")
 
 if __name__ == "__main__":
     visualize_experiment_results("results.json")

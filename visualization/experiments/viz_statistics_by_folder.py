@@ -36,7 +36,7 @@ for root, dirs, files in os.walk("."):
 
 sorted_folders_data = dict(sorted(folders_data.items()))
 
-fig, axs = plt.subplots(3, figsize=(15, 15))
+fig, axs = plt.subplots(4, figsize=(15, 20))
 
 for i, (folder_name, (data, infeasible_count)) in enumerate(sorted_folders_data.items()):
     vehicle_counts = sorted(data.keys())
@@ -52,9 +52,14 @@ for i, (folder_name, (data, infeasible_count)) in enumerate(sorted_folders_data.
     axs[1].set_xlabel("Experiment Folder")
     axs[1].set_ylabel("Evaluated Nodes for Feasible Solution")
 
-    axs[2].bar(folder_name, infeasible_count, width=0.6)
+    axs[2].bar(folder_name, infeasible_count, width=0.6 ,color="blue")
     axs[2].set_xlabel("Experiment Folder")
     axs[2].set_ylabel("Infeasible Experiments Count")
+
+    avg_times = [np.mean(t) for t in times]
+    axs[3].bar(folder_name, np.mean(avg_times), width=0.6 ,color="blue")
+    axs[3].set_xlabel("Experiment Folder")
+    axs[3].set_ylabel("Average Runtime (s)")
 
 plt.tight_layout()
 plt.savefig("combined_boxplots_and_infeasible_counts_sorted.png")

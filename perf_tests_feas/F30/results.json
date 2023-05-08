@@ -1,0 +1,1202 @@
+[
+    {
+        "compute_time": 33438,
+        "experiment_index": 0,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 41176,
+        "experiment_index": 1,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 37853,
+        "experiment_index": 2,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34256,
+        "experiment_index": 3,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 37111,
+        "experiment_index": 4,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 32284,
+        "experiment_index": 5,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34814,
+        "experiment_index": 6,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 24657,
+        "experiment_index": 7,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 13038,
+        "experiment_index": 8,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 9966,
+        "experiment_index": 9,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 19314,
+        "experiment_index": 10,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 45280,
+        "experiment_index": 11,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34328,
+        "experiment_index": 12,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 37990,
+        "experiment_index": 13,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 45903,
+        "experiment_index": 14,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35004,
+        "experiment_index": 15,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34206,
+        "experiment_index": 16,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33516,
+        "experiment_index": 17,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 36905,
+        "experiment_index": 18,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34036,
+        "experiment_index": 19,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33426,
+        "experiment_index": 20,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 12117,
+        "experiment_index": 21,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34363,
+        "experiment_index": 22,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34753,
+        "experiment_index": 23,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 36976,
+        "experiment_index": 24,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34816,
+        "experiment_index": 25,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 36623,
+        "experiment_index": 26,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 22113,
+        "experiment_index": 27,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 3805,
+        "experiment_index": 28,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33158,
+        "experiment_index": 29,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 37147,
+        "experiment_index": 30,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 10099,
+        "experiment_index": 31,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34008,
+        "experiment_index": 32,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34916,
+        "experiment_index": 33,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 41654,
+        "experiment_index": 34,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 37221,
+        "experiment_index": 35,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 13408,
+        "experiment_index": 36,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 38736,
+        "experiment_index": 37,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33703,
+        "experiment_index": 38,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 15430,
+        "experiment_index": 39,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 4093,
+        "experiment_index": 40,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 18030,
+        "experiment_index": 41,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 47071,
+        "experiment_index": 42,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 3775,
+        "experiment_index": 43,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33855,
+        "experiment_index": 44,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34174,
+        "experiment_index": 45,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33477,
+        "experiment_index": 46,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35173,
+        "experiment_index": 47,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 14816,
+        "experiment_index": 48,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 36485,
+        "experiment_index": 49,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 14655,
+        "experiment_index": 50,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 39828,
+        "experiment_index": 51,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 3248,
+        "experiment_index": 52,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 12637,
+        "experiment_index": 53,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 10486,
+        "experiment_index": 54,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 10358,
+        "experiment_index": 55,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 30729,
+        "experiment_index": 56,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 24224,
+        "experiment_index": 57,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33745,
+        "experiment_index": 58,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34574,
+        "experiment_index": 59,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34722,
+        "experiment_index": 60,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34585,
+        "experiment_index": 61,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34881,
+        "experiment_index": 62,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34439,
+        "experiment_index": 63,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 14492,
+        "experiment_index": 64,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 40665,
+        "experiment_index": 65,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 13851,
+        "experiment_index": 66,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 38464,
+        "experiment_index": 67,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33895,
+        "experiment_index": 68,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 4133,
+        "experiment_index": 69,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34799,
+        "experiment_index": 70,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35343,
+        "experiment_index": 71,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 36717,
+        "experiment_index": 72,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 30403,
+        "experiment_index": 73,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34676,
+        "experiment_index": 74,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33642,
+        "experiment_index": 75,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 10567,
+        "experiment_index": 76,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 28168,
+        "experiment_index": 77,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 3611,
+        "experiment_index": 78,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34402,
+        "experiment_index": 79,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 37277,
+        "experiment_index": 80,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34539,
+        "experiment_index": 81,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33737,
+        "experiment_index": 82,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 36436,
+        "experiment_index": 83,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34860,
+        "experiment_index": 84,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33959,
+        "experiment_index": 85,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35399,
+        "experiment_index": 86,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 10448,
+        "experiment_index": 87,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 20243,
+        "experiment_index": 88,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 39636,
+        "experiment_index": 89,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 40185,
+        "experiment_index": 90,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33182,
+        "experiment_index": 91,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35206,
+        "experiment_index": 92,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34009,
+        "experiment_index": 93,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33615,
+        "experiment_index": 94,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 40259,
+        "experiment_index": 95,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33161,
+        "experiment_index": 96,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 10352,
+        "experiment_index": 97,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 7119,
+        "experiment_index": 98,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 12888,
+        "experiment_index": 99,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 16423,
+        "experiment_index": 100,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 17040,
+        "experiment_index": 101,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34482,
+        "experiment_index": 102,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34151,
+        "experiment_index": 103,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 36353,
+        "experiment_index": 104,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 40261,
+        "experiment_index": 105,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 51484,
+        "experiment_index": 106,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33568,
+        "experiment_index": 107,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34735,
+        "experiment_index": 108,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 15889,
+        "experiment_index": 109,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 36386,
+        "experiment_index": 110,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 3704,
+        "experiment_index": 111,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 16562,
+        "experiment_index": 112,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34688,
+        "experiment_index": 113,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33248,
+        "experiment_index": 114,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 12210,
+        "experiment_index": 115,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 42522,
+        "experiment_index": 116,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 9967,
+        "experiment_index": 117,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 41403,
+        "experiment_index": 118,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35395,
+        "experiment_index": 119,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33725,
+        "experiment_index": 120,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34267,
+        "experiment_index": 121,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33008,
+        "experiment_index": 122,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 16712,
+        "experiment_index": 123,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33458,
+        "experiment_index": 124,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33180,
+        "experiment_index": 125,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 42931,
+        "experiment_index": 126,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34259,
+        "experiment_index": 127,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 45693,
+        "experiment_index": 128,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 43637,
+        "experiment_index": 129,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 36013,
+        "experiment_index": 130,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34030,
+        "experiment_index": 131,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34628,
+        "experiment_index": 132,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34360,
+        "experiment_index": 133,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33491,
+        "experiment_index": 134,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 10866,
+        "experiment_index": 135,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 21872,
+        "experiment_index": 136,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35272,
+        "experiment_index": 137,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 29831,
+        "experiment_index": 138,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34246,
+        "experiment_index": 139,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 39278,
+        "experiment_index": 140,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 37003,
+        "experiment_index": 141,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 44499,
+        "experiment_index": 142,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 11553,
+        "experiment_index": 143,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 43871,
+        "experiment_index": 144,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34001,
+        "experiment_index": 145,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33684,
+        "experiment_index": 146,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 13375,
+        "experiment_index": 147,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34576,
+        "experiment_index": 148,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33873,
+        "experiment_index": 149,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34089,
+        "experiment_index": 150,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 17131,
+        "experiment_index": 151,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35052,
+        "experiment_index": 152,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33773,
+        "experiment_index": 153,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 41872,
+        "experiment_index": 154,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 39836,
+        "experiment_index": 155,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33683,
+        "experiment_index": 156,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 32016,
+        "experiment_index": 157,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 26458,
+        "experiment_index": 158,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35247,
+        "experiment_index": 159,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33607,
+        "experiment_index": 160,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 39888,
+        "experiment_index": 161,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 3174,
+        "experiment_index": 162,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34052,
+        "experiment_index": 163,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33112,
+        "experiment_index": 164,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35576,
+        "experiment_index": 165,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35194,
+        "experiment_index": 166,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34092,
+        "experiment_index": 167,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33963,
+        "experiment_index": 168,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34797,
+        "experiment_index": 169,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 7918,
+        "experiment_index": 170,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35203,
+        "experiment_index": 171,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 42643,
+        "experiment_index": 172,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 42824,
+        "experiment_index": 173,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34310,
+        "experiment_index": 174,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35094,
+        "experiment_index": 175,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 46568,
+        "experiment_index": 176,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 39205,
+        "experiment_index": 177,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 36329,
+        "experiment_index": 178,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 20501,
+        "experiment_index": 179,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 18943,
+        "experiment_index": 180,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34711,
+        "experiment_index": 181,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 36425,
+        "experiment_index": 182,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35771,
+        "experiment_index": 183,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35316,
+        "experiment_index": 184,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 35039,
+        "experiment_index": 185,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34197,
+        "experiment_index": 186,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33024,
+        "experiment_index": 187,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34153,
+        "experiment_index": 188,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33968,
+        "experiment_index": 189,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34200,
+        "experiment_index": 190,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34773,
+        "experiment_index": 191,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 37590,
+        "experiment_index": 192,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 37193,
+        "experiment_index": 193,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 24100,
+        "experiment_index": 194,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 41362,
+        "experiment_index": 195,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 34950,
+        "experiment_index": 196,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 11114,
+        "experiment_index": 197,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 33574,
+        "experiment_index": 198,
+        "feasible": false,
+        "max_node_id": 0
+    },
+    {
+        "compute_time": 17391,
+        "experiment_index": 199,
+        "feasible": false,
+        "max_node_id": 0
+    }
+]
