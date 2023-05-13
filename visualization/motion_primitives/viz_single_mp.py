@@ -2,7 +2,6 @@ import json
 import sys
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
-from scipy.spatial import ConvexHull
 
 def main():
     # Read command-line arguments
@@ -27,24 +26,24 @@ def main():
 
     # Draw nodes and highlight motion primitives that leave the convex hull
     nodes = [(node['pose']['x'], node['pose']['y']) for node in data['map']]
-    convex_hull = ConvexHull(nodes)
-    polygon = Polygon(convex_hull.points[convex_hull.vertices], fill=None, edgecolor='black', alpha=0.5)
-    ax2.add_patch(polygon)
     ax2.plot(*zip(*nodes), marker='o', markersize=1, linestyle='None', color='black')
 
     for edge in data['edges']:
         if edge['source']['a'] == a and edge['source']['s'] == s:
             curve_points = [(point['x'] + x * dpc, point['y'] + y * dpc) for point in edge['curve']]
-            if any([not polygon.contains_point(point) for point in curve_points]):
-                ax2.plot(*zip(*curve_points), linewidth=1, color='red', linestyle='--')
+            ax2.plot(*zip(*curve_points), linewidth=1)
 
-    ax1.set_title('All Motion Primitives')  # Added title for ax1
-    ax1.set_xlabel('X Position (a-index)')  # Added x-axis label for ax1
-    ax1.set_ylabel('Y Position (a-index)')  # Added y-axis label for ax1
+    ax1.set_title('Example Subset of Motion Primitives')  # Added title for ax1
+    ax1.set_xlabel('X Position [cm]')  # Added x-axis label for ax1
+    ax1.set_ylabel('Y Position [cm]')  # Added y-axis label for ax1
+    ax1.set_ylim([-40,40])
+    ax1.set_xlim([0,80])
 
-    ax2.set_title('Motion Primitives Outside Convex Hull')  # Added title for ax2
-    ax2.set_xlabel('X Position (a-index)')  # Added x-axis label for ax2
-    ax2.set_ylabel('Y Position (a-index)')  # Added y-axis label for ax2
+    ax2.set_title('Example Subset of Motion Primitives with 2D State Lattice Projection')  # Added title for ax2
+    ax2.set_xlabel('X Position [cm]')  # Added x-axis label for ax2
+    ax2.set_ylabel('Y Position [cm]')  # Added y-axis label for ax2
+    ax2.set_ylim([-40,40])
+    ax2.set_xlim([0,80])
 
 
     plt.savefig("../single_mp.png")

@@ -509,7 +509,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     }
 
     std::unique_lock<std::mutex> lock(m_resultMutex);
-    m_result_var.wait_for(lock, std::chrono::seconds(30), [&]{ return m_resultHasBeenFound;} ); // TODO Introduce config for this
+    m_result_var.wait_for(lock, std::chrono::seconds(120), [&]{ return m_resultHasBeenFound;} ); // TODO Introduce config for this
     m_resultHasBeenFound = true;
     rlog("cbs", LOG_DEBUG, "Got result, feasiblility: " + std::to_string(m_result.feasible));
     // writeConstraintNodeToDisk(m_result, "node100000.json");
@@ -695,6 +695,10 @@ constraint_node CBSPlanner::cbs_single(std::vector<dynamics::data::PoseByIndex> 
             //Wait for all threads to termiante
             await_astar_result(veh_count);
 
+            for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
+                constraint.result[m_lowLevelResults.at(i).car_id]= m_lowLevelResults.at(i);
+            }
+
             // Compute SIC by hop count
             uint64_t sic = 0;
             bool found_paths_for_all_vehicles = true;
@@ -713,9 +717,6 @@ constraint_node CBSPlanner::cbs_single(std::vector<dynamics::data::PoseByIndex> 
             constraint.father = node.node_id;
             node_id ++;
 
-            for(uint32_t i = 0; i < m_lowLevelResults.size(); i ++){
-                constraint.result[m_lowLevelResults.at(i).car_id]= m_lowLevelResults.at(i);
-            }
             m_lowLevelResults.clear();
             m_lowLevelJobs.clear();
 

@@ -1,7 +1,11 @@
-import json
-import matplotlib.pyplot as plt
-import math
 import os
+import sys
+import json
+import math
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import matplotlib.transforms as transforms
 
 def visualize_experiments(experiments_filename, output_folder):
     with open(experiments_filename) as experiments_file:
@@ -34,6 +38,22 @@ def visualize_experiments(experiments_filename, output_folder):
 
             ax.arrow(start_x, start_y, 2*math.cos(start_heading_rad), 2*math.sin(start_heading_rad), width=2, color="blue", )
             ax.arrow(target_x, target_y, 2*math.cos(target_heading_rad), 2*math.sin(target_heading_rad), width=2, color="red")
+            
+            # Create a Rectangle patch for the vehicles at start and target positions
+            start_rect = patches.Rectangle((-10, -5),20,10,linewidth=1,edgecolor='b',facecolor='none')
+            t_start = transforms.Affine2D().rotate_deg_around(0, 0, start_heading_rad * 57.29) + transforms.Affine2D().translate(start_x, start_y) + ax.transData
+            start_rect.set_transform(t_start)
+            
+            # Add the patches to the Axes
+            ax.add_patch(start_rect)
+
+            target_rect = patches.Rectangle((-10, -5),20,10,linewidth=1,edgecolor='r',facecolor='none')
+            # Create a Rectangle patch for the vehicles at start and target positions
+            t_target = transforms.Affine2D().rotate_deg_around(0, 0, target_heading_rad * 57.29) + transforms.Affine2D().translate(target_x, target_y) + ax.transData
+            target_rect.set_transform(t_target)
+            
+            # Add the patches to the Axes
+            ax.add_patch(target_rect)
 
         ax.set_title(f"Experiment {idx + 1}")
         ax.legend()

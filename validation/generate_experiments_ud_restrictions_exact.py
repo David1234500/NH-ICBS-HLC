@@ -68,9 +68,13 @@ def generate_experiments(rectangle, output_filename, experiment_number, vehicle_
             first_target = generate_random_point(rectangle)
             targets = [first_target] + [generate_random_point_around(first_target, max_distance_targets // 2) for _ in range(vehicle_count - 1)]
 
+            
 
             starts_valid = all([not point_in_restrictions(pos, unleaveable, "start_pose") for pos in starts])
             targets_valid = all([not point_in_restrictions(pos, unenterable, "target_pose") for pos in targets])
+
+            start_above_lower_thres = all_distances_sufficient(starts, 6)
+            targets_above_lower_thres = all_distances_sufficient(targets, 6)
 
             starts_distances_within_limit = all_distances_within_limit(starts, starts, max_distance_starts)
             targets_distances_within_limit = all_distances_within_limit(targets, targets, max_distance_targets)
@@ -78,7 +82,7 @@ def generate_experiments(rectangle, output_filename, experiment_number, vehicle_
             start_target_distances_within_limit = all_distances_within_limit(starts, targets, max_distance_start_target)
             
             # print(f"starts_valid {starts_valid} targets_valid {targets_valid} starts_distances_within_limit {starts_distances_within_limit} targets_distances_within_limit {targets_distances_within_limit} start_target_distances_within_limit {start_target_distances_within_limit}")
-            if starts_valid and targets_valid and starts_distances_within_limit and targets_distances_within_limit and start_target_distances_within_limit:
+            if starts_valid and targets_valid and starts_distances_within_limit and targets_distances_within_limit and start_target_distances_within_limit and targets_above_lower_thres and start_above_lower_thres:
                 break
 
         experiment = {
