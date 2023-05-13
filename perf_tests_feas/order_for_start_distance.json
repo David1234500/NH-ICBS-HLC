@@ -1,0 +1,46 @@
+{
+    "experiments": [
+        {
+            "folder_name": "F39",
+            "experiment_name": "75",
+            "order": 2
+        },
+        {
+            "folder_name": "F38",
+            "experiment_name": "100",
+            "order": 3
+        },
+        {
+            "folder_name": "F37",
+            "experiment_name": "150",
+            "order": 4
+        },
+        {
+            "folder_name": "F46",
+            "experiment_name": "250",
+            "order": 5
+        },
+        {
+            "folder_name": "F47",
+            "experiment_name": "300",
+            "order": 6
+        },
+        {
+            "folder_name": "F48",
+            "experiment_name": "350",
+            "order": 7
+        },
+        {
+            "folder_name": "F49",
+            "experiment_name": "400",
+            "order": 18
+        },
+        {
+            "folder_name": "F50",
+            "experiment_name": "450",
+            "order": 9
+        }
+    ],
+    "x_axis_label": "Inter-Vehicle Distance at Start Pose [cm]",
+    "output_file": "rtvdistance.png"
+}

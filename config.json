@@ -8,7 +8,7 @@
     },
     "timestep_ms": 500.0,
     "disc": {
-        "dstep": 4.0,
+        "dstep": 5.0,
         "hstep": 0.5236
     },
     "profiler":false,
@@ -24,10 +24,10 @@
     },
     "debug_modes":{
         "astar":false,
-        "astar_result":true,
-        "cbs":true,
-        "cbs_result":true,
-        "cbs_nodes_to_disc":true,
+        "astar_result":false,
+        "cbs":false,
+        "cbs_result":false,
+        "cbs_nodes_to_disc":false,
         "collision":false,
         "collision_to_disc":false,
         "collision_to_disc_prec":false
@@ -65,8 +65,8 @@
     },
     "mpnl_args":{
       "ts_ms": 500.0,
-      "ubf": [ 0.4,    0.4,   60.0,  60.0],
-      "lbf": [-0.4,   -0.4,  -60.0, -60.0],
+      "ubf": [ 0.45,    0.45,   60.0,  60.0],
+      "lbf": [-0.45,   -0.45,  -60.0, -60.0],
       "ubr": [ 0.055,  0.055,   60.0,  60.0],
       "lbr": [-0.055, -0.055,  -60.0, -60.0],
       "maxt": 2.0,

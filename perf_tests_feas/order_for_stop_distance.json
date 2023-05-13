@@ -1,0 +1,31 @@
+{
+    "experiments": [
+        {
+            "folder_name": "F41",
+            "experiment_name": "150",
+            "order": 1
+        },
+        {
+            "folder_name": "F42",
+            "experiment_name": "100",
+            "order": 2
+        },
+        {
+            "folder_name": "F43",
+            "experiment_name": "75",
+            "order": 3
+        },
+        {
+            "folder_name": "F44",
+            "experiment_name": "50",
+            "order": 4
+        },
+        {
+            "folder_name": "F45",
+            "experiment_name": "25",
+            "order": 5
+        }
+    ],
+    "x_axis_label": "Inter-Vehicle Distance at Target Pose [cm]",
+    "output_file": "rtvdistance_stop.png"
+}

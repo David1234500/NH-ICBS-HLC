@@ -7,7 +7,7 @@ def visualize_interprimitive_data(filename):
     with open(filename, 'r') as f:
         data = json.load(f)
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(12,8))
     ax = fig.add_subplot(111, projection='3d')
 
     x_values = [p['x'] for p in data['interprimitive']]

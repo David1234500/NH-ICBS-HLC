@@ -335,8 +335,8 @@ void MPCompute::writeGraphToDisk(std::string name, bool acc){
 
                         min_x = std::min(next_pose.pos[0],min_x);
                         min_y = std::min(next_pose.pos[1],min_y);
-                        max_x = std::max(next_pose.pos[0],min_x);
-                        max_y = std::max(next_pose.pos[1],min_y);
+                        max_x = std::max(next_pose.pos[0],max_x);
+                        max_y = std::max(next_pose.pos[1],max_y);
 
                         jedge["curve"].push_back(point);
 
@@ -350,8 +350,8 @@ void MPCompute::writeGraphToDisk(std::string name, bool acc){
 
                         min_x = std::min(next_pose.pos[0],min_x);
                         min_y = std::min(next_pose.pos[1],min_y);
-                        max_x = std::max(next_pose.pos[0],min_x);
-                        max_y = std::max(next_pose.pos[1],min_y);
+                        max_x = std::max(next_pose.pos[0],max_x);
+                        max_y = std::max(next_pose.pos[1],max_y);
 
                         jedge["curve"].push_back(point);
                     }
@@ -364,8 +364,8 @@ void MPCompute::writeGraphToDisk(std::string name, bool acc){
 
                         min_x = std::min(next_pose.pos[0],min_x);
                         min_y = std::min(next_pose.pos[1],min_y);
-                        max_x = std::max(next_pose.pos[0],min_x);
-                        max_y = std::max(next_pose.pos[1],min_y);
+                        max_x = std::max(next_pose.pos[0],max_x);
+                        max_y = std::max(next_pose.pos[1],max_y);
 
 
                         jedge["curve"].push_back(point);
@@ -380,8 +380,8 @@ void MPCompute::writeGraphToDisk(std::string name, bool acc){
 
                         min_x = std::min(next_pose.pos[0],min_x);
                         min_y = std::min(next_pose.pos[1],min_y);
-                        max_x = std::max(next_pose.pos[0],min_x);
-                        max_y = std::max(next_pose.pos[1],min_y);
+                        max_x = std::max(next_pose.pos[0],max_x);
+                        max_y = std::max(next_pose.pos[1],max_y);
 
                         jedge["curve"].push_back(point);
                     }

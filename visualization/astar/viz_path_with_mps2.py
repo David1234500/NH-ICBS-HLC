@@ -19,7 +19,7 @@ def visualize_json(filename):
         bnode = interprimitive['bnode']
 
         # Draw unused motion primitives in light gray, excluding the last set
-        if 'unused_primitives' in bnode and i < len(data['interprimitive']) - 1:
+        if 'unused_primitives' in bnode and i < len(data['interprimitive']) :
             for primitive in bnode['unused_primitives']:
                 primitive_path = [(point['x'], point['y']) for point in primitive['mp_path']]
                 ax.plot(*zip(*primitive_path), color='lightgrey', linewidth=0.5, alpha=0.5)
@@ -46,7 +46,7 @@ def visualize_json(filename):
     ax.legend(handles=legend_elements, loc='best')
 
     plt.savefig("../path_with_mps.png")
-    plt.show()
+    
 
 if __name__ == "__main__":
     # Replace "data.json" with the name of your JSON file
