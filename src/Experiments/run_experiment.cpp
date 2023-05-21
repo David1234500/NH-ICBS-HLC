@@ -17,10 +17,7 @@ void run_cbs_experiment(const std::string& input_filename, const std::string& ou
     std::ifstream input_file(input_filename);
     json experiments_json;
     input_file >> experiments_json;
-
-    std::shared_ptr<CBSPlanner> planner = std::make_shared<CBSPlanner>();
-    std::cout << "Loading graph from disk!" << std::endl;
-    planner->mp_comp.loadGraphFromDisk();
+    
     std::cout << "Finished loading graph from disk!" << std::endl;
 
     static int32_t driving_velocity_level = Config::getInstance().get<int32_t>({"velocity","driving_velocity_level"});
@@ -28,6 +25,10 @@ void run_cbs_experiment(const std::string& input_filename, const std::string& ou
     json result_json;
     size_t experiment_index = 0;
     for (const auto& experiment : experiments_json) {
+        std::shared_ptr<CBSPlanner> planner = std::make_shared<CBSPlanner>();
+        std::cout << "Loading graph from disk!" << std::endl;
+        planner->mp_comp.loadGraphFromDisk();
+
         std::vector<dynamics::data::PoseByIndex> starts;
         std::vector<dynamics::data::PoseByIndex> targets;
 
@@ -55,8 +56,7 @@ void run_cbs_experiment(const std::string& input_filename, const std::string& ou
         auto result = planner->cbs(starts, targets);
         auto end_time = system_clock::now();
         auto elapsed_time = duration_cast<milliseconds>(end_time - start_time).count();
-
-        if (elapsed_time > 120000) {
+        if(end_time - start_time > std::chrono::duration(seconds(255))){
             result.feasible = false;
         }
 
