@@ -471,8 +471,8 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             m_lowLevelResults.clear();
             m_lowLevelJobs.clear();
 
-            CBSProfiler::instance().stop(CBSBootstrap, cbs_bootstrap_id);
-            CBSProfiler::instance().stop(CBSComplete,cbs_complete_id);
+            // CBSProfiler::instance().stop(CBSBootstrap, cbs_bootstrap_id);
+            // CBSProfiler::instance().stop(CBSComplete,cbs_complete_id);
             return constraint_node();
         }
         sic += m_lowLevelResults.at(i).path->size();
@@ -509,7 +509,7 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
     }
 
     std::unique_lock<std::mutex> lock(m_resultMutex);
-    m_result_var.wait_for(lock, std::chrono::seconds(120), [&]{ return m_resultHasBeenFound;} ); // TODO Introduce config for this
+    m_result_var.wait_for(lock, std::chrono::seconds(300), [&]{ return m_resultHasBeenFound;} ); // TODO Introduce config for this
     m_resultHasBeenFound = true;
     rlog("cbs", LOG_DEBUG, "Got result, feasiblility: " + std::to_string(m_result.feasible));
     // writeConstraintNodeToDisk(m_result, "node100000.json");
