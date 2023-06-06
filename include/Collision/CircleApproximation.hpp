@@ -148,6 +148,39 @@ class CircleApproximation: public CollisionDetectBase{
 
     }
 
+
+   static CollisionInfo checkForCollision( MotionPrimitive p1,  dynamics::data::Pose2D pbi1,
+                                           MotionPrimitive p2,  dynamics::data::Pose2D pbi2) {
+    CollisionInfo collision_info;
+    CircleApproxDebug debug_info;
+
+    static auto& config = Config::getInstance();
+    static float over_threshold = config.get<float>({"collision_detect","ov_appr_threshold"});
+    static float close_threshold = config.get<float>({"collision_detect","cl_appr_threshold"}); 
+    static uint32_t step_overapproximation = config.get<uint32_t>({"collision_detect","ov_appr_step"}); 
+
+    size_t track1_size = p1.trajectory.size();
+    size_t track2_size = p2.trajectory.size();
+    size_t max_track_size = std::max(track1_size, track2_size);
+
+    // First step: coarse collision check
+    for (size_t i = 0; i < max_track_size; i += 1) {
+        dynamics::data::Pose2D pose1 = (i < track1_size) ? p1.trajectory[i] + pbi1 : pbi1 + p1.trajectory.back();
+        dynamics::data::Pose2D pose2 = (i < track2_size) ? pbi2 + p2.trajectory[i] : pbi2 + p2.trajectory.back();
+
+        float distance = (pose1.pos - pose2.pos).norm();
+        if (distance <= close_threshold) {
+            collision_info.collision_occurred = true;
+            collision_info.pose1 = pose1;
+            collision_info.pose2 = pose2;
+            return collision_info;
+        }
+            
+    }
+    return collision_info;
+    }
+
+    
 };
 
 

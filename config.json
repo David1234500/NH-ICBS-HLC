@@ -13,7 +13,7 @@
     },
     "profiler":false,
     "allowed_reversing":0,
-    "allowed_waiting":3,
+    "allowed_waiting":2,
     "use_acc_for_interprimitive_path_compute_override":true,
     "collision_detect":{
         "mode":"circle",
@@ -65,8 +65,8 @@
     },
     "mpnl_args":{
       "ts_ms": 500.0,
-      "ubf": [ 0.45,    0.45,   60.0,  60.0],
-      "lbf": [-0.45,   -0.45,  -60.0, -60.0],
+      "ubf": [ 0.4,    0.4,   60.0,  60.0],
+      "lbf": [-0.4,   -0.4,  -60.0, -60.0],
       "ubr": [ 0.055,  0.055,   60.0,  60.0],
       "lbr": [-0.055, -0.055,  -60.0, -60.0],
       "maxt": 2.0,

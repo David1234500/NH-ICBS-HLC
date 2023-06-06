@@ -1,8 +1,12 @@
 #ifndef UTIL_POSE_HPP
 #define UTIL_POSE_HPP
  
+#include <map>
+
 #include <Eigen/Dense>
 
+typedef std::size_t JointHash;
+typedef int32_t VehicleID;
 
 namespace dynamics{
 
@@ -91,14 +95,50 @@ struct PoseByIndex{
 };
 
 
+struct MPoseByIndex{
+    std::map<int32_t, dynamics::data::PoseByIndex> vehicle_poses;
+    std::vector<int32_t> vehicle_indices;
 
+    bool operator&=( MPoseByIndex e) {
+        if(e.vehicle_poses.size() != vehicle_poses.size()){
+            return false;
+        }
+        for(auto index: vehicle_indices){
+            if(!(e.vehicle_poses[index] &= vehicle_poses[index])){
+                return false;
+            }
+        }
+        return true;
+    }
+
+     bool operator==( MPoseByIndex e) {
+        if(e.vehicle_poses.size() != vehicle_poses.size()){
+            return false;
+        }
+        for(auto index: vehicle_indices){
+            if(!(e.vehicle_poses[index] == vehicle_poses[index])){
+                return false;
+            }
+        }
+        return true;
+    }
+     bool operator==(const MPoseByIndex e) const {
+        if(e.vehicle_poses.size() != vehicle_poses.size()){
+            return false;
+        }
+        for(auto index: vehicle_indices){
+            if(!(e.vehicle_poses.at(index) == vehicle_poses.at(index))){
+                return false;
+            }
+        }
+        return true;
+    }
+};
 
 struct PBIConstraint{
     int32_t x = 0;
     int32_t y = 0;
- 
     int32_t t = 0;
-    
     int32_t id = 0;
 
     inline void operator=(const PoseByIndex& e){
@@ -140,6 +180,24 @@ struct LLNode{
     }
 };
 
+struct MLLNode{
+    std::vector<VehicleID> vehicle_index; 
+    MPoseByIndex poses;
+    float fScore = 10000000.f;
+    int32_t timestep = 0;
+    int32_t rev_counter = 0;
+    int32_t waiting_counter = 0;
+
+    bool operator < (const dynamics::data::MLLNode r) const {
+        if(fScore < r.fScore){
+            return false;
+        }else{
+            return true;
+        }
+    }
+};
+
+
 struct Pose2D{
     /* 2D Position in cm */
     Position2Df pos = {0.f,0.f}; 
@@ -150,7 +208,7 @@ struct Pose2D{
     /* Velocity in m/s */
     float vel = 0.f;
 
-    inline Pose2D operator+(Pose2D e){
+    inline Pose2D  operator+(const Pose2D& e) const{
         return {pos + e.pos, e.h, e.vel};
     }
 };
@@ -229,13 +287,34 @@ namespace std {
     {
        std::size_t operator()(const dynamics::data::PoseByIndex& p) const noexcept
         {
+            assert(sizeof(std::size_t) == 64);
             std::size_t s_hash = static_cast<std::size_t>(p.s);
-            std::size_t a_hash = static_cast<std::size_t>(p.a) << 3; // Shift by 3 bits (max s value is 7, needs 3 bits)
-            std::size_t y_hash = static_cast<std::size_t>(p.y) << 7; // Shift by 7 bits (max a value is 15, needs 4 bits)
-            std::size_t x_hash = static_cast<std::size_t>(p.x) << 15; // Shift by 15 bits (max y value is 255, needs 8 bits)
-            std::size_t t_hash = static_cast<std::size_t>(p.t) << 23; // Shift by 23 bits (max x value is 255, needs 8 bits)
+            assert(p.s < 4);
+            std::size_t a_hash = static_cast<std::size_t>(p.a) << 2; // Shift by 2 bits (max s value is 4, needs 2 bits)
+            assert(p.a < 15);
+            std::size_t y_hash = static_cast<std::size_t>(p.y) << 6; // Shift by 6 bits (max a value is 15, needs 4 bits)
+            assert(p.y < 127);
+            std::size_t x_hash = static_cast<std::size_t>(p.x) << 13; // Shift by 13 bits (max y value is 127, needs 7 bits)
+            assert(p.x < 127);
+            std::size_t t_hash = static_cast<std::size_t>(p.t) << 20; // Shift by 20 bits (max x value is 127, needs 7 bits)
+            assert(p.t < 2);
 
             return s_hash | a_hash | y_hash | x_hash | t_hash;
+        }
+    };
+
+    template<> struct hash<dynamics::data::MPoseByIndex>
+    {
+       std::size_t operator()(const dynamics::data::MPoseByIndex& p) const noexcept
+        {
+            std::hash<dynamics::data::PoseByIndex> pbiHashFn;
+
+            assert(sizeof(std::size_t) == 64);
+            std::size_t hashv1 = static_cast<std::size_t>(pbiHashFn(p.vehicle_poses.at(0))); 
+            std::size_t hashv2 = static_cast<std::size_t>(pbiHashFn(p.vehicle_poses.at(1))) << 21;
+            std::size_t hashv3 = static_cast<std::size_t>(pbiHashFn(p.vehicle_poses.at(2))) << 42;
+
+            return hashv1 | hashv2 | hashv3;
         }
     };
 }

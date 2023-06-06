@@ -51,8 +51,8 @@ int main() {
     std::cout << "Start AStar!" << std::endl;
     std::vector<dynamics::data::PBIConstraint> constr;
     dynamics::data::PBIConstraint t;
-    t.x = 20;
-    t.y = 40;
+    t.x = 45;
+    t.y = 30;
     t.t = -1;
     constr.push_back(t);
     auto res = planner->astar(start,end, constr);

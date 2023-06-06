@@ -56,6 +56,7 @@ void run_cbs_experiment(const std::string& input_filename, const std::string& ou
         auto result = planner->cbs(starts, targets);
         auto end_time = system_clock::now();
         auto elapsed_time = duration_cast<milliseconds>(end_time - start_time).count();
+        
         if(end_time - start_time > std::chrono::duration(seconds(255))){
             result.feasible = false;
         }
@@ -103,7 +104,7 @@ void run_cbs_experiment(const std::string& input_filename, const std::string& ou
 }
 
 int main(int argc, char** argv) {
-    std::string input_filename = "./experiments.json";
+    std::string input_filename = "./experiment.json";
     std::string output_filename = "./results.json";
     run_cbs_experiment(input_filename, output_filename);
     return 0;

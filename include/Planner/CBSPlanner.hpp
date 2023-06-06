@@ -33,6 +33,7 @@ public:
 
     std::mutex m_openSetMutex;
     std::priority_queue<constraint_node> m_openSet;
+    
 
     std::vector<std::thread> m_cbsWorkers;
     bool m_resultHasBeenFound = true;
@@ -41,6 +42,8 @@ public:
     std::condition_variable m_result_var;
     constraint_node m_result;
     uint64_t m_node_id = 0;
+
+
 
     ReachabilityResult checkForReachability(); 
     

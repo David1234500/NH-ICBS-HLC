@@ -35,7 +35,6 @@ ReachabilityResult CBSPlanner::checkForReachability(){
     float path_time = 0.f;
 
     rlog("ReachCheck", LOG_INFO, "Checking reachability with Span: " + std::to_string(reachable_node_count) + ":" + std::to_string(reachable_distance) );
-
     for(uint32_t i =0; i < map_size_angle; i ++){
         for(uint32_t j = 0; j < map_size_speed; j ++){
             result.edge_count += mp_comp.m_mpmap[i][j].size();
@@ -289,6 +288,10 @@ void CBSPlanner::cbsWorker(int32_t id, std::vector<dynamics::data::PoseByIndex> 
             }
         }
 
+        // if(){
+            
+        // }
+
         // Add new constraints and replan
         for(uint32_t vehicle_index = 0; vehicle_index < 2; vehicle_index ++){
 
@@ -299,6 +302,7 @@ void CBSPlanner::cbsWorker(int32_t id, std::vector<dynamics::data::PoseByIndex> 
             // Create new constraint node and copy current results of other vehicles
             constraint_node constraint;
             constraint.result = node.result;
+            constraint.vcm = node.vcm;
             LLResult res;
 
             if(vehicle_index == 0){
@@ -308,6 +312,8 @@ void CBSPlanner::cbsWorker(int32_t id, std::vector<dynamics::data::PoseByIndex> 
                 constr = info.pose1bi;
                 constr.t = info.index1;
                 constraint.avoid = node.avoid;
+
+                constraint.vcm[ info.car_index_1 < info.car_index_2 ? info.car_index_1 : info.car_index_2 ][info.car_index_1 >= info.car_index_2 ? info.car_index_1 : info.car_index_2] += 1;
 
                 if(info.collision_with_veh_at_track_end == 1){
                    constr.t = -1;
@@ -335,6 +341,8 @@ void CBSPlanner::cbsWorker(int32_t id, std::vector<dynamics::data::PoseByIndex> 
                 constr2.t = info.index2;
                 constraint.avoid = node.avoid;
                 
+                constraint.vcm[ info.car_index_1 < info.car_index_2 ? info.car_index_1 : info.car_index_2 ][info.car_index_1 >= info.car_index_2 ? info.car_index_1 : info.car_index_2] += 1;
+
                 if(info.collision_with_veh_at_track_end == 2){
                     constr2.t = -1;
                 }
@@ -438,6 +446,9 @@ constraint_node CBSPlanner::cbs(std::vector<dynamics::data::PoseByIndex> start_p
             return constraint_node();
         }
     }
+
+    
+
 
     m_resultHasBeenFound = false;
     

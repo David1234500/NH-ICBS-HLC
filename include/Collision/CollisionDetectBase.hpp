@@ -5,6 +5,7 @@
 #include <cmath>
 #include <Eigen/Dense>
 #include <util/Pose.hpp>
+#include <MPCompute/MPCompute.hpp>
 
 
 struct CollisionInfo {
@@ -29,7 +30,8 @@ public:
     CollisionDetectBase(){}
     virtual CollisionInfo checkForCollision(const std::vector<dynamics::data::Pose2WithTime>& track1,
                                    const std::vector<dynamics::data::Pose2WithTime>& track2) = 0;
-
+    // static CollisionInfo checkForCollision(const MotionPrimitive p1, const dynamics::data::Pose2D pbi1,
+    //                                         const MotionPrimitive p2, const dynamics::data::Pose2D pbi2) {};
 
     static void print_collision_info(const CollisionInfo& ci) {
         std::cout << "Collision occurred: " << std::boolalpha << ci.collision_occurred << std::endl;

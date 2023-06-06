@@ -42,19 +42,16 @@ fig, axs = plt.subplots(2, figsize=(12, 8))
 
 # Create average line plot
 avg_times = [np.mean(times) for times in times_data]
-axs[0].plot(vehicle_counts, avg_times, marker='o')
-axs[0].set_xlabel("Vehicle Count")
-axs[0].set_ylabel("Average Time for Feasible Solution (s)")
 
-# Create min, max, average line plot
+# Create min, max, average bar plot
 min_times = [np.min(times) for times in times_data]
 max_times = [np.max(times) for times in times_data]
-axs[1].plot(vehicle_counts, avg_times, label="Average", marker='o')
-axs[1].plot(vehicle_counts, min_times, label="Min", marker='o')
-axs[1].plot(vehicle_counts, max_times, label="Max", marker='o')
+axs[1].bar(vehicle_counts, avg_times, label="Average", color='b', alpha=0.5)
+axs[1].bar(vehicle_counts, min_times, label="Min", color='b')
+axs[1].bar(vehicle_counts, max_times, label="Max", color='b', alpha=0.2)
 axs[1].set_xlabel("Vehicle Count")
 axs[1].set_ylabel("Time for Feasible Solution (s)")
 axs[1].legend()
 
 plt.tight_layout()
-plt.savefig("../experiment_stats_lines.png")
+plt.savefig("../experiment_stats_bars.png")

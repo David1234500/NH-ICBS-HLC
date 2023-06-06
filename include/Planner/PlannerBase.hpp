@@ -14,6 +14,7 @@
 #include <DynamicsModel/SingleTrackModel.hpp>
 #include <MPCompute/MPBruteforce.hpp>
 #include <Collision/CollisionDetectBase.hpp>
+#include <Collision/CircleApproximation.hpp>
 #include <util/Profiler.hpp>
 
 using json = nlohmann::json;
@@ -29,6 +30,15 @@ struct LLJob{
 
 
 struct LLResult{
+    bool found_path = false;
+    std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> path;
+    std::vector<dynamics::data::Pose2WithTime> spline;
+    std::vector<dynamics::data::Pose2WithTime> interprimitive;
+    uint32_t job_id = 0;
+    uint16_t car_id = 0;
+};
+
+struct MLLResult{
     bool found_path = false;
     std::shared_ptr<std::vector<dynamics::data::PoseByIndex>> path;
     std::vector<dynamics::data::Pose2WithTime> spline;
@@ -56,6 +66,7 @@ struct constraint_node{
     uint32_t father = 0;
     bool feasible = false;
 
+    std::map<VehicleID, std::map<VehicleID, int32_t>> vcm;
     std::vector<dynamics::data::PBIConstraint> avoid;
     std::map<int32_t, LLResult> result;
    
@@ -277,6 +288,174 @@ inline bool validatePosition(dynamics::data::Pose2D& cpose, dynamics::data::Pose
     return true;
 }
 
+MLLResult meta_astar(std::map<int32_t,dynamics::data::PoseByIndex> start_positions, std::map<int32_t,dynamics::data::PoseByIndex> target_positions, std::vector<dynamics::data::PBIConstraint> constraints){
+    static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
+    static int32_t allowed_rev_counter = Config::getInstance().get<int32_t>({"allowed_reversing"});
+    static int32_t driving_velocity_level = Config::getInstance().get<int32_t>({"velocity","driving_velocity_level"});
+    static int32_t allowed_waiting = Config::getInstance().get<int32_t>({"allowed_waiting"});
+    static bool astar_debug = Config::getInstance().get<bool>({"debug_modes", "astar"});
+    static bool astar_result = Config::getInstance().get<bool>({"debug_modes", "astar_result"});
+
+    static int32_t x_steps = Config::getInstance().getXstep();
+    static int32_t y_steps = Config::getInstance().getYstep();
+
+    static int32_t map_size_speed = Config::getInstance().get<int32_t>({"map","speed_steps"});
+    static int32_t map_size_angle = Config::getInstance().get<int32_t>({"map","angle_steps"});
+
+    std::priority_queue<dynamics::data::MLLNode> openQueue;
+    absl::flat_hash_set<dynamics::data::MPoseByIndex> openSet;
+
+    absl::flat_hash_map<dynamics::data::MPoseByIndex, dynamics::data::MPoseByIndex> cameFrom;
+    std::map<int32_t, absl::flat_hash_map<dynamics::data::MPoseByIndex, MotionPrimitive>> usedEdges;
+
+    std::array<dynamics::data::Pose2D,3> current_poses;
+    std::array<dynamics::data::Pose2D,3> target_poses;
+    dynamics::data::MPoseByIndex target;
+
+    std::array<absl::flat_hash_map<dynamics::data::PoseByIndex, float>,3> fScore;
+    std::array<absl::flat_hash_map<dynamics::data::PoseByIndex, float>,3> gScore;
+
+    // float manhattan = std::abs(target_pose.pos[0] - current_pose.pos[0]) + std::abs(target_pose.pos[1] - current_pose.pos[1]);
+    //fScore[start] = manhattan;
+    // fScore[start] = (target_pose.pos - current_pose.pos).norm();
+    // gScore[start] = 0.f;
+
+    dynamics::data::MLLNode initial; // = {start, fScore[start], 0};
+    openQueue.push(initial);
+    // openSet.insert(start);
+
+    
+    uint32_t explored_nodes = 0; 
+    while(!openQueue.empty()){
+        
+        auto current = openQueue.top(); 
+        explored_nodes += 1;
+
+        if(current.poses &= target){
+            MLLResult res;
+            // res.path = getPath(cameFrom, current.pose);
+            // res.interprimitive = getInterPrimitivPositions(cameFrom, usedEdge, current.pose);
+            res.found_path = true;
+            return res;
+        }
+
+        openQueue.pop();
+        // openSet.erase(current.poses);
+
+        std::map<int32_t, MotionPrimitive> selected_operations;
+        std::map<int32_t, dynamics::data::PoseByIndex> selected_pose;
+        std::map<int32_t, float> selected_manh;
+        std::map<int32_t, float> selected_tentative_score;
+        
+        std::map<int32_t, int32_t> operations_index;
+        for(auto veh_index: start_positions){
+            operations_index[veh_index.first] = -1;
+        }
+        float sum_manh = 0.f;
+        
+        bool added_all_operators = false;
+        while(!added_all_operators){
+         
+            added_all_operators = true;
+            for(int32_t veh_index = 0; veh_index < current.vehicle_index.size(); veh_index ++){
+                
+                auto posebi = current.poses.vehicle_poses[veh_index];
+                auto poseac = pose_lut[posebi];
+
+                if(operations_index[veh_index] < mp_comp.m_mpmap[posebi.a][posebi.s].size()){
+                    added_all_operators = false;
+                }
+
+                for(; operations_index[veh_index] < mp_comp.m_mpmap[posebi.a][posebi.s].size(); operations_index[veh_index] ++ ){
+                    auto candidate_primitive = mp_comp.m_mpmap[posebi.a][posebi.s].at(operations_index[veh_index]);
+
+                    dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(posebi, candidate_primitive.target);
+                    gl_neighbor.t = current.waiting_counter;
+
+                    if(candidate_primitive.target.s < zero_velocity_level){
+                        if(current.rev_counter >= allowed_rev_counter || current.timestep >= allowed_rev_counter){
+                            continue;
+                        }
+                    }
+                    if(!validatePosition(poseac, gl_neighbor, candidate_primitive, candidate_primitive.trajectory)){
+                        continue;
+                    }
+
+                    bool discard_due_to_obstacle = false;
+                    for(auto obstacle : constraints){
+                        if(std::abs(current.timestep - obstacle.t ) <= 2 || obstacle.t == -1 ){
+                            if(std::abs(gl_neighbor.x - obstacle.x ) <= 1 && std::abs(gl_neighbor.y - obstacle.y) <= 1){
+                            continue;
+                            }
+                        }
+                    }
+
+                    CollisionInfo result;
+                    for(int32_t v1 = 0; v1 < veh_index; v1 ++){
+                        result = CircleApproximation::checkForCollision(selected_operations[v1], pose_lut[current.poses.vehicle_poses[v1]],
+                                                               selected_operations[veh_index], pose_lut[current.poses.vehicle_poses[veh_index]]);
+                    }
+                            
+                    auto neigh_pose = pose_lut[gl_neighbor];
+                    float manhattan = std::abs(neigh_pose.pos[0] - poseac.pos[0]) + std::abs(neigh_pose.pos[1] - poseac.pos[1]);
+                    float tentative_score = gScore[veh_index][posebi] + manhattan;
+                    auto gScoreIt = gScore[veh_index].find(gl_neighbor); 
+                    if(gScoreIt == gScore[veh_index].end() || tentative_score < gScoreIt->second){
+
+                        selected_operations[veh_index] = candidate_primitive;
+                        selected_pose[veh_index] = gl_neighbor;
+                        selected_tentative_score[veh_index] = tentative_score;
+                        selected_manh[veh_index] = manhattan;
+                        break;
+                    }
+                }
+            }
+
+            //TODO Interrupt when no operators could be determined for this node in the openSet
+            if(selected_operations.size() != current.poses.vehicle_indices.size()){
+                continue;
+            }
+            
+            dynamics::data::MPoseByIndex npose = {selected_pose, current.vehicle_index};
+            cameFrom[npose] = current.poses;
+        
+                
+            // update heuristics
+            float sfscore = 0.f;
+            for(auto veh_index: current.poses.vehicle_indices){
+                usedEdges[veh_index][npose] = selected_operations[veh_index];
+                gScore[veh_index][selected_pose[veh_index]] = selected_tentative_score[veh_index];
+                fScore[veh_index][selected_pose[veh_index]] = selected_tentative_score[veh_index]; // TODO ADD heuristic value here + selected_manh[veh_index];
+                sfscore += selected_tentative_score[veh_index] + selected_manh[veh_index];
+            }
+                
+            if(openSet.find(npose) == openSet.end()){
+                dynamics::data::MLLNode node = {current.vehicle_index, npose,  sfscore, current.timestep + 1, current.rev_counter, current.waiting_counter}; // TODO readd reversing counter
+                openQueue.push(node);
+                openSet.insert(npose);
+            }
+        }
+
+            // auto new_pbi = current.pose;
+            // new_pbi.t += 1;
+            // if(openSet.count(new_pbi) == 0 && current.pose.s == zero_velocity_level && current.waiting_counter < allowed_waiting){
+            //     dynamics::data::LLNode node = {new_pbi, fScore[current.pose], current.timestep + 1,  current.rev_counter, current.waiting_counter + 1};
+                
+            //     MotionPrimitive mp;
+            //     mp.is_waiting_trajectory = true;
+            //     mp.target = new_pbi;
+                
+            //     cameFrom[new_pbi] = current.pose;
+            //     usedEdge[new_pbi] = mp;
+            //     gScore[new_pbi] = gScore[current.pose];
+                
+            //     openQueue.push(node);
+            //     openSet.insert(current.pose);
+            // }
+         
+    }
+}
+
 LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex target, std::vector<dynamics::data::PBIConstraint> constraints, bool relaxed = false){
     static int32_t zero_velocity_level = Config::getInstance().get<int32_t>({"velocity","zero_velocity_level"});
     static int32_t allowed_rev_counter = Config::getInstance().get<int32_t>({"allowed_reversing"});
@@ -348,6 +527,8 @@ LLResult astar(dynamics::data::PoseByIndex start, dynamics::data::PoseByIndex ta
         }
 
         openQueue.pop();
+        openSet.erase(current.pose);
+
         bool infront_of_constraint = false;
         auto current_pose = pose_lut[current.pose];
         for(auto& rel_neighbor: mp_comp.m_mpmap[current.pose.a][current.pose.s]){

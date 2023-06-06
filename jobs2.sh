@@ -3,28 +3,73 @@
 set -e
 export LD_LIBRARY_PATH=/usr/local/lib/
 
-cd perf_tests_feas/F1
-../../build/run_experiment F1
+cd perf_tests_exps_2/V1
+../../build/run_experiment 
 cd ../..
 
-cd perf_tests_feas/F2
-../../build/run_experiment F2
+cd perf_tests_exps_2/V2
+../../build/run_experiment 
 cd ../..
 
-cd perf_tests_feas/F3
-../../build/run_experiment F3
+cd perf_tests_exps_2/V3
+../../build/run_experiment 
 cd ../..
 
-cd perf_tests_feas/F4
-../../build/run_experiment F4
+cd perf_tests_exps_2/V4
+../../build/run_experiment 
 cd ../..
 
-cd perf_tests_feas/F5
-../../build/run_experiment F5
+cd perf_tests_exps_2/V5
+../../build/run_experiment 
 cd ../..
 
-cd perf_tests_feas/F6
-../../build/run_experiment F6
+cd perf_tests_exps_2/V6
+../../build/run_experiment 
 cd ../..
+
+cd perf_tests_exps_2/V7
+../../build/run_experiment 
+cd ../..
+
+cd perf_tests_exps_2/V8
+../../build/run_experiment 
+cd ../..
+
+cd perf_tests_exps_2/V9
+../../build/run_experiment 
+cd ../..
+
+cd perf_tests_exps_2/V10
+../../build/run_experiment 
+cd ../..
+
+cd perf_tests_exps_2/V11
+../../build/run_experiment 
+cd ../..
+
+cd perf_tests_exps_2/V12
+../../build/run_experiment 
+cd ../..
+
+cd perf_tests_exps_2/V13
+../../build/run_experiment 
+cd ../..
+
+cd perf_tests_exps_2/V14
+../../build/run_experiment 
+cd ../..
+
+cd perf_tests_exps_2/V15
+../../build/run_experiment 
+cd ../..
+
+cd perf_tests_exps_2/V16
+../../build/run_experiment 
+cd ../..
+
+cd perf_tests_exps_2/V17
+../../build/run_experiment 
+cd ../..
+
 
 echo "JOBS DONE"
