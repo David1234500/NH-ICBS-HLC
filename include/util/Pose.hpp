@@ -24,6 +24,16 @@ struct PoseByIndex{
     int32_t s = 0;
     int32_t t = 0;
 
+    std::string toString() const {
+        std::stringstream ss;
+        ss << "PoseByIndex(x=" << x 
+           << ", y=" << y 
+           << ", a=" << a 
+           << ", s=" << s 
+           << ", t=" << t << ")";
+        return ss.str();
+    }
+
     inline PoseByIndex operator+(PoseByIndex e) {
         PoseByIndex n = {e.x + x, e.y + y, a, s, t};
         return n;
@@ -97,7 +107,28 @@ struct PoseByIndex{
 
 struct MPoseByIndex{
     std::map<int32_t, dynamics::data::PoseByIndex> vehicle_poses;
-    std::vector<int32_t> vehicle_indices;
+    std::vector<VehicleID> vehicle_indices;
+
+    std::string toString() const {
+        std::stringstream ss;
+        ss << "MPoseByIndex(\n\tvehicle_poses={\n";
+
+        for (const auto& pair : vehicle_poses) {
+            ss << "\t\t" << pair.first << ": " << pair.second.toString() << "\n";
+        }
+
+        ss << "\t},\n\tvehicle_indices={";
+
+        for (size_t i = 0; i < vehicle_indices.size(); ++i) {
+            ss << vehicle_indices[i];
+            if (i != vehicle_indices.size() - 1) {
+                ss << ", ";
+            }
+        }
+
+        ss << "}\n)";
+        return ss.str();
+    }
 
     bool operator&=( MPoseByIndex e) {
         if(e.vehicle_poses.size() != vehicle_poses.size()){
@@ -184,6 +215,9 @@ struct MLLNode{
     std::vector<VehicleID> vehicle_index; 
     MPoseByIndex poses;
     float fScore = 10000000.f;
+
+    std::map<VehicleID, int32_t> expansion_index;
+
     int32_t timestep = 0;
     int32_t rev_counter = 0;
     int32_t waiting_counter = 0;
@@ -287,7 +321,8 @@ namespace std {
     {
        std::size_t operator()(const dynamics::data::PoseByIndex& p) const noexcept
         {
-            assert(sizeof(std::size_t) == 64);
+            uint32_t size = sizeof(std::size_t);
+            assert(size == 8);
             std::size_t s_hash = static_cast<std::size_t>(p.s);
             assert(p.s < 4);
             std::size_t a_hash = static_cast<std::size_t>(p.a) << 2; // Shift by 2 bits (max s value is 4, needs 2 bits)
@@ -309,10 +344,10 @@ namespace std {
         {
             std::hash<dynamics::data::PoseByIndex> pbiHashFn;
 
-            assert(sizeof(std::size_t) == 64);
-            std::size_t hashv1 = static_cast<std::size_t>(pbiHashFn(p.vehicle_poses.at(0))); 
-            std::size_t hashv2 = static_cast<std::size_t>(pbiHashFn(p.vehicle_poses.at(1))) << 21;
-            std::size_t hashv3 = static_cast<std::size_t>(pbiHashFn(p.vehicle_poses.at(2))) << 42;
+            assert(sizeof(std::size_t) == 8);
+            std::size_t hashv1 = static_cast<std::size_t>(pbiHashFn(p.vehicle_poses.at(p.vehicle_indices.at(0)))); 
+            std::size_t hashv2 = static_cast<std::size_t>(pbiHashFn(p.vehicle_poses.at(p.vehicle_indices.at(1)))) << 21;
+            std::size_t hashv3 = static_cast<std::size_t>(pbiHashFn(p.vehicle_poses.at(p.vehicle_indices.at(2)))) << 42;
 
             return hashv1 | hashv2 | hashv3;
         }

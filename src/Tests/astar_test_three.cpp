@@ -48,18 +48,18 @@ int main() {
     auto tstart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     std::map<int32_t,dynamics::data::PoseByIndex> start_poses;
     std::map<int32_t,dynamics::data::PoseByIndex> target_poses;
-    dynamics::data::PoseByIndex end = {40,15,6,driving_velocity_level};
-    dynamics::data::PoseByIndex start = {10,70,11,driving_velocity_level};
+    dynamics::data::PoseByIndex end = {60,15,6,driving_velocity_level};
+    dynamics::data::PoseByIndex start = {24,60,11,driving_velocity_level};
     start_poses[1] = start;
     target_poses[1] = end;
 
-    dynamics::data::PoseByIndex end2 = {40,15,6,driving_velocity_level};
-    dynamics::data::PoseByIndex start2 = {10,70,11,driving_velocity_level};
+    dynamics::data::PoseByIndex end2 = {50,15,6,driving_velocity_level};
+    dynamics::data::PoseByIndex start2 = {15,50,11,driving_velocity_level};
     start_poses[2] = start2;
     target_poses[2] = end2;
 
     dynamics::data::PoseByIndex end3 = {40,15,6,driving_velocity_level};
-    dynamics::data::PoseByIndex start3 = {10,70,11,driving_velocity_level};
+    dynamics::data::PoseByIndex start3 = {8,40,11,driving_velocity_level};
     start_poses[3] = start3;
     target_poses[3] = end3;
     
@@ -69,7 +69,7 @@ int main() {
     std::cout << "Completed Astar" << std::endl;
     
     if(res.found_path){ 
-        std::cout << res.path->size() << std::endl;
+        // std::cout << res.path->size() << std::endl;
         // planner->writeCurveToDiskWithMPs(res, "pathwithMPs.json");
     }else{
         std::cout << "No viable solution found" << std::endl;

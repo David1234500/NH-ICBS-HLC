@@ -165,14 +165,14 @@ class CircleApproximation: public CollisionDetectBase{
 
     // First step: coarse collision check
     for (size_t i = 0; i < max_track_size; i += 1) {
-        dynamics::data::Pose2D pose1 = (i < track1_size) ? p1.trajectory[i] + pbi1 : pbi1 + p1.trajectory.back();
-        dynamics::data::Pose2D pose2 = (i < track2_size) ? pbi2 + p2.trajectory[i] : pbi2 + p2.trajectory.back();
+        dynamics::data::Vector2Df pose1 = (i < track1_size) ? p1.trajectory.at(i).pos + pbi1.pos : pbi1.pos + p1.trajectory.back().pos;
+        dynamics::data::Vector2Df pose2 = (i < track2_size) ? pbi2.pos + p2.trajectory.at(i).pos : pbi2.pos + p2.trajectory.back().pos;
 
-        float distance = (pose1.pos - pose2.pos).norm();
+        float distance = (pose1 - pose2).norm();
         if (distance <= close_threshold) {
             collision_info.collision_occurred = true;
-            collision_info.pose1 = pose1;
-            collision_info.pose2 = pose2;
+            collision_info.pose1.pos = pose1;
+            collision_info.pose2.pos = pose2;
             return collision_info;
         }
             

@@ -26,6 +26,7 @@ struct MotionPrimitive{
     float dist_yp = 0.f;
     float dist_yn = 0.f;
     std::vector<dynamics::data::Pose2D> trajectory = {};
+    float gscore = 0.f;
 };
 
 struct MPNode{
