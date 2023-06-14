@@ -315,12 +315,31 @@ MLLResult meta_astar(std::map<int32_t,dynamics::data::PoseByIndex> start_positio
     absl::flat_hash_map<dynamics::data::MPoseByIndex, float> gScore;
 
     std::vector<VehicleID> vehicle_ids;
+    std::map<VehicleID, int32_t> exp_index;
     float sum_fscore = 0.f;
+
+    std::map<VehicleID, std::vector<std::tuple<float, int32_t, int32_t>>> sorted_osf;
     for(auto pose_it: start_positions){
+        exp_index[pose_it.first] = 0;
         vehicle_ids.push_back(pose_it.first);
         float manhattan = std::abs(pose_lut[target_positions[pose_it.first]].pos[0] - pose_lut[current_poses[pose_it.first]].pos[0]) + std::abs(pose_lut[target_positions[pose_it.first]].pos[1] - pose_lut[current_poses[pose_it.first]].pos[1]);
         auto posebi = current_poses[pose_it.first];
         sum_fscore += manhattan;
+
+        // Compute PEA* Heuristic for OSF from vheicle start
+        std::vector<std::tuple<float, int32_t, int32_t>> osf_values;
+        for(auto op: mp_comp.m_mpmap[pose_it.second.a][pose_it.second.s]){
+            auto op_target_pose = pose_lut[op.target];
+            float mh_target = std::abs(pose_lut[target_positions[pose_it.first]].pos[0] - op_target_pose.pos[0]) + std::abs(pose_lut[target_positions[pose_it.first]].pos[1] - op_target_pose.pos[1]);
+            float impr = manhattan - mh_target;
+            osf_values.push_back(std::make_tuple(impr, pose_it.second.a, pose_it.second.s));
+        }
+
+        std::sort(begin(osf_values), end(osf_values), [](auto const &t1, auto const &t2) {
+            return get<0>(t1) < get<0>(t2); 
+        });
+
+        sorted_osf[pose_it.first] = osf_values;
     }
 
     dynamics::data::MPoseByIndex start_mpose = {start_positions, vehicle_ids};
@@ -329,7 +348,9 @@ MLLResult meta_astar(std::map<int32_t,dynamics::data::PoseByIndex> start_positio
     gScore[start_mpose] = 0.f;
 
     std::cout << "START " << start_mpose.toString() << std::endl;
-    dynamics::data::MLLNode initial = {vehicle_ids, start_mpose, sum_fscore, 0, 0, 0};
+    
+    
+    dynamics::data::MLLNode initial = {vehicle_ids, start_mpose, sum_fscore, exp_index, 0, 0, 0};
     openQueue.push(initial);
     openSet.insert(start_mpose);
 
@@ -358,46 +379,69 @@ MLLResult meta_astar(std::map<int32_t,dynamics::data::PoseByIndex> start_positio
         std::map<int32_t, float> selected_manh;
         std::map<int32_t, float> selected_tentative_score;
 
-        for(int32_t a = 0; a < map_size_angle; a += 1){
-            for(int32_t s = 0; s < map_size_speed; s += 1){
-                //TODO Compute constant f value change
-            }
-        }
-
-        std::map<int32_t, int32_t> operations_index;
         float sum_manh = 0.f;
-
-            // std::cout << "vehicle index " << veh_index << " op index " << operations_index[veh_index] << " size " << mp_comp.m_mpmap[posebi.a][posebi.s].size() << std::endl;
-
+        
         auto pose1 = current.poses.vehicle_poses[current.vehicle_index.at(0)];
         auto pose2 = current.poses.vehicle_poses[current.vehicle_index.at(1)];
         auto pose3 = current.poses.vehicle_poses[current.vehicle_index.at(2)];
     
         int32_t remaining_expansions = 150; //Partial-Expansion A* with Selective Node Generation
 
-        for( operations_index[current.vehicle_index.at(0)] = 0; operations_index[current.vehicle_index.at(0)] < mp_comp.m_mpmap[pose1.a][pose1.s].size(); operations_index[current.vehicle_index.at(0) ++] ++ ){
-            for(operations_index[current.vehicle_index.at(1)] = 0; operations_index[current.vehicle_index.at(1)] < mp_comp.m_mpmap[pose2.a][pose2.s].size(); operations_index[current.vehicle_index.at(1)] ++ ){
-                for(operations_index[current.vehicle_index.at(2)] = 0; operations_index[current.vehicle_index.at(2)] < mp_comp.m_mpmap[pose3.a][pose3.s].size(); operations_index[current.vehicle_index.at(2)] ++ ){
+        //TODO Improve operator selection -> heavy bias towards 0 atm and use osf
+
+        while( current.expansion_index[current.vehicle_index.at(0)] < mp_comp.m_mpmap[pose1.a][pose1.s].size()
+            && current.expansion_index[current.vehicle_index.at(1)] < mp_comp.m_mpmap[pose2.a][pose2.s].size()
+            && current.expansion_index[current.vehicle_index.at(2)] < mp_comp.m_mpmap[pose3.a][pose3.s].size()){
+
+            if(remaining_expansions <= 0){
+                  
+                        current.fScore = 0.f; 
+                        openSet.insert(current.poses);
+                        openQueue.push(current);
+                        remaining_expansions --;
+                        break;
+            }
+
+            switch (5)
+            {
+            case 0:
+                current.expansion_index[current.vehicle_index.at(0)] += 1;
+                break;
+            case 1:
+                current.expansion_index[current.vehicle_index.at(1)] += 1;
+                break;
+            case 2:
+                current.expansion_index[current.vehicle_index.at(2)] += 1;
+                break;
+            }
+        }
+
+        for( current.expansion_index[current.vehicle_index.at(0)] = 0; remaining_expansions >= 0 && current.expansion_index[current.vehicle_index.at(0)] < mp_comp.m_mpmap[pose1.a][pose1.s].size(); current.expansion_index[current.vehicle_index.at(0)] ++ ){
+            for(current.expansion_index[current.vehicle_index.at(1)] = 0; remaining_expansions >= 0 && current.expansion_index[current.vehicle_index.at(1)] < mp_comp.m_mpmap[pose2.a][pose2.s].size(); current.expansion_index[current.vehicle_index.at(1)] ++ ){
+                for(current.expansion_index[current.vehicle_index.at(2)] = 0; remaining_expansions >= 0 && current.expansion_index[current.vehicle_index.at(2)] < mp_comp.m_mpmap[pose3.a][pose3.s].size(); current.expansion_index[current.vehicle_index.at(2)] ++ ){
                     
-                    if(remaining_expansions){}
+                    if(remaining_expansions == 0){
+                      
+
+                    }
 
                     for(int32_t i = 0; i < current.vehicle_index.size(); i ++){
                         auto veh_index = current.vehicle_index.at(i);
                         auto posebi = current.poses.vehicle_poses[veh_index];
                         auto poseac = pose_lut[posebi];
-                        auto candidate_primitive = mp_comp.m_mpmap[posebi.a][posebi.s].at(operations_index[veh_index]);
+                        auto candidate_primitive = mp_comp.m_mpmap[posebi.a][posebi.s].at(current.expansion_index[veh_index]);
                         dynamics::data::PoseByIndex gl_neighbor = toGlobalIndex(posebi, candidate_primitive.target);
                         gl_neighbor.t = 0; //TODO turn back to regular value
                         
                         if(!validatePosition(poseac, gl_neighbor, candidate_primitive, candidate_primitive.trajectory)){
-                            operations_index[veh_index] += 1;
+                            current.expansion_index[veh_index] += 1;
                             break;
                         }
 
                         for(auto obstacle : constraints){
                             if(std::abs(current.timestep - obstacle.t ) <= 2 || obstacle.t == -1 ){
                                 if(std::abs(gl_neighbor.x - obstacle.x ) <= 1 && std::abs(gl_neighbor.y - obstacle.y) <= 1){
-                                operations_index[veh_index] += 1;
+                                current.expansion_index[veh_index] += 1;
                                 break;
                                 }
                             }
@@ -405,9 +449,9 @@ MLLResult meta_astar(std::map<int32_t,dynamics::data::PoseByIndex> start_positio
                     }
 
 
-                    auto mp_can_1 = mp_comp.m_mpmap[pose1.a][pose1.s].at(operations_index[current.vehicle_index.at(0)]);
-                    auto mp_can_2 = mp_comp.m_mpmap[pose2.a][pose2.s].at(operations_index[current.vehicle_index.at(1)]);
-                    auto mp_can_3 = mp_comp.m_mpmap[pose3.a][pose3.s].at(operations_index[current.vehicle_index.at(2)]);
+                    auto mp_can_1 = mp_comp.m_mpmap[pose1.a][pose1.s].at(current.expansion_index[current.vehicle_index.at(0)]);
+                    auto mp_can_2 = mp_comp.m_mpmap[pose2.a][pose2.s].at(current.expansion_index[current.vehicle_index.at(1)]);
+                    auto mp_can_3 = mp_comp.m_mpmap[pose3.a][pose3.s].at(current.expansion_index[current.vehicle_index.at(2)]);
 
 
                     CollisionInfo result1 = CircleApproximation::checkForCollision(mp_can_1, pose_lut[pose1],
@@ -454,7 +498,7 @@ MLLResult meta_astar(std::map<int32_t,dynamics::data::PoseByIndex> start_positio
 
                             cameFrom[npose] = current.poses;
                             if(openSet.find(npose) == openSet.end()){
-                                dynamics::data::MLLNode node = {current.vehicle_index, npose,  candidate_score + h1 + h2 + h3, current.timestep + 1, 0, 0}; // TODO readd reversing counter
+                                dynamics::data::MLLNode node = {current.vehicle_index, npose,  candidate_score + h1 + h2 + h3, exp_index, current.timestep + 1, 0, 0}; // TODO readd reversing counter
                                 openQueue.push(node);
                                 openSet.insert(npose);
                                 remaining_expansions --;
