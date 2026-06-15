@@ -5,11 +5,8 @@ The planner combines a high-level CBS layer that resolves conflicts between vehi
 low-level A\* search that operates over a **precomputed lattice of motion primitives**, so that
 every edge expanded during search is already a kinematically feasible vehicle maneuver.
 
-This was developed as part of a master's thesis. The name stands for
+This was developed as part of my master's thesis. The name stands for
 **N**on-**H**olonomic **I**mproved **C**onflict-**B**ased **S**earch **H**igh-**L**evel **C**ontroller.
-
-> ⚠️ **Status: research / thesis code.** Expect rough edges, commented-out experiments, and
-> hard-coded parameters. It builds and runs, but it is not production software.
 
 ---
 
